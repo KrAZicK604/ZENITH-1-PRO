@@ -1,141 +1,20 @@
-﻿<!DOCTYPE html>
-<html>
-<head>
-<title>ZENITH 4D VR SOLAR SYSTEM v16</title>
-<style>
-body{margin:0;overflow:hidden;background:#000;color:#fff;font-family:Orbitron,monospace}
-#info{position:absolute;top:10px;left:10px;z-index:10;background:rgba(0,20,40,0.9);padding:15px;border:1px solid #0ff;border-radius:10px}
-#vr-hud{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);z-index:10;background:rgba(0,255,255,0.2);padding:10px 20px;border-radius:20px}
-button{background:#0ff;color:#000;border:none;padding:10px 20px;margin:5px;border-radius:5px;font-weight:bold;cursor:pointer}
-</style>
-<script type="importmap">
-{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
-</script>
-</head>
-<body>
-<div id="info">
-<h3>🚀 ZENITH-1-PRO v16</h3>
-<div>🌍-♂️ 259.1M km REAL JPL</div>
-<div>Psi: 1.133 | Saved: 117t</div>
-<div id="stats">Solar System 4D VR</div>
-</div>
-<div id="vr-hud">
-<button onclick="enterVR()">🥽 ENTER VR</button>
-<button onclick="togglePsi()">⚡ PSI FIELD</button>
-<button onclick="focusMars()">♂️ FOCUS MARS</button>
-</div>
+﻿<!DOCTYPE html><html><head><meta charset="utf-8"><title>ZENITH VR v18</title><style>body{margin:0;overflow:hidden;background:#000;font-family:monospace}#overlay{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,0.9);z-index:100;color:#0ff}#overlay h1{font-size:48px;text-shadow:0 0 20px #0ff}button{padding:15px 30px;margin:10px;background:#0ff;color:#000;border:none;font-size:18px;font-weight:bold;cursor:pointer;border-radius:10px}#hud{position:absolute;top:10px;left:10px;background:rgba(0,0,0,0.8);padding:15px;border:1px solid #0ff;color:#0ff;z-index:10;border-radius:10px}</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script></head><body>
+<div id="overlay"><h1>🚀 ZENITH VR v18</h1><p>259.1M km WALK EARTH TO MARS IN VR</p><button id="enter">ENTER VR - QUEST READY</button><button id="enter2D">WATCH 2D</button></div>
+<div id="hud">MODE: <span id="mode">READY</span><br>Distance: <span id="dist">0</span>/259.1M km</div>
 <script type="module">
-import * as THREE from 'three';
-import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {VRButton} from 'three/addons/webxr/VRButton.js';
-
-let scene = new THREE.Scene();
-let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 50000);
-let renderer = new THREE.WebGLRenderer({antialias:true});
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.xr.enabled = true;
-document.body.appendChild(renderer.domElement);
-document.body.appendChild(VRButton.createButton(renderer));
-
-let controls = new OrbitControls(camera, renderer.domElement);
-camera.position.set(0,200,500);
-controls.update();
-
-let ambient = new THREE.AmbientLight(0x404040, 0.5);
-scene.add(ambient);
-let sunLight = new THREE.PointLight(0xffffaa, 2, 5000);
-scene.add(sunLight);
-
-// STARS
-let starGeo = new THREE.BufferGeometry();
-let starPos = [];
-for(let i=0;i<10000;i++){starPos.push((Math.random()-0.5)*20000,(Math.random()-0.5)*20000,(Math.random()-0.5)*20000)}
-starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos,3));
-let stars = new THREE.Points(starGeo, new THREE.PointsMaterial({color:0xffffff,size:2}));
-scene.add(stars);
-
-// SUN
-let sun = new THREE.Mesh(new THREE.SphereGeometry(20,32,32), new THREE.MeshBasicMaterial({color:0xffaa00}));
-scene.add(sun);
-
-// PLANETS DATA - REAL RELATIVE
-let planets = [
-{name:"Mercury", r:3, dist:60, color:0xaaaaaa, speed:0.04},
-{name:"Venus", r:6, dist:90, color:0xffcc88, speed:0.015},
-{name:"Earth", r:6.5, dist:130, color:0x4488ff, speed:0.01},
-{name:"Mars", r:4, dist:200, color:0xff4422, speed:0.008},
-{name:"Jupiter", r:15, dist:350, color:0xffaa66, speed:0.002},
-{name:"Saturn", r:12, dist:500, color:0xffdd88, speed:0.0009},
-{name:"Uranus", r:9, dist:650, color:0x66ccff, speed:0.0004},
-{name:"Neptune", r:9, dist:800, color:0x3366ff, speed:0.0001}
-];
-
-let planetMeshes = [];
-planets.forEach(p=>{
- let mesh = new THREE.Mesh(new THREE.SphereGeometry(p.r,16,16), new THREE.MeshStandardMaterial({color:p.color}));
- let orbit = new THREE.LineLoop(
-   new THREE.BufferGeometry().setFromPoints(Array.from({length:64},(_,i)=>{let a=i/64*Math.PI*2; return new THREE.Vector3(Math.cos(a)*p.dist,0,Math.sin(a)*p.dist)})),
-   new THREE.LineBasicMaterial({color:p.color,transparent:true,opacity:0.3})
- );
- scene.add(orbit);
- mesh.userData = p;
- scene.add(mesh);
- planetMeshes.push(mesh);
-
- // Mars special
- if(p.name==="Mars"){
-   let ring = new THREE.Mesh(new THREE.TorusGeometry(p.dist,1,8,100), new THREE.MeshBasicMaterial({color:0x00ffff,transparent:true,opacity:0.2,wireframe:true}));
-   ring.rotation.x = Math.PI/2;
-   scene.add(ring);
- }
-});
-
-// Earth-Mars line 259.1M km
-let transferLine = new THREE.Line(
- new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(130,0,0), new THREE.Vector3(200,0,0)]),
- new THREE.LineDashedMaterial({color:0x00ff00,dashSize:5,gapSize:5})
-);
-transferLine.computeLineDistances();
-scene.add(transferLine);
-
-let psiVisible=false;
-let psiField = new THREE.Mesh(new THREE.SphereGeometry(250,32,32), new THREE.MeshBasicMaterial({color:0x00ffff,wireframe:true,transparent:true,opacity:0}));
-scene.add(psiField);
-
-window.togglePsi=()=>{
- psiVisible=!psiVisible;
- psiField.material.opacity = psiVisible?0.15:0;
- document.getElementById('stats').innerHTML = psiVisible?"⚡ PSI FIELD ACTIVE 1.133":"Solar System 4D VR";
-}
-
-window.focusMars=()=>{
- let mars = planetMeshes[3];
- camera.position.set(mars.position.x+50, 50, mars.position.z+50);
- controls.target.copy(mars.position);
-}
-
-window.enterVR=()=>{
- renderer.xr.isPresenting? renderer.xr.getSession().end() : null;
-}
-
-renderer.setAnimationLoop(()=>{
- planetMeshes.forEach((m,i)=>{
-   let p=planets[i];
-   let t=Date.now()*p.speed*0.001;
-   m.position.x = Math.cos(t)*p.dist;
-   m.position.z = Math.sin(t)*p.dist;
- });
- sun.rotation.y+=0.001;
- if(psiVisible) psiField.rotation.y+=0.002;
- controls.update();
- renderer.render(scene,camera);
-});
-
-window.addEventListener('resize',()=>{
- camera.aspect=window.innerWidth/window.innerHeight;
- camera.updateProjectionMatrix();
- renderer.setSize(window.innerWidth, window.innerHeight);
-});
-</script>
-</body>
-</html>
+import * as THREE from 'three'; import {OrbitControls} from 'three/addons/controls/OrbitControls.js'; import {VRButton} from 'three/addons/webxr/VRButton.js';
+let scene=new THREE.Scene(); scene.background=new THREE.Color(0x000011);
+let cam=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,2000); cam.position.set(0,5,20);
+let ren=new THREE.WebGLRenderer({antialias:true}); ren.setSize(innerWidth,innerHeight); ren.xr.enabled=true; document.body.appendChild(ren.domElement);
+document.body.appendChild(VRButton.createButton(ren));
+let con=new OrbitControls(cam,ren.domElement); scene.add(new THREE.AmbientLight(0xffffff,0.9));
+let stars=new THREE.BufferGeometry(); let sp=[]; for(let i=0;i<5000;i++)sp.push((Math.random()-0.5)*2000,(Math.random()-0.5)*2000,(Math.random()-0.5)*2000); stars.setAttribute('position',new THREE.Float32BufferAttribute(sp,3)); scene.add(new THREE.Points(stars,new THREE.PointsMaterial({color:0xffffff,size:1.5})));
+let earth=new THREE.Mesh(new THREE.SphereGeometry(2,32,32),new THREE.MeshLambertMaterial({color:0x0066FF})); earth.position.set(-20,0,-20); scene.add(earth);
+let mars=new THREE.Mesh(new THREE.SphereGeometry(1.5,32,32),new THREE.MeshLambertMaterial({color:0xFF3300})); mars.position.set(20,0,-20); scene.add(mars);
+let ship=new THREE.Mesh(new THREE.ConeGeometry(0.3,1,8),new THREE.MeshLambertMaterial({color:0xffffff})); ship.position.copy(earth.position); scene.add(ship);
+let prog=0;
+document.getElementById('enter').onclick=()=>{document.getElementById('overlay').style.display='none'; document.getElementById('mode').innerText='VR';};
+document.getElementById('enter2D').onclick=()=>{document.getElementById('overlay').style.display='none'; document.getElementById('mode').innerText='2D';};
+function animate(){ prog+=0.001; if(prog>1)prog=0; ship.position.lerpVectors(earth.position,mars.position,prog); document.getElementById('dist').innerText=(259.1*prog).toFixed(2); earth.rotation.y+=0.01; mars.rotation.y+=0.01; con.update(); ren.render(scene,cam); }
+ren.setAnimationLoop(animate);
+</script></body></html>
