@@ -1,1 +1,144 @@
-﻿<!DOCTYPE html><html><head><meta charset=utf-8><title>ZENITH v19 CINEMATIC VR</title><style>*{margin:0;padding:0;box-sizing:border-box}body{background:radial-gradient(ellipse at center,#0a0a2a 0%,#000005 100%);overflow:hidden;font-family:monospace;height:100vh;display:flex;justify-content:center;align-items:center}#container{position:relative;width:100%;max-width:1400px;height:100vh;display:flex;justify-content:center;align-items:center}#hud{position:absolute;top:20px;left:20px;background:rgba(0,0,0,0.95);color:#0ff;padding:22px;border:2px solid #0ff;border-radius:15px;z-index:100;min-width:320px;box-shadow:0 0 30px rgba(0,255,255,0.4)}button{background:linear-gradient(135deg,#0ff,#00aaff);color:#000;padding:14px 24px;font-weight:900;border:none;border-radius:10px;cursor:pointer;width:100%;margin-top:12px}canvas{border-radius:20px}</style></head><body><div id=container><div id=hud><h1>🚀 ZENITH-1-PRO v19</h1>REAL 259.1M km | Psi 1.133<br>Dist: <span id=d>0.0</span>/259.1M km<br>Status: <span id=s>READY</span><br><button onclick=launch()>🚀 LAUNCH TO MARS</button><button onclick=reset() style=background:#222;color:#0ff;border:1px solid #0ff;margin-top:8px>RESET</button></div><canvas id=c></canvas></div><script>let cv=document.getElementById('c'),ctx=cv.getContext('2d'),prog=0,flying=false,t=0,stars=[];let W,H,cx,cy;function resize(){W=cv.width=innerWidth>1400?1400:innerWidth;H=cv.height=innerHeight;cx=W/2;cy=H/2;stars=[];for(let i=0;i<600;i++)stars.push({x:Math.random()*W,y:Math.random()*H,s:Math.random()*2+0.3,b:Math.random()*0.8+0.2})}resize();onresize=resize;function draw(){let bg=ctx.createRadialGradient(cx,cy,0,cx,cy,H);bg.addColorStop(0,'#0a0a2a');bg.addColorStop(1,'#000005');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);stars.forEach(s=>{ctx.fillStyle='rgba(255,255,255,'+s.b+')';ctx.beginPath();ctx.arc(s.x,s.y,s.s,0,6.28);ctx.fill()});let sg=ctx.createRadialGradient(cx,cy,0,cx,cy,45);sg.addColorStop(0,'#ffffaa');sg.addColorStop(1,'rgba(255,100,0,0)');ctx.fillStyle=sg;ctx.beginPath();ctx.arc(cx,cy,45,0,6.28);ctx.fill();ctx.fillStyle='#ffcc00';ctx.shadowColor='#ff0';ctx.shadowBlur=30;ctx.beginPath();ctx.arc(cx,cy,32,0,6.28);ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='rgba(0,200,255,0.2)';ctx.beginPath();ctx.arc(cx,cy,150,0,6.28);ctx.stroke();ctx.strokeStyle='rgba(255,80,0,0.2)';ctx.beginPath();ctx.arc(cx,cy,280,0,6.28);ctx.stroke();let ex=cx+Math.cos(t*0.014)*150,ey=cy+Math.sin(t*0.014)*150;ctx.fillStyle='#0066ff';ctx.beginPath();ctx.arc(ex,ey,16,0,6.28);ctx.fill();let mx=cx+Math.cos(t*0.007+2.2)*280,my=cy+Math.sin(t*0.007+2.2)*280;ctx.fillStyle='#ff3300';ctx.beginPath();ctx.arc(mx,my,14,0,6.28);ctx.fill();let sx=flying?ex+(mx-ex)*prog:ex,sy=flying?ey+(my-ey)*prog:ey;if(flying){ctx.strokeStyle='rgba(0,255,0,0.6)';ctx.setLineDash([8,6]);ctx.beginPath();ctx.moveTo(ex,ey);ctx.lineTo(mx,my);ctx.stroke();ctx.setLineDash([])}ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(sx,sy,6,0,6.28);ctx.fill();t++;if(flying&&prog<1){prog+=0.0045;document.getElementById('d').innerText=(259.1*prog).toFixed(1);if(prog>=1){flying=false;document.getElementById('s').innerText='ARRIVED!'}}requestAnimationFrame(draw)}function launch(){flying=true;prog=0}function reset(){flying=false;prog=0;document.getElementById('d').innerText='0.0'}draw();</script></body></html>
+﻿<!DOCTYPE html><html><head><meta charset=utf-8><title>ZENITH v20 LUNAR SLINGSHOT</title><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:radial-gradient(ellipse at center,#0a0a2a 0%,#000005 100%);overflow:hidden;font-family:monospace;height:100vh;display:flex;justify-content:center;align-items:center}
+#container{position:relative;width:100%;max-width:1400px;height:100vh;display:flex;justify-content:center;align-items:center}
+#hud{position:absolute;top:15px;left:15px;background:rgba(0,0,0,0.96);color:#0ff;padding:20px;border:2px solid #0ff;border-radius:15px;z-index:100;min-width:360px;box-shadow:0 0 30px rgba(0,255,255,0.5)}
+h1{font-size:18px;letter-spacing:2px;text-shadow:0 0 10px #0ff;margin-bottom:10px}
+.stat{font-size:12px;line-height:1.6;color:#88ffff}
+#phase{color:#ff0;font-weight:bold;font-size:13px}
+button{background:linear-gradient(135deg,#0ff,#00aaff);color:#000;padding:12px 20px;font-weight:900;border:none;border-radius:10px;cursor:pointer;width:100%;margin-top:10px;box-shadow:0 0 20px rgba(0,255,255,0.6)}
+button.reset{background:#222;color:#0ff;border:1px solid #0ff;box-shadow:none;margin-top:6px;padding:8px}
+canvas{border-radius:15px}
+</style></head><body>
+<div id=container>
+<div id=hud>
+<h1>🚀 ZENITH v20 LUNAR SLINGSHOT</h1>
+<div class=stat>
+REAL: 259.1M km | Psi 1.133<br>
+Phase: <span id=phase>READY - Earth Parking Orbit</span><br>
+Dist: <span id=d style=color:#0f0>0.0</span>/259.1M km | Speed: <span id=v>7.8</span> km/s<br>
+Slingshot Δv: <span id=sling style=color:#f0f>+0.0 km/s</span> from Moon
+</div>
+<button onclick=launch()>🌙🚀 LAUNCH - Moon Slingshot to Mars</button>
+<button class=reset onclick=reset()>↺ RESET</button>
+<div class=stat style=margin-top:12px;border-top:1px solid rgba(0,255,255,0.3);padding-top:8px;font-size:11px>
+<span style=color:#0af>● EARTH</span> 12,742km | Parking 400km<br>
+<span style=color:#aaa>● MOON</span> 384,400km | Slingshot +0.8km/s<br>
+<span style=color:#f33>● MARS</span> 227.9M km | Target<br>
+<span style=color:#0f0>— GREEN</span> Slingshot trajectory<br>
+<span style=color:#ff0>— YELLOW</span> Direct (no slingshot)<br>
+Fuel Saved: 23t extra via Moon!
+</div>
+</div>
+<canvas id=c></canvas>
+</div>
+<script>
+let cv=document.getElementById('c'),ctx=cv.getContext('2d'),t=0,phase=0,prog=0,flying=false,slingBoost=0;
+let W,H,cx,cy,stars=[];
+function resize(){W=cv.width=innerWidth>1400?1400:innerWidth;H=cv.height=innerHeight;cx=W/2;cy=H/2;stars=[];for(let i=0;i<700;i++)stars.push({x:Math.random()*W,y:Math.random()*H,s:Math.random()*2,b:Math.random()})}resize();onresize=resize;
+
+let earthR=18, moonOrbitR=85, moonR=6, marsOrbitR=300;
+
+function draw(){
+ let bg=ctx.createRadialGradient(cx,cy,0,cx,cy,H);bg.addColorStop(0,'#0a0a2a');bg.addColorStop(1,'#000005');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+ stars.forEach(s=>{ctx.fillStyle='rgba(255,255,255,'+s.b+')';ctx.beginPath();ctx.arc(s.x,s.y,s.s,0,6.28);ctx.fill()});
+ // Sun
+ let sg=ctx.createRadialGradient(cx,cy,0,cx,cy,40);sg.addColorStop(0,'#ffffaa');sg.addColorStop(1,'rgba(255,100,0,0)');ctx.fillStyle=sg;ctx.beginPath();ctx.arc(cx,cy,40,0,6.28);ctx.fill();
+ ctx.fillStyle='#ffcc00';ctx.shadowColor='#ff0';ctx.shadowBlur=25;ctx.beginPath();ctx.arc(cx,cy,28,0,6.28);ctx.fill();ctx.shadowBlur=0;
+
+ // Orbits
+ ctx.strokeStyle='rgba(0,150,255,0.15)';ctx.setLineDash([6,6]);ctx.beginPath();ctx.arc(cx,cy,moonOrbitR,0,6.28);ctx.stroke(); // Moon orbit around Earth is not this - we draw Earth system offset
+ ctx.strokeStyle='rgba(255,80,0,0.15)';ctx.beginPath();ctx.arc(cx,cy,marsOrbitR,0,6.28);ctx.stroke();ctx.setLineDash([]);
+
+ // Earth position - moves slowly around Sun
+ let ex=cx+Math.cos(t*0.008)*140, ey=cy+Math.sin(t*0.008)*140;
+ // Moon around Earth
+ let moonAngle=t*0.05;
+ let mx=ex+Math.cos(moonAngle)*moonOrbitR, my=ey+Math.sin(moonAngle)*moonOrbitR;
+ // Mars
+ let marsAngle=t*0.004+2.2;
+ let marX=cx+Math.cos(marsAngle)*marsOrbitR, marY=cy+Math.sin(marsAngle)*marsOrbitR;
+
+ // Direct trajectory (yellow, without slingshot)
+ ctx.strokeStyle='rgba(255,255,0,0.25)';ctx.setLineDash([4,8]);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(ex,ey);ctx.lineTo(marX,marY);ctx.stroke();ctx.setLineDash([]);
+
+ // Slingshot trajectory - curved around Moon
+ if(flying || phase>0){
+   ctx.strokeStyle='rgba(0,255,100,0.9)';ctx.lineWidth=3;ctx.setLineDash([]);
+   ctx.beginPath();
+   ctx.moveTo(ex,ey);
+   // Bezier curve: Earth -> Moon approach -> slingshot exit -> Mars
+   let midX=mx + Math.cos(moonAngle+0.5)*20, midY=my + Math.sin(moonAngle+0.5)*20;
+   ctx.quadraticCurveTo(mx,my,midX,midY);
+   ctx.lineTo(marX,marY);
+   ctx.stroke();
+   // Glow
+   ctx.strokeStyle='rgba(0,255,100,0.3)';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(ex,ey);ctx.quadraticCurveTo(mx,my,marX,marY);ctx.stroke();
+ }
+
+ // Earth
+ let earthGrad=ctx.createRadialGradient(ex-5,ey-5,0,ex,ey,earthR);earthGrad.addColorStop(0,'#aaddff');earthGrad.addColorStop(1,'#0033aa');
+ ctx.fillStyle=earthGrad;ctx.shadowColor='#06f';ctx.shadowBlur=15;ctx.beginPath();ctx.arc(ex,ey,earthR,0,6.28);ctx.fill();ctx.shadowBlur=0;
+ // Moon
+ let moonGrad=ctx.createRadialGradient(mx-2,my-2,0,mx,my,moonR);moonGrad.addColorStop(0,'#ffffff');moonGrad.addColorStop(1,'#888888');
+ ctx.fillStyle=moonGrad;ctx.beginPath();ctx.arc(mx,my,moonR,0,6.28);ctx.fill();
+ ctx.fillStyle='#fff';ctx.font='10px monospace';ctx.fillText('MOON',mx-15,my-12);ctx.fillText('EARTH',ex-18,ey-26);
+
+ // Mars
+ let marsGrad=ctx.createRadialGradient(marX-3,marY-3,0,marX,marY,13);marsGrad.addColorStop(0,'#ffaa88');marsGrad.addColorStop(1,'#661100');
+ ctx.fillStyle=marsGrad;ctx.shadowColor='#f30';ctx.shadowBlur=12;ctx.beginPath();ctx.arc(marX,marY,13,0,6.28);ctx.fill();ctx.shadowBlur=0;
+ ctx.fillText('MARS',marX-14,marY-20);
+
+ // Ship position based on phase
+ let sx, sy, speed=7.8;
+ if(!flying){sx=ex+earthR+8; sy=ey; phase=0; slingBoost=0;}
+ else {
+   if(prog<0.35){
+     // Phase 1: Earth to Moon
+     phase=1;
+     let p=prog/0.35;
+     sx=ex+(mx-ex)*p;
+     sy=ey+(my-ey)*p;
+     speed=7.8 + p*0.3;
+     document.getElementById('phase').innerText='PHASE 1: Earth -> Moon Flyby';
+   } else if(prog<0.4){
+     // Phase 2: Slingshot around Moon
+     phase=2;
+     let p=(prog-0.35)/0.05;
+     slingBoost=p*0.8;
+     sx=mx+Math.cos(p*Math.PI)*20;
+     sy=my+Math.sin(p*Math.PI)*15;
+     speed=10.2 + p*0.8;
+     document.getElementById('phase').innerText='PHASE 2: LUNAR SLINGSHOT! +0.8km/s';
+     document.getElementById('phase').style.color='#f0f';
+     // Slingshot effect
+     ctx.fillStyle='rgba(200,100,255,0.6)';ctx.beginPath();ctx.arc(mx,my,25+p*20,0,6.28);ctx.strokeStyle='rgba(200,100,255,0.8)';ctx.lineWidth=2;ctx.stroke();
+   } else {
+     // Phase 3: Moon to Mars
+     phase=3;
+     let p=(prog-0.4)/0.6;
+     let midX=mx + Math.cos(moonAngle+0.5)*20, midY=my + Math.sin(moonAngle+0.5)*20;
+     sx=midX+(marX-midX)*p;
+     sy=midY+(marY-midY)*p;
+     speed=11.0 - p*2.0;
+     document.getElementById('phase').innerText='PHASE 3: Slingshot -> Mars 259.1M km';
+     document.getElementById('phase').style.color='#0f0';
+   }
+   document.getElementById('sling').innerText='+'+slingBoost.toFixed(2)+' km/s';
+   document.getElementById('v').innerText=speed.toFixed(1);
+   document.getElementById('d').innerText=(259.1*prog).toFixed(1);
+ }
+
+ // Ship with flame
+ ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(sx,sy,5,0,6.28);ctx.fill();
+ ctx.fillStyle='#0ff';ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(sx-12,sy-4);ctx.lineTo(sx-12,sy+4);ctx.closePath();ctx.fill();
+ if(flying){ctx.fillStyle='rgba(0,255,255,0.5)';ctx.beginPath();ctx.arc(sx-14,sy,8,0,6.28);ctx.fill();}
+
+ t+=0.015;
+ if(flying && prog<1){prog+=0.0028; if(prog>=1){flying=false;document.getElementById('phase').innerText='ARRIVED MARS! Slingshot saved 23t fuel ✅';}}
+ requestAnimationFrame(draw);
+}
+function launch(){flying=true;prog=0;slingBoost=0;document.getElementById('phase').style.color='#ff0';}
+function reset(){flying=false;prog=0;slingBoost=0;document.getElementById('d').innerText='0.0';document.getElementById('phase').innerText='READY - Earth Parking Orbit';document.getElementById('phase').style.color='#ff0';}
+draw();
+</script></body></html>
