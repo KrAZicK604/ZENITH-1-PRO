@@ -1,4 +1,4 @@
-﻿streamlit
-pandas
-numpy
-plotly
+﻿flask
+stripe
+python-dotenv
+gunicorn
