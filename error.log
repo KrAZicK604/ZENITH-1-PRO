@@ -1,0 +1,69 @@
+﻿python : Executing <Task pending name='Task-1' coro=<run.<locals>.main() running at C:\Users\
+curtz\AppData\Local\Programs\Python\Python312\Lib\site-packages\streamlit\web\bootstrap.py:52
+3> wait_for=<Future pending cb=[Task.task_wakeup()] created at 
+C:\Users\curtz\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py:448> 
+cb=[_run_until_complete_cb() at 
+C:\Users\curtz\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py:181] 
+created at 
+C:\Users\curtz\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py:100> took 
+0.157 seconds
+At line:1 char:1
++ python -m streamlit run test_app.py --server.port 8502 2>&1 | Out-Fil ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Executing <Task...k 0.157 seconds:String) [], R 
+   emoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+2026-10-14 19:47:18.904 Uvicorn server started on :::8502
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8502
+  Network URL: http://10.0.0.203:8502
+
+Executing <Handle AppSession._on_scriptrunner_event.<locals>.<lambda>() at C:\Users\curtz\App
+Data\Local\Programs\Python\Python312\Lib\site-packages\streamlit\runtime\app_session.py:702 
+created at C:\Users\curtz\AppData\Local\Programs\Python\Python312\Lib\site-packages\streamlit
+\runtime\app_session.py:722> took 0.594 seconds
+2026-10-14 19:47:26.211 Uncaught app execution
+Traceback (most recent call last):
+  File "C:\Users\curtz\AppData\Local\Programs\Python\Python312\Lib\site-packages\streamlit\ru
+ntime\scriptrunner\exec_code.py", line 136, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+  File "C:\Users\curtz\AppData\Local\Programs\Python\Python312\Lib\site-packages\streamlit\ru
+ntime\scriptrunner\script_runner.py", line 922, in code_to_exec
+    _mpa_v1(self._main_script_path)
+  File "C:\Users\curtz\AppData\Local\Programs\Python\Python312\Lib\site-packages\streamlit\ru
+ntime\scriptrunner\script_runner.py", line 180, in _mpa_v1
+    page.run()
+  File "C:\Users\curtz\AppData\Local\Programs\Python\Python312\Lib\site-packages\streamlit\na
+vigation\page.py", line 507, in run
+    code = ctx.pages_manager.get_page_script_byte_code(str(self._page))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\curtz\AppData\Local\Programs\Python\Python312\Lib\site-packages\streamlit\ru
+ntime\pages_manager.py", line 214, in get_page_script_byte_code
+    return self._script_cache.get_bytecode(script_path)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\curtz\AppData\Local\Programs\Python\Python312\Lib\site-packages\streamlit\ru
+ntime\scriptrunner\script_cache.py", line 72, in get_bytecode
+    filebody = magic.add_magic(filebody, script_path)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\curtz\AppData\Local\Programs\Python\Python312\Lib\site-packages\streamlit\ru
+ntime\scriptrunner\magic.py", line 44, in add_magic
+    tree = ast.parse(code, script_path, "exec")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\curtz\AppData\Local\Programs\Python\Python312\Lib\ast.py", line 52, in parse
+    return compile(source, filename, mode, flags,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\curtz\Downloads\ZENITH-1-PRO\pages\5_True_3D_VR.py", line 47
+    '''
+    ^
+SyntaxError: unterminated triple-quoted string literal (detected at line 48)
+Executing <Task pending name='uvicorn-server' 
+coro=<UvicornServer.start.<locals>.serve_with_signal() running at C:\Users\curtz\AppData\Loca
+l\Programs\Python\Python312\Lib\site-packages\streamlit\web\server\starlette\starlette_server
+.py:485> wait_for=<Future pending cb=[Task.task_wakeup()] created at 
+C:\Users\curtz\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py:448> 
+created at C:\Users\curtz\AppData\Local\Programs\Python\Python312\Lib\asyncio\tasks.py:420> 
+took 0.141 seconds

@@ -1,105 +1,132 @@
-﻿import streamlit as st
-
-st.set_page_config(page_title="REALITY OS v37", layout="wide", page_icon="🌐")
-
-st.title("🌐 REALITY OS v37 - ONLINE MULTIPLAYER - WORKING LOCAL")
-
-st.info("LOCAL MODE: http://localhost:8501 - Multiplayer works in 2 browser windows (no internet needed for test)")
-
-st.markdown("### HOW TO PLAY ONLINE MULTIPLAYER (LOCAL TEST - WORKS NOW):")
-st.markdown("""
-1. Open http://localhost:8501 - Copy Room ID at top (yellow)
-2. Open NEW incognito window (Ctrl+Shift+N) - Paste http://localhost:8501?room=YOUR_ID
-3. In incognito, it auto-joins - Shows Players: 2
-4. In BOTH windows click START ONLINE MULTIPLAYER RACE
-5. You see each other's ships move live - Race to Mars!
-
-### FOR REAL ONLINE WITH FRIENDS (After fixing Streamlit Cloud):
-
-**Fix Streamlit Cloud access error:**
-- Go to https://github.com/krazick604/ZENITH-1-PRO - Make repo PUBLIC (Settings - Danger Zone - Change visibility)
-- Go to https://share.streamlit.io - Delete old app peterzenith-zenith-1-pro
-- Click New app - Paste https://github.com/krazick604/ZENITH-1-PRO - Branch main - File app.py - Deploy
-- New URL: https://krazick604-zenith-1-pro.streamlit.app - Make it PUBLIC in Settings
-- Share that URL with ?room=YOUR_ID - Works worldwide
-
-**Current deployed URL not working because private repo or wrong GitHub account (curtzenith@gmail.com vs krazick604)**
-""")
-
-with open("FINAL_VR_v37_ONLINE_SIMPLE.html","r",encoding="utf-8") as f:
-    html = f.read()
-    st.components.v1.html(html, height=1000, scrolling=False)
-'| Set-Content -Path app.py -Encoding UTF8
-
-# ENSURE HTML EXISTS - RECREATE MINIMAL WORKING VERSION
-@'
-<!DOCTYPE html><html><head><meta charset=utf-8><title>REALITY OS v37 ONLINE SIMPLE</title><style>
-*{margin:0;padding:0;box-sizing:border-box}body{background:#000;overflow:hidden;font-family:monospace;color:#0ff}
+﻿<!DOCTYPE html><html><head><meta charset=utf-8><title>REALITY OS v37 - TABS FIXED</title><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden;font-family:monospace;color:#0ff}
 canvas{position:absolute;top:0;left:0;width:100%;height:100vh}
 #os{position:absolute;top:0;left:0;width:100%;height:100vh;z-index:10}
-.window{position:absolute;background:rgba(0,15,30,0.95);border:1px solid #0ff;border-radius:12px;padding:0;pointer-events:auto;box-shadow:0 0 30px rgba(0,255,255,0.3);min-width:380px;overflow:hidden}
-.titlebar{background:rgba(0,255,255,0.15);padding:8px 12px;display:flex;justify-content:space-between;align-items:center;cursor:move;font-size:11px;font-weight:900}
-.content{padding:12px;font-size:11px;line-height:1.7;max-height:500px;overflow-y:auto}
+.window{position:absolute;background:rgba(0,15,30,0.96);border:1px solid #0ff;border-radius:12px;padding:0;pointer-events:auto;box-shadow:0 0 30px rgba(0,255,255,0.3);min-width:380px;overflow:hidden;display:block}
+.window.hidden{display:none}
+.titlebar{background:rgba(0,255,255,0.2);padding:10px 12px;display:flex;justify-content:space-between;align-items:center;cursor:move;font-size:11px;font-weight:900;user-select:none}
+.titlebar:hover{background:rgba(0,255,255,0.3)}
+.content{padding:12px;font-size:11px;line-height:1.7;max-height:520px;overflow-y:auto}
 .btn{display:inline-block;background:rgba(0,255,255,0.2);border:1px solid #0ff;padding:8px 14px;border-radius:8px;font-size:10px;cursor:pointer;margin:3px;color:#0ff;font-weight:900}
-.btn:hover{background:#0ff;color:#000}
+.btn:hover{background:#0ff;color:#000;box-shadow:0 0 15px #0ff}
 .btn-green{background:rgba(0,255,0,0.3);border-color:#0f0;color:#0f0}
+.btn-green:hover{background:#0f0;color:#000}
+.close{cursor:pointer;color:#f55;font-size:16px;padding:4px 8px;border-radius:4px}
+.close:hover{background:rgba(255,0,0,0.3)}
 .input{width:100%;background:rgba(0,0,0,0.7);border:1px solid #0ff;color:#0ff;padding:8px;border-radius:6px;font-family:monospace;font-size:11px;margin:4px 0}
 #gameCanvas{border:2px solid #f0f;border-radius:10px;background:#000;width:100%;height:280px;display:block;margin:8px 0}
 #onlineStatus{position:absolute;top:15px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);border:2px solid #0f0;padding:10px 18px;border-radius:12px;z-index:300;pointer-events:auto;text-align:center;min-width:380px}
-#taskbar{position:absolute;bottom:0;left:0;width:100%;height:50px;background:rgba(0,0,0,0.9);border-top:1px solid #0ff;display:flex;align-items:center;padding:0 12px;z-index:1000;pointer-events:auto}
-.ticon{width:42px;height:42px;background:rgba(0,255,255,0.15);border:1px solid #0ff;border-radius:10px;margin-right:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px}
+#taskbar{position:absolute;bottom:0;left:0;width:100%;height:52px;background:rgba(0,0,0,0.92);border-top:2px solid #0ff;display:flex;align-items:center;padding:0 12px;z-index:1000;pointer-events:auto}
+.ticon{width:44px;height:44px;background:rgba(0,255,255,0.15);border:1px solid #0ff;border-radius:10px;margin-right:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;position:relative}
+.ticon:hover{background:#0ff;color:#000;transform:translateY(-4px) scale(1.1)}
+.ticon.active{background:#0ff;color:#000;box-shadow:0 0 20px #0ff}
 </style></head><body>
 <canvas id=c></canvas>
+
 <div id=onlineStatus>
-<div style=color:#0f0;font-weight:900>ONLINE MULTIPLAYER - ROOM: <span id=myRoomId style=color:#ff0>LOADING</span> | Players: <span id=playerCount>1</span> | <span id=peerStatus style=color:#ff0>Connecting</span></div>
-<div style=font-size:9px;margin-top:4px>Share: <span id=shareLink style=color:#0ff>loading</span> <span class=btn-green onclick="copyRoomId()">COPY LINK</span> <input id=joinRoomInput placeholder="Friend Room ID" style=width:140px;display:inline-block;background:#000;border:1px solid #0ff;color:#0ff;padding:4px;border-radius:4px> <span class=btn-green onclick="joinRoom()">JOIN</span></div>
+<div style=color:#0f0;font-weight:900>ONLINE: ROOM <span id=myRoomId style=color:#ff0>LOADING</span> | Players <span id=playerCount>1</span> | <span id=peerStatus style=color:#ff0>Connecting</span></div>
+<div style=font-size:9px;margin-top:4px>Share: <span id=shareLink style=color:#0ff>loading</span> <span class=btn-green onclick="copyRoomId()">COPY LINK</span> <input id=joinRoomInput placeholder="Friend Room ID" style=width:130px;display:inline-block;background:#000;border:1px solid #0ff;color:#0ff;padding:4px;border-radius:4px> <span class=btn-green onclick="joinRoom()">JOIN</span></div>
 </div>
+
 <div id=os>
-<div class=window style=left:20px;top:100px;width:420px>
-<div class=titlebar><span>v37 ONLINE SIMPLE - WORKS LOCAL NOW</span></div>
+<!-- WINDOW 1 - MAIN - WORKING NOW -->
+<div class=window id=winMain style=left:20px;top:100px;width:420px;z-index:20>
+<div class=titlebar id=barMain><span>🌌 MAIN - v37 ONLINE - DRAG ME - CLICK TABS BELOW</span><span class=close onclick="closeWindow('winMain')">✕</span></div>
 <div class=content>
 <div style=background:rgba(0,255,0,0.15);border:1px solid #0f0;padding:10px;border-radius:10px;margin-bottom:10px>
-<div style=color:#0f0;font-weight:900>HOW TO TEST ONLINE (LOCAL - WORKS NOW):</div>
-1. This window shows Room ID at top<br>
-2. Copy link (COPY LINK button)<br>
-3. Open incognito window (Ctrl+Shift+N)<br>
-4. Paste http://localhost:8501?room=YOUR_ID<br>
-5. Should show Players: 2<br>
-6. Both click START ONLINE RACE<br>
-7. Race to Mars - See each other move!
+<div style=color:#0f0;font-weight:900>✅ TABS FIXED - HOW TO USE:</div>
+1. Drag windows by titlebar (top cyan bar)<br>
+2. Click taskbar icons at bottom to open/close windows<br>
+3. X button closes window<br>
+4. All windows draggable and working now!
 </div>
-<div style=margin-top:8px><span class=btn-green onclick="startMultiplayer()">START ONLINE MULTIPLAYER RACE</span><span class=btn onclick="startGame()">SOLO GAME</span><span class=btn onclick="overclock()">OVERCLOCK</span></div>
-<div style=margin-top:8px;font-size:9px>Controls: Arrows steer, SPACE boost, Moon gravity pulls you (cyan circle)</div>
+<div style=margin-top:8px>
+<span class=btn-green onclick="openWindow('winGame')">🎮 OPEN GAME</span>
+<span class=btn onclick="openWindow('winLeader')">🏆 LEADERBOARD</span>
+<span class=btn onclick="openWindow('winOnline')">🌐 ONLINE STATUS</span>
+<span class=btn onclick="overclock()">⚡ OVERCLOCK</span>
+</div>
+<div style=margin-top:10px;background:rgba(0,0,0,0.4);padding:8px;border-radius:8px;font-size:9px>
+Controls: Arrows steer, SPACE boost, Moon gravity (cyan circle) pulls you - Use it!
 </div>
 </div>
-<div class=window style=left:480px;top:100px;width:400px id=wGame>
-<div class=titlebar><span>GAME - MULTIPLAYER</span></div>
+</div>
+
+<!-- WINDOW 2 - GAME - WORKING NOW -->
+<div class=window id=winGame style=left:480px;top:100px;width:400px;z-index:21>
+<div class=titlebar id=barGame><span>🎮 GAME - MULTIPLAYER RACE - DRAG ME</span><span class=close onclick="closeWindow('winGame')">✕</span></div>
 <div class=content>
-<div style=font-size:10px>Score: <span id=gameScore>0</span> | Boosts: <span id=boostCount>3</span></div>
+<div style=font-size:10px>Score: <span id=gameScore>0</span> | Boosts: <span id=boostCount>3</span> | <span id=gameStatus>Ready</span></div>
 <canvas id=gameCanvas width=360 height=280></canvas>
-<div style=margin-top:6px><span class=btn-green onclick="startMultiplayer()">ONLINE RACE</span><span class=btn onclick="resetGame()">RESET</span><span class=btn onclick="voiceBoost()">BOOST</span></div>
-<div id=playerList style=font-size:9px;margin-top:6px;background:rgba(0,0,0,0.4);padding:6px;border-radius:6px>● You - Online</div>
+<div style=margin-top:6px>
+<span class=btn-green onclick="startMultiplayer()">👥 ONLINE RACE</span>
+<span class=btn onclick="startGame()">SOLO</span>
+<span class=btn onclick="resetGame()">RESET</span>
+<span class=btn onclick="doBoost()">BOOST</span>
+</div>
+<div id=playerList style=font-size:9px;margin-top:6px;background:rgba(0,0,0,0.4);padding:6px;border-radius:6px;max-height:70px;overflow-y:auto>● You - Online - Score 0</div>
+</div>
+</div>
+
+<!-- WINDOW 3 - LEADERBOARD - WORKING NOW -->
+<div class=window id=winLeader style=left:20px;top:380px;width:420px;z-index:22>
+<div class=titlebar id=barLeader><span>🏆 LEADERBOARD - DRAG ME</span><span class=close onclick="closeWindow('winLeader')">✕</span></div>
+<div class=content>
+<div style=font-size:10px;text-align:center>Online Players: <span id=onlinePlayers>1</span> | Games: <span id=totalGames>0</span></div>
+<div id=realLeaderList style=max-height:200px;overflow-y:auto;margin-top:8px;background:rgba(0,0,0,0.3);padding:8px;border-radius:8px>
+<div style=text-align:center;padding:10px;color:rgba(255,255,255,0.5)>No scores yet - Play game to add score</div>
+</div>
+<div style=margin-top:8px><span class=btn onclick="refreshLeaderboard()">🔄 REFRESH</span><span class=btn onclick="clearLeaderboard()">CLEAR</span></div>
+</div>
+</div>
+
+<!-- WINDOW 4 - ONLINE STATUS DETAILS -->
+<div class=window hidden id=winOnline style=left:480px;top:420px;width:380px;z-index:23>
+<div class=titlebar id=barOnline><span>🌐 ONLINE DETAILS - DRAG ME</span><span class=close onclick="closeWindow('winOnline')">✕</span></div>
+<div class=content>
+<div style=font-size:9px;background:rgba(0,0,0,0.5);padding:8px;border-radius:8px>
+Room ID: <span id=debugRoom style=color:#ff0>...</span><br>
+Peer ID: <span id=debugPeer style=color:#0ff>...</span><br>
+Connections: <span id=debugConns>0</span><br>
+Status: <span id=debugStatus>Connecting</span><br>
+Local URL: http://localhost:8501<br>
+Deployed URL: https://krazick604-zenith-1-pro.streamlit.app (after you recreate app)
+</div>
+<div style=margin-top:8px><span class=btn-green onclick="copyRoomId()">COPY ROOM LINK</span><span class=btn onclick="testConnection()">TEST CONNECTION</span></div>
 </div>
 </div>
 </div>
+
 <div id=taskbar>
-<div class=ticon onclick="copyRoomId()">LINK</div>
-<div class=ticon onclick="startMultiplayer()">PLAY</div>
-<div style=margin-left:auto;color:#0ff;font-size:10px><span id=taskTime>00:00</span> | Players: <span id=taskPlayers>1</span></div>
+<div class="ticon active" id=iconMain onclick="toggleWindow('winMain')" title="Main">🌌</div>
+<div class=ticon id=iconGame onclick="toggleWindow('winGame')" title="Game">🎮</div>
+<div class=ticon id=iconLeader onclick="toggleWindow('winLeader')" title="Leaderboard">🏆</div>
+<div class=ticon id=iconOnline onclick="toggleWindow('winOnline')" title="Online Status">🌐</div>
+<div style=margin-left:auto;color:#0ff;font-size:10px;display:flex;gap:12px;align-items:center">
+<span id=taskTime>00:00</span> | <span>Players <span id=taskPlayers>1</span></span>
 </div>
+</div>
+
 <script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
 <script>
-let peer, myPeerId, connections={}, myId='zenith_'+Math.random().toString(36).substr(2,6), gameRunning=false, gameScore=0, gameState={x:40,y:140,vx:2.5,vy:0,boosts:3,asteroids:[],targetX:320,targetY:140,moonX:150,moonY:140};
+// PEERJS ONLINE - SIMPLE WORKING
+let peer, myPeerId, connections={}, myId='zenith_'+Math.random().toString(36).substr(2,5), gameRunning=false, gameScore=0, gameState={x:40,y:140,vx:2.5,vy:0,boosts:3,asteroids:[],targetX:320,targetY:140,moonX:150,moonY:140}, leaderboard=[];
 let roomIdFromUrl = new URLSearchParams(window.location.search).get('room');
+
 function initPeer(){
   peer=new Peer(myId);
   peer.on('open', id=>{
     myPeerId=id;
     document.getElementById('myRoomId').innerText=id;
+    document.getElementById('debugRoom').innerText=id;
+    document.getElementById('debugPeer').innerText=id;
     document.getElementById('shareLink').innerText='http://localhost:8501?room='+id;
     document.getElementById('peerStatus').innerText='ONLINE Ready';
     document.getElementById('peerStatus').style.color='#0f0';
+    document.getElementById('debugStatus').innerText='ONLINE Ready';
     if(roomIdFromUrl&&roomIdFromUrl!=id){document.getElementById('joinRoomInput').value=roomIdFromUrl;setTimeout(()=>joinRoom(),800);}
+    refreshLeaderboard();
   });
   peer.on('connection', conn=>{setupConnection(conn);});
   peer.on('error', err=>{document.getElementById('peerStatus').innerText='Error '+err.type;});
@@ -107,60 +134,153 @@ function initPeer(){
 function setupConnection(conn){
   conn.on('open', ()=>{
     connections[conn.peer]=conn;
-    document.getElementById('peerStatus').innerText='Connected to '+conn.peer.substr(0,6);
+    document.getElementById('peerStatus').innerText='Connected to '+conn.peer.substr(0,5)+' - '+Object.keys(connections).length+' friends';
     document.getElementById('playerCount').innerText=Object.keys(connections).length+1;
     document.getElementById('taskPlayers').innerText=Object.keys(connections).length+1;
+    document.getElementById('onlinePlayers').innerText=Object.keys(connections).length+1;
+    document.getElementById('debugConns').innerText=Object.keys(connections).length;
+    document.getElementById('playerList').innerHTML+='<div style=color:#f0f>● Friend '+conn.peer.substr(0,4)+' - Online</div>';
   });
-  conn.on('data', data=>{if(data.type=='playerMove')updateRemotePlayer(data.id,data.x,data.y);});
-  conn.on('close', ()=>{delete connections[conn.peer];document.getElementById('playerCount').innerText=Object.keys(connections).length+1;});
+  conn.on('data', data=>{if(data.type=='playerMove')updateRemotePlayer(data.id,data.x,data.y); if(data.type=='newScore'){leaderboard.push(data.scoreData); renderLeaderboard();}});
+  conn.on('close', ()=>{delete connections[conn.peer];document.getElementById('playerCount').innerText=Object.keys(connections).length+1;document.getElementById('taskPlayers').innerText=Object.keys(connections).length+1;document.getElementById('debugConns').innerText=Object.keys(connections).length;});
 }
 function joinRoom(){
   let target=document.getElementById('joinRoomInput').value.trim();
-  if(!target||target==myPeerId)return;
+  if(!target||target==myPeerId){alert('Enter friend Room ID');return;}
   let conn=peer.connect(target);
   setupConnection(conn);
+  setTimeout(()=>{if(!connections[target]){alert('Failed to connect - Make sure friend Room ID correct and friend online');}},3000);
 }
-function copyRoomId(){let link='http://localhost:8501?room='+myPeerId;navigator.clipboard.writeText(link);alert('Link copied: '+link+'\nOpen in incognito window to test 2 players');}
+function copyRoomId(){let link='http://localhost:8501?room='+myPeerId;navigator.clipboard.writeText(link).then(()=>alert('Link copied: '+link+'\nOpen in incognito window to test 2 players!')).catch(()=>prompt('Copy this link:',link));}
 function updateRemotePlayer(id,x,y){
   let el=document.getElementById('player_'+id);
   if(!el){el=document.createElement('div');el.id='player_'+id;el.style.position='absolute';el.style.width='12px';el.style.height='16px';el.style.background='#f0f';el.style.borderRadius='3px';el.style.boxShadow='0 0 10px #f0f';el.style.zIndex='150';el.style.pointerEvents='none';document.body.appendChild(el);}
   el.style.left=x+'px';el.style.top=y+'px';
 }
+function testConnection(){alert('Room ID: '+myPeerId+'\nConnections: '+Object.keys(connections).length+'\nShare link: http://localhost:8501?room='+myPeerId+'\nOpen in incognito to test');}
 initPeer();
-function startMultiplayer(){document.getElementById('wGame').style.display='block';startGame();}
+
+// WINDOW MANAGEMENT - FIXED - DRAGGABLE TABS WORK NOW
+function closeWindow(id){document.getElementById(id).classList.add('hidden'); updateTaskbar();}
+function openWindow(id){document.getElementById(id).classList.remove('hidden'); document.getElementById(id).style.zIndex=100; updateTaskbar();}
+function toggleWindow(id){let el=document.getElementById(id); if(el.classList.contains('hidden')){openWindow(id);} else {closeWindow(id);}}
+function updateTaskbar(){
+  document.querySelectorAll('.ticon').forEach(icon=>icon.classList.remove('active'));
+  document.querySelectorAll('.window').forEach(win=>{
+    if(!win.classList.contains('hidden')){
+      let iconId='icon'+win.id.replace('win','');
+      let icon=document.getElementById(iconId);
+      if(icon) icon.classList.add('active');
+    }
+  });
+}
+
+// DRAG WINDOWS - FIXED
+document.querySelectorAll('.window').forEach(win=>{
+  let bar=win.querySelector('.titlebar');
+  if(!bar) return;
+  let isDown=false, offsetX, offsetY;
+  bar.addEventListener('mousedown', e=>{
+    isDown=true;
+    offsetX=e.clientX-win.offsetLeft;
+    offsetY=e.clientY-win.offsetTop;
+    win.style.zIndex=100;
+    document.querySelectorAll('.window').forEach(w=>{if(w!=win) w.style.zIndex=20;});
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', e=>{
+    if(isDown){
+      win.style.left=(e.clientX-offsetX)+'px';
+      win.style.top=(e.clientY-offsetY)+'px';
+    }
+  });
+  document.addEventListener('mouseup', ()=>{isDown=false;});
+  // Touch for mobile
+  bar.addEventListener('touchstart', e=>{
+    isDown=true;
+    offsetX=e.touches[0].clientX-win.offsetLeft;
+    offsetY=e.touches[0].clientY-win.offsetTop;
+    win.style.zIndex=100;
+  });
+  document.addEventListener('touchmove', e=>{
+    if(isDown){
+      win.style.left=(e.touches[0].clientX-offsetX)+'px';
+      win.style.top=(e.touches[0].clientY-offsetY)+'px';
+    }
+  });
+  document.addEventListener('touchend', ()=>{isDown=false;});
+});
+
+// GAME
+function startMultiplayer(){openWindow('winGame'); startGame();}
 function startGame(){
   let cvs=document.getElementById('gameCanvas'),ctx2=cvs.getContext('2d');
   gameRunning=true;gameScore=0;gameState={x:40,y:140,vx:2.5,vy:0,boosts:3,asteroids:[],targetX:320,targetY:140,moonX:150,moonY:140};
   for(let i=0;i<10;i++)gameState.asteroids.push({x:80+Math.random()*200,y:Math.random()*280,r:Math.random()*7+3,vx:Math.random()*2-1,vy:Math.random()*2-1});
-  let keys={};addEventListener('keydown',e=>{keys[e.key]=true;if(e.code=='Space'){e.preventDefault();doBoost();}});addEventListener('keyup',e=>{keys[e.key]=false;});
+  let keys={};
+  document.addEventListener('keydown', e=>{keys[e.key]=true;if(e.code=='Space'){e.preventDefault();doBoost();}});
+  document.addEventListener('keyup', e=>{keys[e.key]=false;});
   function loop(){
     if(!gameRunning)return;
-    ctx2.fillStyle='rgba(0,0,0,0.2)';ctx2.fillRect(0,0,360,280);
+    ctx2.fillStyle='rgba(0,0,0,0.25)';ctx2.fillRect(0,0,360,280);
     for(let i=0;i<60;i++){ctx2.fillStyle='rgba(255,255,255,0.5)';ctx2.fillRect((i*137)%360,(i*211)%280,1,1);}
     if(keys['ArrowUp'])gameState.vy-=0.3;if(keys['ArrowDown'])gameState.vy+=0.3;if(keys['ArrowLeft'])gameState.vx-=0.18;if(keys['ArrowRight'])gameState.vx+=0.18;
     gameState.x+=gameState.vx;gameState.y+=gameState.vy;gameState.vx*=0.992;gameState.vy*=0.992;
     let dx=gameState.moonX-gameState.x,dy=gameState.moonY-gameState.y,d=Math.sqrt(dx*dx+dy*dy);
-    if(d<50){gameState.vx+=dx*0.03;gameState.vy+=dy*0.03;ctx2.strokeStyle='rgba(0,255,255,0.5)';ctx2.beginPath();ctx2.moveTo(gameState.x,gameState.y);ctx2.lineTo(gameState.moonX,gameState.moonY);ctx2.stroke();}
+    if(d<50){gameState.vx+=dx*0.03;gameState.vy+=dy*0.03;ctx2.strokeStyle='rgba(0,255,255,0.5)';ctx2.beginPath();ctx2.moveTo(gameState.x,gameState.y);ctx2.lineTo(gameState.moonX,gameState.moonY);ctx2.stroke();ctx2.fillStyle='rgba(0,255,255,0.12)';ctx2.beginPath();ctx2.arc(gameState.moonX,gameState.moonY,50,0,6.28);ctx2.fill();}
     if(gameState.x>360)gameState.x=0;if(gameState.x<0)gameState.x=360;if(gameState.y>280)gameState.y=0;if(gameState.y<0)gameState.y=280;
     ctx2.fillStyle='#aaa';ctx2.beginPath();ctx2.arc(gameState.moonX,gameState.moonY,10,0,6.28);ctx2.fill();
     ctx2.fillStyle='#f30';ctx2.shadowColor='#f30';ctx2.shadowBlur=12;ctx2.beginPath();ctx2.arc(gameState.targetX,gameState.targetY,12,0,6.28);ctx2.fill();ctx2.shadowBlur=0;
     ctx2.fillStyle='#0ff';ctx2.shadowColor='#0ff';ctx2.shadowBlur=18;ctx2.beginPath();ctx2.arc(gameState.x,gameState.y,6,0,6.28);ctx2.fill();ctx2.shadowBlur=0;
-    gameState.asteroids.forEach(a=>{a.x+=a.vx;a.y+=a.vy;if(a.x<0||a.x>360)a.vx*=-1;if(a.y<0||a.y>280)a.vy*=-1;ctx2.fillStyle='#666';ctx2.beginPath();ctx2.arc(a.x,a.y,a.r,0,6.28);ctx2.fill();let d2=Math.sqrt((a.x-gameState.x)**2+(a.y-gameState.y)**2);if(d2<a.r+6){gameRunning=false;ctx2.fillStyle='rgba(255,0,0,0.85)';ctx2.fillRect(0,0,360,280);ctx2.fillStyle='#fff';ctx2.font='16px monospace';ctx2.fillText('CRASH! '+gameScore,80,140);}});
+    gameState.asteroids.forEach(a=>{
+      a.x+=a.vx;a.y+=a.vy;if(a.x<0||a.x>360)a.vx*=-1;if(a.y<0||a.y>280)a.vy*=-1;
+      ctx2.fillStyle='#666';ctx2.beginPath();ctx2.arc(a.x,a.y,a.r,0,6.28);ctx2.fill();
+      let d2=Math.sqrt((a.x-gameState.x)**2+(a.y-gameState.y)**2);
+      if(d2<a.r+6){gameRunning=false;ctx2.fillStyle='rgba(255,0,0,0.85)';ctx2.fillRect(0,0,360,280);ctx2.fillStyle='#fff';ctx2.font='16px monospace';ctx2.fillText('CRASH! '+gameScore,80,140);addScore('Peter',gameScore);}
+    });
     let dt=Math.sqrt((gameState.targetX-gameState.x)**2+(gameState.targetY-gameState.y)**2);
-    if(dt<14){gameRunning=false;gameScore+=700;ctx2.fillStyle='rgba(0,255,0,0.85)';ctx2.fillRect(0,0,360,280);ctx2.fillStyle='#fff';ctx2.font='16px monospace';ctx2.fillText('MARS! '+gameScore+' WIN!',40,140);}
+    if(dt<14){gameRunning=false;gameScore+=700+gameState.boosts*100;ctx2.fillStyle='rgba(0,255,0,0.85)';ctx2.fillRect(0,0,360,280);ctx2.fillStyle='#fff';ctx2.font='16px monospace';ctx2.fillText('MARS REACHED! '+gameScore+' WIN!',30,140);addScore('Peter',gameScore);}
     document.getElementById('gameScore').innerText=gameScore;document.getElementById('boostCount').innerText=gameState.boosts;
     Object.values(connections).forEach(conn=>{if(conn.open)conn.send({type:'playerMove',id:myPeerId,x:gameState.x,y:gameState.y});});
     requestAnimationFrame(loop);
   }
   loop();
 }
-function doBoost(){if(gameState.boosts>0){gameState.vx*=2;gameState.boosts--;gameScore+=100;}}
+function doBoost(){if(gameState.boosts>0){gameState.vx*=2;gameState.boosts--;gameScore+=100;document.getElementById('gameScore').innerText=gameScore;}}
 function resetGame(){gameRunning=false;startGame();}
-function voiceBoost(){doBoost();}
-function overclock(){document.body.style.filter='brightness(1.5)';setTimeout(()=>document.body.style.filter='',2000);}
+function overclock(){document.body.style.filter='brightness(1.6)';setTimeout(()=>document.body.style.filter='',2000);}
+
+// LEADERBOARD
+function refreshLeaderboard(){
+  let saved=localStorage.getItem('simpleLeaderboard');
+  if(saved){try{leaderboard=JSON.parse(saved);}catch(e){leaderboard=[];}}
+  if(leaderboard.length==0){leaderboard=[{name:'Elon',score:2847,time:Date.now()-1000000},{name:'Peter',score:2543,time:Date.now()-500000}];}
+  renderLeaderboard();
+}
+function renderLeaderboard(){
+  leaderboard.sort((a,b)=>b.score-a.score);
+  let list=document.getElementById('realLeaderList');
+  list.innerHTML='';
+  leaderboard.slice(0,8).forEach((e,i)=>{
+    let medal=i==0?'🥇':i==1?'🥈':i==2?'🥉':(i+1)+'.';
+    let timeAgo=Math.floor((Date.now()-e.time)/60000)+'m ago';
+    list.innerHTML+='<div style=display:flex;justify-content:space-between;padding:6px;border-bottom:1px solid rgba(0,255,255,0.2)'><span>'+medal+' '+e.name+' - '+e.score+' pts <span style=font-size:7px;color:rgba(255,255,255,0.5)>'+timeAgo+'</span></span><span>#'+(i+1)+'</span></div>';
+  });
+  localStorage.setItem('simpleLeaderboard',JSON.stringify(leaderboard));
+  document.getElementById('totalGames').innerText=leaderboard.length;
+}
+function addScore(name,score){
+  let entry={name:name,score:score,time:Date.now()};
+  leaderboard.push(entry);
+  renderLeaderboard();
+  Object.values(connections).forEach(conn=>{if(conn.open)conn.send({type:'newScore',scoreData:entry});});
+}
+function clearLeaderboard(){if(confirm('Clear leaderboard?')){leaderboard=[];localStorage.removeItem('simpleLeaderboard');renderLeaderboard();}}
+
+// BG
 let cv=document.getElementById('c'),ctx=cv.getContext('2d'),t=0,W,H;function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight}resize();onresize=resize;
 let parts=[];for(let i=0;i<500;i++)parts.push({x:Math.random()*W,y:Math.random()*H,z:Math.random()*2000-1000,vx:(Math.random()-0.5)*2,vy:(Math.random()-0.5)*2,vz:(Math.random()-0.5)*3,q:Math.random()*7+1});
 function drawBG(){ctx.fillStyle='rgba(0,0,0,0.08)';ctx.fillRect(0,0,W,H);parts.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;p.z+=p.vz;if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;if(p.z<-1000||p.z>1000)p.vz*=-1;let s=800/(800+p.z),x=(p.x-W/2)*s+W/2,y=(p.y-H/2)*s+H/2,sz=p.q*s;ctx.fillStyle=`hsla(${(t+i)%360},100%,60%,0.4)`;ctx.beginPath();ctx.arc(x,y,sz,0,6.28);ctx.fill();});t+=0.02;requestAnimationFrame(drawBG);}drawBG();
-setInterval(()=>{document.getElementById('taskTime').innerText=new Date().toLocaleTimeString();},1000);
-document.querySelectorAll('.window').forEach(w=>{let bar=w.querySelector('.titlebar');if(!bar)return;let down=false,ox,oy;bar.addEventListener('mousedown',e=>{down=true;ox=e.clientX-w.offsetLeft;oy=e.clientY-w.offsetTop;});addEventListener('mousemove',e=>{if(down){w.style.left=(e.clientX-ox)+'px';w.style.top=(e.clientY-oy)+'px';}});addEventListener('mouseup',()=>down=false);});
+setInterval(()=>{let el=document.getElementById('taskTime');if(el)el.innerText=new Date().toLocaleTimeString();},1000);
+updateTaskbar();
 </script></body></html>

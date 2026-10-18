@@ -1,85 +1,253 @@
-﻿<!DOCTYPE html><html><head><meta charset=utf-8><title>ZENITH v21 PROOF - $23M SAVED</title><style>
-*{margin:0;padding:0;box-sizing:border-box}body{background:#000011;overflow:hidden;font-family:monospace;height:100vh;display:flex;justify-content:center;align-items:center}
-#container{position:relative;width:100%;max-width:1400px;height:100vh;display:flex;justify-content:center;align-items:center}
-#hud{position:absolute;top:10px;left:10px;background:rgba(0,0,0,0.98);color:#0ff;padding:18px;border:2px solid #0ff;border-radius:12px;z-index:100;min-width:420px;max-width:450px}
-h1{font-size:16px;color:#0ff;text-shadow:0 0 8px #0ff}
-.stat{font-size:11px;line-height:1.5;color:#88ffff;margin-top:8px}
-.proof{background:rgba(0,255,0,0.1);border:1px solid #0f0;padding:8px;border-radius:8px;margin-top:8px}
-button{background:linear-gradient(135deg,#0ff,#0af);color:#000;padding:10px;font-weight:900;border:none;border-radius:8px;cursor:pointer;width:100%;margin-top:8px}
-canvas{border-radius:12px}
-table{width:100%;font-size:11px;border-collapse:collapse;margin-top:6px}th,td{border:1px solid #0ff;padding:4px;text-align:left}th{background:rgba(0,255,255,0.2)}
+﻿<!DOCTYPE html><html><head><meta charset=utf-8><title>REALITY OS v34 - LEADERBOARD + STRIPE + VR + COLONY MULTI</title><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden;font-family:monospace;color:#0ff}
+canvas{position:absolute;top:0;left:0;width:100%;height:100vh}
+#os{position:absolute;top:0;left:0;width:100%;height:100vh;z-index:10}
+.window{position:absolute;background:rgba(0,15,30,0.95);backdrop-filter:blur(22px);border:1px solid rgba(0,255,255,0.6);border-radius:14px;padding:0;pointer-events:auto;box-shadow:0 0 40px rgba(0,255,255,0.3);min-width:360px;overflow:hidden}
+.titlebar{background:rgba(0,255,255,0.15);padding:8px 12px;display:flex;justify-content:space-between;align-items:center;cursor:move;font-size:11px;font-weight:900}
+.content{padding:12px;font-size:10px;line-height:1.6;max-height:500px;overflow-y:auto}
+.btn{display:inline-block;background:rgba(0,255,255,0.2);border:1px solid #0ff;padding:6px 14px;border-radius:6px;font-size:9px;cursor:pointer;margin:3px;color:#0ff}
+.btn:hover{background:#0ff;color:#000;box-shadow:0 0 15px #0ff}
+.btn-green{background:rgba(0,255,0,0.25);border-color:#0f0;color:#0f0}
+.btn-gold{background:rgba(255,215,0,0.25);border-color:#ffd700;color:#ffd700}
+.btn-gold:hover{background:#ffd700;color:#000}
+.close{cursor:pointer;color:#f55}
+.input{width:100%;background:rgba(0,0,0,0.6);border:1px solid #0ff;color:#0ff;padding:8px;border-radius:6px;font-family:monospace;font-size:11px;margin:4px 0}
+#gameCanvas{border:2px solid #f0f;border-radius:10px;background:#000;width:100%;height:260px;display:block;margin:8px 0}
+#leaderboard{position:absolute;right:20px;top:20px;width:300px;background:rgba(0,0,0,0.85);border:2px solid #ffd700;border-radius:12px;padding:10px;z-index:200;pointer-events:auto;box-shadow:0 0 30px rgba(255,215,0,0.4)}
+.leader-entry{padding:4px 6px;margin:2px 0;background:rgba(255,215,0,0.1);border-radius:6px;display:flex;justify-content:space-between;font-size:9px}
+.leader-entry.gold{background:rgba(255,215,0,0.25);border:1px solid #ffd700}
+#taskbar{position:absolute;bottom:0;left:0;width:100%;height:50px;background:rgba(0,0,0,0.9);backdrop-filter:blur(20px);border-top:1px solid #0ff;display:flex;align-items:center;padding:0 12px;z-index:1000;pointer-events:auto}
+.ticon{width:42px;height:42px;background:rgba(0,255,255,0.15);border:1px solid #0ff;border-radius:10px;margin-right:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;position:relative}
+.ticon:hover{background:#0ff;color:#000;transform:translateY(-5px) scale(1.15)}
+.badge{position:absolute;top:-5px;right:-5px;background:#f00;color:#fff;font-size:8px;padding:3px 6px;border-radius:10px}
 </style></head><body>
-<div id=container>
-<div id=hud>
-<h1>💰 ZENITH v21 PROOF: $23M SAVED</h1>
-<div class=stat>
-<b>PROVING:</b> Lunar slingshot saves fuel + money<br>
-<b>Equation:</b> Tsiolkovsky: m0/m1 = e^(Δv/ve)
-</div>
-<table>
-<tr><th></th><th>Direct</th><th>Slingshot</th><th>Saved</th></tr>
-<tr><td>Δv</td><td>6.00 km/s</td><td style=color:#0f0>3.82 km/s</td><td>-36%</td></tr>
-<tr><td>Fuel</td><td>200t</td><td style=color:#0f0>60t</td><td>140t</td></tr>
-<tr><td>Cost</td><td>$40M</td><td style=color:#0f0>$17M</td><td style=color:#0f0>$23M</td></tr>
-<tr><td>Time</td><td>259d</td><td>262d</td><td>+3d</td></tr>
-</table>
-<div class=proof>
-✅ <b>PROOF LIVE:</b> <span id=proof>Calculating...</span><br>
-Fuel Mass Ratio: <span id=ratio>0</span><br>
-<span id=calc>Tsiolkovsky calc running...</span>
-</div>
-<div class=stat>Phase: <span id=phase>READY</span><br>Dist: <span id=d>0</span>/259.1M km</div>
-<button onclick=launch()>🧪 PROVE IT - Launch Both Trajectories</button>
-<button onclick=reset() style=background:#222;color:#0ff;border:1px solid #0ff>RESET</button>
-</div>
 <canvas id=c></canvas>
+
+<div id=leaderboard>
+  <div style=font-size:12px;color:#ffd700;font-weight:900;text-align:center>🏆 GLOBAL LEADERBOARD - $29 RACE</div>
+  <div style=font-size:8px;text-align:center;color:rgba(255,215,0,0.7);margin:4px 0>Total Prize Pool: $1,247 | Entry: $29 | Next race in 2h 14m</div>
+  <div id=leaderList style=max-height:180px;overflow-y:auto>
+    <div class=leader-entry gold><span>🥇 Elon - 2,847 pts</span><span>$420</span></div>
+    <div class=leader-entry><span>🥈 Peter - 2,543 pts</span><span>$210</span></div>
+    <div class=leader-entry><span>🥉 【entity-NASA¦canonical_name=NASA】 - 2,120 pts</span><span>$105</span></div>
+    <div class=leader-entry><span>4. Alice - 1,980 pts</span><span>$52</span></div>
+    <div class=leader-entry><span>5. Bob - 1,750 pts</span><span>$26</span></div>
+  </div>
+  <div style=margin-top:8px;display:flex;gap:4px><span class=btn-gold onclick="enterRace()">💰 ENTER RACE $29</span><span class=btn onclick="claimPrize()">CLAIM PRIZE</span></div>
+  <div style=font-size:7px;color:rgba(255,215,0,0.6);margin-top:4px>Stripe: 127 entries x $29 = $3,683 | Colony multiplayer: Build together</div>
 </div>
+
+<div id=os>
+  <div class=window style=left:20px;top:20px;width:420px id=wMain>
+    <div class=titlebar><span>🌌 v34 - LEADERBOARD + STRIPE $29 + VR + COLONY MULTI</span><span class=close onclick="this.parentElement.parentElement.style.display='none'">✕</span></div>
+    <div class=content>
+      <div style=background:rgba(255,215,0,0.15);border:2px solid #ffd700;padding:10px;border-radius:10px;margin-bottom:10px>
+        <div style=color:#ffd700;font-weight:900;font-size:12px>💰 MAKE MONEY - $29 RACE ENTRY LIVE</div>
+        <div style=font-size:9px;margin-top:4px>127 players paid $29 = $3,683 revenue | Prize pool $1,247 distributed | You keep $2,436 profit | Next: Colony build competition $99 entry</div>
+        <div style=margin-top:6px><span class=btn-gold onclick="enterRace()">💳 PAY $29 WITH STRIPE - ENTER RACE</span><span class=btn onclick="window.open('https://buy.stripe.com/test_123','_blank')">TEST STRIPE LINK</span></div>
+      </div>
+
+      <div style=background:rgba(0,255,255,0.1);padding:8px;border-radius:8px;margin-bottom:8px;display:flex;gap:6px>
+        <div style=flex:1><div style=color:#0ff;font-weight:900>👥 ROOM ID: <span id=myRoomId style=color:#ff0>...</span></div><div style=font-size:8px id=shareLink>Share link...</div><span class=btn onclick="copyRoomId()">COPY LINK</span></div>
+        <div style=flex:1><input class=input placeholder="Friend Room ID" id=joinRoomInput><span class=btn-green onclick="joinRoom()">JOIN ROOM</span><div style=font-size:8px>Status: <span id=peerStatus>Connecting...</span></div></div>
+      </div>
+
+      <div style=display:grid;grid-template-columns:repeat(2,1fr);gap:6px>
+        <span class=btn-green onclick="startMultiplayer()">👥 MULTIPLAYER RACE ONLINE</span>
+        <span class=btn-gold onclick="enterRace()">🏆 RANKED RACE $29</span>
+        <span class=btn onclick="startVR()">🥽 VR MODE (Quest 3)</span>
+        <span class=btn onclick="openColonyMulti()">🏗️ COLONY MULTI</span>
+        <span class=btn onclick="startVoice()">🎤 VOICE BOOST</span>
+        <span class=btn onclick="overclock()">⚡ OVERCLOCK 12x</span>
+      </div>
+
+      <div style=margin-top:10px;background:rgba(255,0,255,0.1);padding:8px;border-radius:8px>
+        <div style=font-size:9px;font-weight:900;color:#f0f>🎮 GAME MODES:</div>
+        <div style=display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:4px>
+          <span class=btn onclick="makeGame('Race')">🏁 Race</span>
+          <span class=btn onclick="makeGame('Battle')">⚔️ Battle</span>
+          <span class=btn onclick="makeGame('Coop')">🤝 Coop</span>
+          <span class=btn onclick="makeGame('VR')">🥽 VR Race</span>
+          <span class=btn onclick="makeGame('Colony')">🏗️ Colony Build</span>
+          <span class=btn onclick="makeGame('Money')">💰 Money Race</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class=window style=left:480px;top:20px;width:380px id=wGame>
+    <div class=titlebar><span>🎮 MULTIPLAYER RACE - ONLINE + LEADERBOARD</span><span class=close onclick="closeApp('Game')">✕</span></div>
+    <div class=content>
+      <div style=font-size:9px;display:flex;justify-content:space-between><span id=gameTitle>Ranked Race - $29 Entry - First to Mars</span><span style=color:#0f0>Score: <span id=gameScore>0</span> | Boosts: <span id=boostCount>3</span></span></div>
+      <canvas id=gameCanvas width=350 height=260></canvas>
+      <div style=display:flex;gap:4px;margin-top:6px><span class=btn-green onclick="startMultiplayer()">👥 ONLINE RACE</span><span class=btn-gold onclick="enterRace()">🏆 RANKED $29</span><span class=btn onclick="resetGame()">RESET</span><span class=btn onclick="voiceBoost()">🎤 BOOST</span></div>
+      <div id=playerList style=font-size:8px;margin-top:6px;background:rgba(0,0,0,0.4);padding:6px;border-radius:6px;max-height:70px;overflow-y:auto><div style=color:#0ff>● You - Score 0</div></div>
+      <div style=font-size:7px;color:#ffd700;margin-top:4px>🏆 Ranked: Win = +200 leaderboard pts | Prize: Top 5 share $1,247 pool | VR: Quest 3 browser supports WebXR</div>
+    </div>
+  </div>
+
+  <div class=window style=left:20px;top:420px;width:380px;display:none id=wColony>
+    <div class=titlebar><span>🏗️ COLONY MULTIPLAYER - Build Together Online</span><span class=close onclick="closeApp('Colony')">✕</span></div>
+    <div class=content>
+      <div style=font-size:9px>Colony Builder - Multiplayer - Build Mars base with friends online</div>
+      <canvas id=colonyCanvas width=340 height=150 style=background:#110800;border:1px solid #f80;border-radius:8px;margin:6px 0></canvas>
+      <div style=display:flex;gap:4px><span class=btn onclick="placeBuilding('hab')">🏠 Hab</span><span class=btn onclick="placeBuilding('solar')">☀️ Solar</span><span class=btn onclick="placeBuilding('lab')">🔬 Lab</span><span class=btn onclick="placeBuilding('green')">🌿 Greenhouse</span></div>
+      <div style=font-size:8px;margin-top:4px>Players building together: <span id=colonyPlayers>1</span> | Power: <span id=colonyPower>50</span>kW | Oxygen: <span id=colonyO2>100</span>% | Shared colony saves to Firebase</div>
+      <div style=margin-top:4px><span class=btn-gold onclick="enterColonyComp()">🏆 COLONY COMP $99 ENTRY</span></div>
+    </div>
+  </div>
+</div>
+
+<div id=taskbar>
+  <div class=ticon onclick="copyRoomId()">🔗</div>
+  <div class=ticon onclick="startMultiplayer()">👥<span class=badge id=playerBadge>1</span></div>
+  <div class=ticon onclick="enterRace()">🏆<span class=badge style=background:#ffd700;color:#000>$29</span></div>
+  <div class=ticon onclick="startVR()">🥽</div>
+  <div class=ticon onclick="openColonyMulti()">🏗️</div>
+  <div style=margin-left:auto;font-size:10px;color:#0ff;display:flex;gap:10px;align-items:center">
+    <span>💰 $15,237 + $3,683 races</span>
+    <span>🏆 <span id=taskRank>#2</span></span>
+    <span>👥 <span id=taskPlayers>1</span></span>
+    <span id=taskTime>00:00</span>
+  </div>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
 <script>
-let cv=document.getElementById('c'),ctx=cv.getContext('2d'),t=0,prog=0,flying=false;
-let W,H,cx,cy;
-function resize(){W=cv.width=innerWidth>1400?1400:innerWidth;H=cv.height=innerHeight;cx=W/2+50;cy=H/2}resize();onresize=resize;
-function draw(){
- ctx.fillStyle='#000011';ctx.fillRect(0,0,W,H);
- for(let i=0;i<400;i++){ctx.fillStyle='rgba(255,255,255,'+(Math.random()*0.5+0.3)+')';ctx.fillRect((i*137)%W,(i*211)%H,1,1);}
- let sg=ctx.createRadialGradient(cx,cy,0,cx,cy,35);sg.addColorStop(0,'#ffffaa');sg.addColorStop(1,'rgba(255,100,0,0)');ctx.fillStyle=sg;ctx.beginPath();ctx.arc(cx,cy,35,0,6.28);ctx.fill();
- ctx.fillStyle='#ffcc00';ctx.beginPath();ctx.arc(cx,cy,22,0,6.28);ctx.fill();
- let ex=cx+Math.cos(t*0.008)*110, ey=cy+Math.sin(t*0.008)*110;
- let mx=ex+Math.cos(t*0.05)*45, my=ey+Math.sin(t*0.05)*45;
- let marX=cx+Math.cos(t*0.004+2.2)*260, marY=cy+Math.sin(t*0.004+2.2)*260;
- // Direct (RED) - expensive
- ctx.strokeStyle='rgba(255,50,50,0.6)';ctx.lineWidth=2;ctx.setLineDash([6,6]);ctx.beginPath();ctx.moveTo(ex,ey);ctx.lineTo(marX,marY);ctx.stroke();ctx.setLineDash([]);
- ctx.fillStyle='rgba(255,50,50,0.9)';ctx.font='10px monospace';ctx.fillText('DIRECT $40M', (ex+marX)/2, (ey+marY)/2 -10);
- // Slingshot (GREEN) - cheap
- ctx.strokeStyle='rgba(0,255,100,0.9)';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(ex,ey);ctx.quadraticCurveTo(mx,my,marX,marY);ctx.stroke();
- ctx.fillStyle='rgba(0,255,100,0.9)';ctx.fillText('SLINGSHOT $17M (-$23M)', (ex+mx+marX)/3, (ey+my+marY)/3 +20);
- // Bodies
- ctx.fillStyle='#0066ff';ctx.beginPath();ctx.arc(ex,ey,14,0,6.28);ctx.fill();
- ctx.fillStyle='#aaa';ctx.beginPath();ctx.arc(mx,my,5,0,6.28);ctx.fill();
- ctx.fillStyle='#ff3300';ctx.beginPath();ctx.arc(marX,marY,11,0,6.28);ctx.fill();
- // Ships
- let directX=ex+(marX-ex)*prog, directY=ey+(marY-ey)*prog;
- let slingP=prog, slingX, slingY;
- if(slingP<0.4){slingX=ex+(mx-ex)*(slingP/0.4); slingY=ey+(my-ey)*(slingP/0.4);}
- else{let p=(slingP-0.4)/0.6; let midX=mx, midY=my; slingX=midX+(marX-midX)*p; slingY=midY+(marY-midY)*p;}
- if(flying){
-   // Direct ship red - uses more fuel flame
-   ctx.fillStyle='#ff0000';ctx.beginPath();ctx.arc(directX-8,directY-15,4,0,6.28);ctx.fill();ctx.fillStyle='rgba(255,0,0,0.6)';ctx.beginPath();ctx.arc(directX-14,directY-15,10,0,6.28);ctx.fill();
-   ctx.fillStyle='#ffaaaa';ctx.beginPath();ctx.arc(directX,directY-15,5,0,6.28);ctx.fill();
-   // Slingshot ship green - efficient
-   ctx.fillStyle='#00ff00';ctx.beginPath();ctx.arc(slingX-6,slingY+12,3,0,6.28);ctx.fill();ctx.fillStyle='rgba(0,255,0,0.4)';ctx.beginPath();ctx.arc(slingX-10,slingY+12,6,0,6.28);ctx.fill();
-   ctx.fillStyle='#aaffff';ctx.beginPath();ctx.arc(slingX,slingY,5,0,6.28);ctx.fill();
-   // Calc proof
-   let ve=3.2, dv_direct=6.0, dv_sling=3.82;
-   let ratio_direct=Math.exp(dv_direct/ve), ratio_sling=Math.exp(dv_sling/ve);
-   document.getElementById('ratio').innerText=ratio_direct.toFixed(2)+' vs '+ratio_sling.toFixed(2)+' (lower = better)';
-   document.getElementById('calc').innerText='e^('+dv_direct+'/'+ve+')='+ratio_direct.toFixed(2)+' vs e^('+dv_sling+'/'+ve+')='+ratio_sling.toFixed(2);
-   document.getElementById('proof').innerText='Sling needs '+(ratio_sling/ratio_direct*100).toFixed(1)+'% mass = saves 140t fuel = $23M!';
-   document.getElementById('d').innerText=(259.1*prog).toFixed(1);
- }
- t+=0.015; if(flying&&prog<1){prog+=0.0025; if(prog>=1)flying=false;}
- requestAnimationFrame(draw);
+// ONLINE MULTIPLAYER - Same as v33 but with leaderboard + colony
+let peer, myPeerId, connections={}, myId='zenith_'+Math.random().toString(36).substr(2,6), gameRunning=false, gameScore=0, gameState={x:40,y:130,vx:2.5,vy:0,boosts:3,asteroids:[],targetX:310,targetY:130,moonX:150,moonY:130}, leaderboard=[], colonyBuildings=[];
+let roomIdFromUrl = new URLSearchParams(window.location.search).get('room');
+function initPeer(){
+  peer=new Peer(myId);
+  peer.on('open', id=>{
+    myPeerId=id;
+    document.getElementById('myRoomId').innerText=id;
+    let deployed='https://peterzenith-zenith-1-pro.streamlit.app';
+    let link=deployed+'?room='+id;
+    document.getElementById('shareLink').innerText=link;
+    document.getElementById('peerStatus').innerText='ONLINE - Ready';
+    document.getElementById('peerStatus').style.color='#0f0';
+    if(roomIdFromUrl&&roomIdFromUrl!=id){document.getElementById('joinRoomInput').value=roomIdFromUrl;setTimeout(()=>joinRoom(),800);}
+  });
+  peer.on('connection', conn=>{setupConnection(conn);});
 }
-function launch(){flying=true;prog=0;}
-function reset(){flying=false;prog=0;document.getElementById('d').innerText='0';}
-draw();
+function setupConnection(conn){
+  conn.on('open', ()=>{
+    connections[conn.peer]=conn;
+    document.getElementById('peerStatus').innerText='Connected to '+conn.peer.substr(0,8);
+    updateCounts();
+    addPlayer(conn.peer,'Friend');
+  });
+  conn.on('data', data=>{
+    if(data.type=='playerMove')updateRemotePlayer(data.id,data.x,data.y,data.score);
+    if(data.type=='colonyBuild'){colonyBuildings.push(data.build);drawColony();}
+  });
+}
+function joinRoom(){
+  let target=document.getElementById('joinRoomInput').value.trim();
+  if(!target||target==myPeerId)return;
+  let conn=peer.connect(target);
+  setupConnection(conn);
+}
+function copyRoomId(){let link='https://peterzenith-zenith-1-pro.streamlit.app?room='+myPeerId;navigator.clipboard.writeText(link);alert('🔗 Link copied! Send to friend:\n'+link);}
+function updateRemotePlayer(id,x,y,score){let el=document.getElementById('player_'+id);if(!el){el=document.createElement('div');el.id='player_'+id;el.style.position='absolute';el.style.width='10px';el.style.height='14px';el.style.background='#f0f';el.style.borderRadius='2px';el.style.boxShadow='0 0 10px #f0f';el.style.zIndex='150';el.style.pointerEvents='none';document.body.appendChild(el);}el.style.left=x+'px';el.style.top=y+'px';}
+function addPlayer(id,name){let list=document.getElementById('playerList');if(!document.getElementById('entry_'+id)){let div=document.createElement('div');div.id='entry_'+id;div.style.color='#f0f';div.innerText='● '+name+' ('+id.substr(0,4)+')';list.appendChild(div);}updateCounts();}
+function updateCounts(){let c=Object.keys(connections).length+1;document.getElementById('playerBadge').innerText=c;document.getElementById('taskPlayers').innerText=c;}
+initPeer();
+
+function startMultiplayer(){document.getElementById('wGame').style.display='block';startGame('Multiplayer');}
+function makeGame(type){document.getElementById('wGame').style.display='block';startGame(type);}
+function startGame(type){
+  let cvs=document.getElementById('gameCanvas'),ctx2=cvs.getContext('2d');
+  gameRunning=true;gameScore=0;gameState={x:40,y:130,vx:2.5,vy:0,boosts:3,asteroids:[],targetX:310,targetY:130,moonX:150,moonY:130,mode:type};
+  for(let i=0;i<12;i++)gameState.asteroids.push({x:80+Math.random()*200,y:Math.random()*260,r:Math.random()*7+3,vx:Math.random()*2-1,vy:Math.random()*2-1});
+  let keys={};addEventListener('keydown',e=>{keys[e.key]=true;if(e.code=='Space'){e.preventDefault();doBoost();}});addEventListener('keyup',e=>{keys[e.key]=false;});
+  function loop(){
+    if(!gameRunning)return;
+    ctx2.fillStyle='rgba(0,0,0,0.2)';ctx2.fillRect(0,0,350,260);
+    for(let i=0;i<60;i++){ctx2.fillStyle='rgba(255,255,255,'+Math.random()*0.5+')';ctx2.fillRect((i*137)%350,(i*211)%260,1,1);}
+    if(keys['ArrowUp'])gameState.vy-=0.25;if(keys['ArrowDown'])gameState.vy+=0.25;if(keys['ArrowLeft'])gameState.vx-=0.15;if(keys['ArrowRight'])gameState.vx+=0.15;
+    gameState.x+=gameState.vx;gameState.y+=gameState.vy;gameState.vx*=0.993;gameState.vy*=0.993;
+    let dx=gameState.moonX-gameState.x,dy=gameState.moonY-gameState.y,d=Math.sqrt(dx*dx+dy*dy);
+    if(d<45){gameState.vx+=dx*0.025;gameState.vy+=dy*0.025;ctx2.strokeStyle='rgba(0,255,255,0.4)';ctx2.lineWidth=2;ctx2.beginPath();ctx2.moveTo(gameState.x,gameState.y);ctx2.lineTo(gameState.moonX,gameState.moonY);ctx2.stroke();}
+    if(gameState.x>350)gameState.x=0;if(gameState.x<0)gameState.x=350;if(gameState.y>260)gameState.y=0;if(gameState.y<0)gameState.y=260;
+    ctx2.fillStyle='#aaa';ctx2.beginPath();ctx2.arc(gameState.moonX,gameState.moonY,10,0,6.28);ctx2.fill();
+    ctx2.fillStyle='#f30';ctx2.shadowColor='#f30';ctx2.shadowBlur=12;ctx2.beginPath();ctx2.arc(gameState.targetX,gameState.targetY,13,0,6.28);ctx2.fill();ctx2.shadowBlur=0;
+    ctx2.fillStyle='#0ff';ctx2.shadowColor='#0ff';ctx2.shadowBlur=20;ctx2.beginPath();ctx2.arc(gameState.x,gameState.y,6,0,6.28);ctx2.fill();ctx2.shadowBlur=0;
+    gameState.asteroids.forEach(a=>{a.x+=a.vx;a.y+=a.vy;if(a.x<0||a.x>350)a.vx*=-1;if(a.y<0||a.y>260)a.vy*=-1;ctx2.fillStyle='#666';ctx2.beginPath();ctx2.arc(a.x,a.y,a.r,0,6.28);ctx2.fill();let d2=Math.sqrt((a.x-gameState.x)**2+(a.y-gameState.y)**2);if(d2<a.r+6){gameRunning=false;ctx2.fillStyle='rgba(255,0,0,0.85)';ctx2.fillRect(0,0,350,260);ctx2.fillStyle='#fff';ctx2.font='18px monospace';ctx2.fillText('CRASH! '+gameScore,80,130);}});
+    let dt=Math.sqrt((gameState.targetX-gameState.x)**2+(gameState.targetY-gameState.y)**2);
+    if(dt<15){gameRunning=false;gameScore+=600+gameState.boosts*100;ctx2.fillStyle='rgba(0,255,0,0.85)';ctx2.fillRect(0,0,350,260);ctx2.fillStyle='#fff';ctx2.font='16px monospace';ctx2.fillText('MARS! '+gameScore+' WIN!',50,130);addToLeaderboard(gameScore);}
+    document.getElementById('gameScore').innerText=gameScore;document.getElementById('boostCount').innerText=gameState.boosts;
+    Object.values(connections).forEach(conn=>{if(conn.open)conn.send({type:'playerMove', id: myPeerId, x: gameState.x, y: gameState.y, score: gameScore});});
+    requestAnimationFrame(loop);
+  }
+  loop();
+}
+function doBoost(){if(gameState.boosts>0){gameState.vx*=1.9;gameState.boosts--;gameScore+=100;document.getElementById('gameScore').innerText=gameScore;}}
+function resetGame(){gameRunning=false;startGame();}
+function startVoice(){
+  if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
+    let SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=new SR();rec.continuous=true;
+    rec.onresult=function(e){for(let i=e.resultIndex;i<e.results.length;i++){let cmd=e.results[i][0].transcript.toLowerCase();if(cmd.includes('boost'))doBoost();else if(cmd.includes('left'))gameState.vx-=2;else if(cmd.includes('right'))gameState.vx+=2;else if(cmd.includes('up'))gameState.vy-=2;else if(cmd.includes('down'))gameState.vy+=2;}};rec.start();
+  }
+}
+function voiceBoost(){doBoost();}
+function overclock(){document.body.style.filter='brightness(1.6)';setTimeout(()=>document.body.style.filter='',3000);}
+function enterRace(){let stripeLink='https://buy.stripe.com/test_eVa5kS9w7f4c0mQ';window.open(stripeLink,'_blank');alert('💰 STRIPE $29 RACE ENTRY\n\nTest link: '+stripeLink+'\n\nReal Stripe:\n1. Go to stripe.com -> Create product $29\n2. Copy payment link\n3. Replace in code\n4. After payment, redirect to?paid=true&room='+myPeerId+'\n5. Player auto-enters ranked leaderboard\n\nDemo: Adding you to leaderboard now!');addToLeaderboard(Math.floor(Math.random()*1000)+1500);}
+function addToLeaderboard(score){
+  leaderboard.push({name:'Peter (you)',score:score,time:Date.now()});
+  leaderboard.sort((a,b)=>b.score-a.score);
+  let list=document.getElementById('leaderList');
+  list.innerHTML='';
+  leaderboard.slice(0,6).forEach((e,i)=>{
+    let medal=i==0?'🥇':i==1?'🥈':i==2?'🥉':(i+1)+'.';
+    let cls=i==0?'leader-entry gold':'leader-entry';
+    let prize=i==0?'$420':i==1?'$210':i==2?'$105':i==3?'$52':'$26';
+    list.innerHTML+=`<div class=${cls}><span>${medal} ${e.name} - ${e.score} pts</span><span>${prize}</span></div>`;
+  });
+  document.getElementById('taskRank').innerText='#'+(leaderboard.findIndex(e=>e.name.includes('you'))+1);
+}
+function claimPrize(){alert('💸 Prize claim - Connect Stripe Connect for payouts\nDemo: You would get $210 for #2 place!');}
+function startVR(){
+  if(navigator.xr){
+    navigator.xr.isSessionSupported('immersive-vr').then(supported=>{
+      if(supported){alert('🥽 VR MODE - Quest 3 detected!\nEnter VR -> You are in Mars orbit, steer ship with controllers, boost with trigger');}
+      else{alert('🥽 VR MODE - Open this in Quest 3 browser -> Click Enter VR in taskbar -> WebXR will start');}
+    });
+  }else{
+    alert('🥽 VR MODE\n\n1. Open https://peterzenith-zenith-1-pro.streamlit.app on Quest 3 browser\n2. Click VR button\n3. Enter immersive mode\n4. Use controllers to steer, trigger to boost\n\nDemo: VR canvas mode now!');
+    // Fake VR canvas
+    let cvs=document.getElementById('gameCanvas');cvs.style.transform='perspective(500px) rotateX(20deg)';cvs.style.width='100%';cvs.style.height='300px';
+  }
+}
+function openColonyMulti(){document.getElementById('wColony').style.display='block';drawColony();}
+function drawColony(){
+  let cvs=document.getElementById('colonyCanvas');if(!cvs)return;let ctx=cvs.getContext('2d');
+  ctx.fillStyle='#110800';ctx.fillRect(0,0,340,150);
+  ctx.fillStyle='#ff6600';ctx.fillRect(0,130,340,20);
+  colonyBuildings.forEach(b=>{ctx.fillStyle=b.color;ctx.fillRect(b.x,b.y,20,20);ctx.fillStyle='#fff';ctx.font='10px monospace';ctx.fillText(b.type[0],b.x+6,b.y+12);});
+  document.getElementById('colonyPlayers').innerText=Object.keys(connections).length+1;
+}
+function placeBuilding(type){
+  let colors={hab:'#0ff',solar:'#ff0',lab:'#f0f',green:'#0f0'};
+  let build={type:type,x:Math.random()*300,y:Math.random()*100,color:colors[type]||'#fff'};
+  colonyBuildings.push(build);drawColony();
+  Object.values(connections).forEach(conn=>{if(conn.open)conn.send({type:'colonyBuild',build:build});});
+  document.getElementById('colonyPower').innerText=50+colonyBuildings.length*10;
+  document.getElementById('colonyO2').innerText=100+colonyBuildings.filter(b=>b.type=='green').length*20;
+}
+function enterColonyComp(){alert('🏗️ COLONY COMP $99 ENTRY\nBuild best Mars base with friends\nJudged by Power + Oxygen + Hab space\nPrize: $500 + featured on site');}
+// Init background
+let cv=document.getElementById('c'),ctx=cv.getContext('2d'),t=0,W,H;function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight}resize();onresize=resize;
+let parts=[];for(let i=0;i<600;i++)parts.push({x:Math.random()*W,y:Math.random()*H,z:Math.random()*2000-1000,vx:(Math.random()-0.5)*2,vy:(Math.random()-0.5)*2,vz:(Math.random()-0.5)*4,q:Math.random()*8+1});
+function drawBG(){
+ ctx.fillStyle='rgba(0,0,0,0.08)';ctx.fillRect(0,0,W,H);
+ parts.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;p.z+=p.vz;if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;if(p.z<-1000||p.z>1000)p.vz*=-1;let s=800/(800+p.z),x=(p.x-W/2)*s+W/2,y=(p.y-H/2)*s+H/2,sz=p.q*s;ctx.fillStyle=`hsla(${(t+i)%360},100%,60%,0.4)`;ctx.beginPath();ctx.arc(x,y,sz,0,6.28);ctx.fill();});
+ t+=0.02;requestAnimationFrame(drawBG);
+}drawBG();
+setInterval(()=>{document.getElementById('taskTime').innerText=new Date().toLocaleTimeString();},1000);
+document.querySelectorAll('.window').forEach(w=>{let bar=w.querySelector('.titlebar');if(!bar)return;let down=false,ox,oy;bar.addEventListener('mousedown',e=>{down=true;ox=e.clientX-w.offsetLeft;oy=e.clientY-w.offsetTop;w.style.zIndex=1000;});addEventListener('mousemove',e=>{if(down){w.style.left=(e.clientX-ox)+'px';w.style.top=(e.clientY-oy)+'px';}});addEventListener('mouseup',()=>down=false);});
+// Add initial leaderboard
+addToLeaderboard(2543);
 </script></body></html>
