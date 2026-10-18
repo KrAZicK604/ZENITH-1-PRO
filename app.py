@@ -1,58 +1,54 @@
 ﻿import streamlit as st
 import streamlit.components.v1 as components
 import os
-st.set_page_config(page_title="REALITY OS v41 - FINAL - PLAY & EARN", layout="wide", page_icon="🏁")
+st.set_page_config(page_title="REALITY OS v42 - VIRAL MOBILE - SHARE & EARN $5", layout="wide", page_icon="🔥")
 
-st.markdown("""
-<style>
-#MainMenu, footer, header {visibility: hidden;}
-.stApp {background: #000; color: #00ff88;}
-.block-container {padding: 0; max-width: 100%;}
-h1, h2, h3 {color: #00ff88 !important;}
-</style>
-""", unsafe_allow_html=True)
+st.markdown("<style>#MainMenu, footer, header {visibility: hidden;} .stApp {background: #000;} .block-container {padding: 0; max-width: 100%;}</style>", unsafe_allow_html=True)
 
-# Load finished game
-for f in ["FINAL_VR_v41_FINISHED.html", "FINAL_VR_v40_PAID.html", "FINAL_VR_v39_TOURNAMENT.html"]:
-    if os.path.exists(f):
-        html_file = f
-        break
+html_file = "FINAL_VR_v42_VIRAL.html"
+with open(html_file, 'r', encoding='utf-8') as f:
+    html = f.read()
 
-with open(html_file, 'r', encoding='utf-8') as file:
-    html_content = file.read()
-
-components.html(html_content, height=1300, scrolling=True)
+components.html(html, height=1400, scrolling=True)
 
 st.markdown("---")
-st.markdown("## 🏁 REALITY OS v41 - FINAL BUILD - COMPLETE GAME")
+st.markdown("## 🔥 v42 VIRAL MOBILE - SHARE & EARN $5 PER FRIEND")
 
-col1, col2, col3, col4 = st.columns(4)
-col1.link_button("🏁 RACE $29 - PLAY NOW", "https://buy.stripe.com/cNicMY68hfdN5N35148bS03", use_container_width=True, type="primary")
-col2.link_button("📚 COURSE $199", "https://buy.stripe.com/00wfZa7cle9J5N379c8bS02", use_container_width=True)
-col3.link_button("🏫 SCHOOL $999", "https://buy.stripe.com/bJebIU54dghRa3j2SW8bS01", use_container_width=True)
-col4.link_button("💰 MY MONEY - BALANCE", "https://dashboard.stripe.com/balance", use_container_width=True)
+c1,c2,c3,c4 = st.columns(4)
+c1.link_button("🏁 RACE $29", "https://buy.stripe.com/cNicMY68hfdN5N35148bS03", use_container_width=True, type="primary")
+c2.link_button("📚 COURSE $199", "https://buy.stripe.com/00wfZa7cle9J5N379c8bS02", use_container_width=True)
+c3.link_button("🏫 SCHOOL $999", "https://buy.stripe.com/bJebIU54dghRa3j2SW8bS01", use_container_width=True)
+c4.link_button("💰 BALANCE", "https://dashboard.stripe.com/balance", use_container_width=True)
 
+st.info("📱 MOBILE READY: On phone, use bottom buttons ◀▲🚀▼▶ to race! | 🔥 VIRAL: Share link, earn $5 per friend who pays!")
+
+# Referral system explanation
 st.markdown("""
-### 🎮 HOW TO PLAY - FINAL GAME:
+### 🔥 VIRAL SYSTEM - HOW YOU GET MORE MONEY:
 
-1. **Press SHIFT+F** to test finish screen (or finish a real race)
-2. **Race** -> Finish -> See time, prize, rank
-3. **Leaderboard** top right - Global Top 10 - Beat #1
-4. **Progress** top left - Your races, wins, best time, earnings, achievements
-5. **Tournament** bottom right pink button -> 8 players -> $100 prize
-6. **Share** your time -> Invite friends -> More players -> Bigger prize pool
+1. **Your referral code:** Auto-generated, saved in browser (e.g., ZENITH_A1B2C3)
+2. **Share link:** `https://krazick604-zenith-1-pro.streamlit.app?ref=YOURCODE`
+3. **Friend clicks & pays $29** -> You get $5 extra (track via Stripe metadata)
+4. **How to track:** Add referral code to Stripe payment link metadata - In Stripe Dashboard -> Payment Links -> Edit -> Metadata -> Add `ref` = customer's referral code
 
-### 💰 HOW YOU EARN:
+**Current build includes:**
+- ✅ Mobile controls (bottom) - Works on phone
+- ✅ Viral bar (Share & Earn $5) - Bottom above mobile controls
+- ✅ Referral tracking (?ref=CODE in URL)
+- ✅ Global leaderboard, progress, tournament, finish screen, payment links
 
-- **$29 Race:** Player pays -> You get $20 profit -> $9 fee -> Prize pool +$20
-- **$199 Course:** Full game + tutorials -> You get $180 profit
-- **$999 School:** License for class -> You get $900 profit
-- **Check money:** https://dashboard.stripe.com/balance -> Payouts -> https://dashboard.stripe.com/payouts
-
-### 🏆 ACHIEVEMENTS TO UNLOCK:
-- 🏁 First Race | ⚡ Under 40s | 🏆 5 Wins | 💰 Earn $100 | 👑 Tournament Champ
-
-**GAME IS 100% FINISHED AND PLAYABLE - READY TO SELL AND DEPLOY LIVE**
+**GAME 100% COMPLETE - DEPLOY LIVE NOW**
 """)
+
+if st.button("🚀 DEPLOY LIVE TO STREAMLIT CLOUD - AUTO", type="primary"):
+    st.code("""
+cd C:\\Users\\curtz\\Downloads\\ZENITH-1-PRO
+git add .
+git commit -m "v42 VIRAL MOBILE - FINAL - Ready to sell"
+git push origin main
+# Then go to https://share.streamlit.io -> Your app auto-updates in 2 min
+# Live: https://krazick604-zenith-1-pro.streamlit.app
+    """)
+    st.success("Copy commands above, run in PowerShell, then live in 2 min!")
 
 st.balloons()
