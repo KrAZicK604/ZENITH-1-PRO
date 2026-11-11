@@ -1,49 +1,102 @@
-﻿from flask import Flask, request, jsonify
+"""Verified Stripe Checkout webhook for ZENITH race access.
+
+Requires STRIPE_WEBHOOK_SECRET and a persistent DATABASE_PATH mounted on durable storage.
+No unauthenticated email-based entitlement lookup is exposed.
+"""
 import os
+import sqlite3
+from pathlib import Path
+
+import stripe
+from flask import Flask, jsonify, request
 
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024
 
-# In production, use Supabase or Firebase to store unlocks
-# For demo, in-memory
-unlocked_users = set()
 
-@app.route('/')
-def home():
-    return jsonify({"status":"REALITY OS Webhook - Auto-unlock $29 races","room":"zenith_pjqu7a","unlocked":len(unlocked_users)})
+def _database_path():
+    return Path(os.environ.get("DATABASE_PATH", "zenith_entitlements.sqlite3"))
 
-@app.route('/webhook', methods=['POST'])
+
+def _connect():
+    db = _database_path()
+    db.parent.mkdir(parents=True, exist_ok=True)
+    connection = sqlite3.connect(str(db), timeout=10)
+    connection.execute("PRAGMA busy_timeout=10000")
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS entitlements (
+            session_id TEXT PRIMARY KEY,
+            email TEXT NOT NULL,
+            product TEXT NOT NULL,
+            amount INTEGER NOT NULL,
+            currency TEXT NOT NULL
+        )
+    """)
+    return connection
+
+
+def _field(obj, name, default=None):
+    return obj.get(name, default) if isinstance(obj, dict) else getattr(obj, name, default)
+
+
+@app.get("/")
+def health():
+    return jsonify({"service": "zenith-webhook", "status": "online"})
+
+
+@app.post("/webhook")
 def stripe_webhook():
-    # Stripe sends event here when $29 paid
-    # Configure at https://dashboard.stripe.com/webhooks - Add endpoint https://zenith-webhook.onrender.com/webhook
-    # Select events: checkout.session.completed, payment_link.created, charge.succeeded
+    secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+    if not secret.startswith("whsec_") or "YOUR_" in secret:
+        return jsonify({"error": "webhook_not_configured"}), 503
+
+    signature = request.headers.get("Stripe-Signature", "")
+    if not signature:
+        return jsonify({"error": "missing_signature"}), 400
     try:
-        data = request.json
-        print(f"Webhook received: {data.get('type')}")
-        
-        # Example: When payment succeeds
-        if data.get('type') in ['checkout.session.completed', 'charge.succeeded', 'payment_intent.succeeded']:
-            email = data.get('data',{}).get('object',{}).get('customer_details',{}).get('email') or data.get('data',{}).get('object',{}).get('billing_details',{}).get('email') or 'unknown'
-            amount = data.get('data',{}).get('object',{}).get('amount_total') or data.get('data',{}).get('object',{}).get('amount') or 2900
-            print(f"✅ Payment: {email} paid ${amount/100}")
-            unlocked_users.add(email)
-            
-            # In real app: Write to Supabase
-            # supabase.table('unlocked_races').insert({"email":email, "room":"zenith_pjqu7a", "unlocked":True, "amount":amount/100}).execute()
-            
-            # Return success to Stripe
-            return jsonify({"received":True, "email":email, "unlocked":True, "redirect":"https://peterzenith-zenith-1-pro.streamlit.app?payment=success"})
-        
-        return jsonify({"received":True})
-    except Exception as e:
-        print(f"Webhook error: {e}")
-        return jsonify({"error":str(e)}), 400
+        event = stripe.Webhook.construct_event(request.get_data(), signature, secret)
+    except (ValueError, stripe.SignatureVerificationError):
+        return jsonify({"error": "invalid_webhook"}), 400
 
-@app.route('/check/<email>')
-def check_unlock(email):
-    # Frontend checks if user paid: GET /check/email@example.com
-    unlocked = email in unlocked_users
-    return jsonify({"email":email, "unlocked":unlocked, "room":"zenith_pjqu7a"})
+    if _field(event, "type") != "checkout.session.completed":
+        return jsonify({"received": True}), 200
 
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 10000))
-    app.run(host='0.0.0.0', port=port)
+    session = _field(_field(event, "data", {}), "object", {})
+    # Asynchronous payment methods must wait for an independently verified paid event.
+    if _field(session, "payment_status") != "paid":
+        return jsonify({"received": True, "granted": False}), 200
+
+    session_id = _field(session, "id")
+    amount = _field(session, "amount_total")
+    currency = _field(session, "currency")
+    details = _field(session, "customer_details", {}) or {}
+    email = _field(details, "email") or _field(session, "customer_email")
+    expected_link = os.environ.get("RACE_PAYMENT_LINK_ID", "")
+    link_id = _field(session, "payment_link")
+    # Product attribution must be configured and must match the session.
+    if not expected_link or not expected_link.startswith("plink_"):
+        return jsonify({"error": "race_payment_link_not_configured"}), 503
+    if link_id != expected_link:
+        return jsonify({"received": True, "granted": False}), 200
+    if (not isinstance(session_id, str) or not session_id.startswith("cs_")
+            or not isinstance(email, str) or not email.strip()
+            or type(amount) is not int or amount != 2900
+            or str(currency).lower() != "cad"):
+        return jsonify({"received": True, "granted": False}), 200
+
+    try:
+        with _connect() as db:
+            db.execute(
+                "INSERT OR IGNORE INTO entitlements "
+                "(session_id,email,product,amount,currency) VALUES (?,?,?,?,?)",
+                (session_id, email.strip().lower(), "race_29", amount, "cad"),
+            )
+    except (sqlite3.Error, OSError):
+        app.logger.exception("Failed to persist entitlement")
+        # Stripe retries non-2xx responses. Never acknowledge an unpersisted grant.
+        return jsonify({"error": "storage_unavailable"}), 503
+    return jsonify({"received": True, "granted": True}), 200
+
+
+if __name__ == "__main__":
+    app.run(host="127.0.0.1", port=int(os.environ.get("PORT", "10000")))
