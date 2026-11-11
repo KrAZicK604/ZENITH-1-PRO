@@ -55,7 +55,7 @@ def stripe_webhook():
         return jsonify({"error": "missing_signature"}), 400
     try:
         event = stripe.Webhook.construct_event(request.get_data(), signature, secret)
-    except (ValueError, stripe.error.SignatureVerificationError):
+    except (ValueError, stripe.SignatureVerificationError):
         return jsonify({"error": "invalid_webhook"}), 400
 
     if _field(event, "type") != "checkout.session.completed":
