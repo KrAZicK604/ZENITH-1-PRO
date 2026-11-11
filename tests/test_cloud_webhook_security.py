@@ -45,7 +45,7 @@ class WebhookSecurityTests(unittest.TestCase):
         self.assertEqual(self.count(), 0)
 
     def test_invalid_signature_rejected(self):
-        from stripe.error import SignatureVerificationError
+        from stripe import SignatureVerificationError
         with patch.object(self.module.stripe.Webhook, "construct_event",
                           side_effect=SignatureVerificationError("bad", "sig")):
             response = self.client.post("/webhook", data=b"{}",
