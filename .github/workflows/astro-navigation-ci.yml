@@ -5,6 +5,7 @@ on:
       - 'public/astro-*'
       - 'public/astro-navigation.html'
       - 'tests/astro-*'
+      - 'docs/ASTRO_CALIBRATION_GATE_V41.md'
       - '.github/workflows/astro-navigation-ci.yml'
   workflow_dispatch:
 permissions:
