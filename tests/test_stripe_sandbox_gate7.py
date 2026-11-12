@@ -131,6 +131,13 @@ class SandboxReadinessTests(unittest.TestCase):
         trial["prices"].append(duplicate)
         self.assertFalse(inspect(trial)["ready"])
 
+    def test_malformed_webhook_event_lists_never_raise_or_grant(self):
+        for unexpected in ([{"bad": "event"}], [[]], [None], [1], ["x", []]):
+            with self.subTest(unexpected=unexpected):
+                obj = self.ready_fixture()
+                obj["webhook_endpoints"][0]["enabled_events"] = unexpected
+                self.assertFalse(inspect(obj)["ready"])
+
     def test_malformed_injections_never_raise_or_grant(self):
         for bad in (None, "", 0, [], {"schema": "zenith-stripe-sandbox-preflight-v1",
                                      "prices": None, "payment_links": True,
