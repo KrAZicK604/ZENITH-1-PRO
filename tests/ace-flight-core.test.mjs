@@ -90,7 +90,7 @@ test('inertial flight assist may be toggled and laterally dampens drift',()=>{
 test('maneuver pulses consume finite charges and reset restores them',()=>{
  const f=isolated();startAce(f);
  for(let i=0;i<10;i++)stepAce(f,{pulse:true});
- assert.equal(f.boosts,0);assert.deepEqual(resetAce(f),isolated());
+ assert.equal(f.boosts,0);assert.deepEqual(resetAce(f),createAce(f.seed));
 });
 test('3D velocity and position are bounded across long random commands',()=>{
  const f=isolated();startAce(f);
@@ -149,7 +149,7 @@ test('unobstructed Mars arrival grants a single local score',()=>{
 test('timeout is terminal and resets are idempotent',()=>{
  const f=isolated(92);startAce(f);f.ticks=ACE.maxTicks-1;stepAce(f);
  assert.equal(f.phase,'timeout');const t=f.ticks;stepAce(f);assert.equal(f.ticks,t);
- const fresh=resetAce(f);assert.deepEqual(fresh,isolated(92));
+ const fresh=resetAce(f);assert.deepEqual(fresh,createAce(92));
 });
 test('perspective projection protects points behind camera',()=>{
  const cam={pos:{x:0,y:0,z:0},forward:{x:1,y:0,z:0},right:{x:0,y:1,z:0},up:{x:0,y:0,z:1}};
