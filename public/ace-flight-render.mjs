@@ -119,6 +119,7 @@ function cockpitHud(ctx,f,cam){
  const s=f.ship,sel=f.targetIndex===0?f.goal:f.asteroids[f.targetIndex-1];
  const target=sel&&projection(sel,cam);
  ctx.save();
+ ctx.textAlign='left'; // Explicit HUD state; preflight overlays use centered text.
  // Reticle aligned to camera, not a simulated ballistic firing solution.
  ctx.strokeStyle='rgba(115,242,242,.85)';ctx.lineWidth=2;
  line(ctx,{x:464,y:270},{x:475,y:270},'#80eaff',2);
@@ -202,10 +203,12 @@ export function renderAce(ctx,f,options={}){
  ship(ctx,f.ship,cam,time);
  cockpitHud(ctx,f,cam);
  if(f.phase!=='running'){
+  ctx.save();
   ctx.fillStyle='rgba(2,8,20,.42)';ctx.fillRect(0,0,W,H);
   ctx.textAlign='center';ctx.font='900 38px system-ui';ctx.fillStyle='#e9fbff';
   ctx.fillText(({ready:'VECTOR SYSTEMS READY',paused:'FLIGHT PAUSED',won:'MARS APPROACH COMPLETE',crashed:'SHIP LOST',timeout:'MISSION CLOCK EXPIRED'})[f.phase],W/2,H/2-10);
   ctx.font='bold 16px system-ui';ctx.fillStyle='#afdeef';
   ctx.fillText(f.phase==='ready'?'Launch to begin 4D arcade flight':'Restart to fly again',W/2,H/2+23);
+  ctx.restore();
  }
 }
