@@ -1,25 +1,45 @@
-# ZENITH-1-PRO Stripe security deployment
+# ZENITH-1-PRO — Mars Race subscription security gate
 
-Based on commit `89666e2`. No live revenue, payout, or payment-link status has been verified.
+**PR-only change. No live Stripe billing objects or production services were changed.** Live Stripe catalogue inspected read-only November 11, 2026; recheck before deployment.
 
-## Verified webhook deployment
+## Verified live product mapping
 
-The existing `Procfile` launches `gunicorn cloud_webhook:app`. Use a Python web host and configure:
+| Product | CAD | Term | Price ID | Payment Link ID |
+| --- | ---: | --- | --- | --- |
+| Mars Race | $29 | Monthly recurring | price_1UQdzi5TQIzi9HKPizM62pvD | plink_1URxrb5TQIzi9HKP8Ou9iaId |
+| Complete Course | $199 | One-time | price_1URxv05TQIzi9HKPbpxT9ij7 | plink_1URxv85TQIzi9HKPgUjI6Zxm |
+| School License | $999 | One-time | price_1URxvz5TQIzi9HKPUoUFEEhH | plink_1URxwK5TQIzi9HKPQe6kWnrY |
 
-- `STRIPE_WEBHOOK_SECRET`: actual Stripe destination signing secret (`whsec_`) stored server-side.
-- `RACE_PAYMENT_LINK_ID`: exact `plink_` ID for the race product, retrieved from Stripe. A checkout URL is **not** this ID.
-- `DATABASE_PATH`: persistent backed-up writable SQLite file location (e.g. `/var/data/zenith_entitlements.sqlite3`). Ephemeral storage loses unlocks.
+The repository had previously swapped Race and School URLs in .env.example; this branch corrects them.
 
-Send `checkout.session.completed` to `https://YOUR-HOST/webhook`. Only a signature-verified Checkout Session marked `paid`, referring to the configured Payment Link, with exact 2900 cents CAD and a real customer email, is recorded. Replayed sessions are idempotent. Different prices, discounts, tax, currencies, and asynchronous payment flows require separate, tested policy and are denied by default.
+## Signed event lifecycle
 
-There is deliberately no public email lookup endpoint. **Paid access is not yet end-to-end functional**: a properly authenticated authorization endpoint and game integration still must be implemented. Never grant access from query parameters, redirects, or caller-supplied email. Use a shared transactional database for horizontally scaled deployment.
+Host gunicorn cloud_webhook:app on a **persistent Python web service**, not the Vercel static frontend. Configure server-side STRIPE_WEBHOOK_SECRET (correct webhook signing secret), STRIPE_EXPECT_LIVEMODE (literal true or false), RACE_PAYMENT_LINK_ID, RACE_PRICE_ID, and DATABASE_PATH (absolute, durable, backed-up path). Sandbox and live modes have different secrets and object IDs. Never embed secrets in public frontend or source.
 
-## Testing and hosting
+Set your Stripe classic webhook to https://YOUR-SERVER/webhook and enable:
 
-Run `python -B -m unittest discover -s tests -p 'test_*.py' -v`. Mock signature tests exercise business logic but are not a substitute for Stripe-signed integration testing. Verify delivery, storage durability, duplicate deliveries, webhook outages, and real test-mode payment-link mapping before enabling live use.
+- checkout.session.completed: bind exact paid CAD $29 subscription-mode checkout and configured Payment Link to its subscription and customer IDs. Checkout alone never grants access.
+- invoice.paid: require exact CAD $29 paid invoice, one line, quantity one, exact Race Price ID and bounded month-long service period. A correct invoice and previously-bound checkout together can satisfy the *internal* active-period predicate.
+- invoice.payment_failed: conservatively block access until a **later** qualifying paid invoice.
+- customer.subscription.updated: block past_due, unpaid, paused, incomplete, incomplete_expired, canceled. Mere active/trialing status cannot grant.
+- customer.subscription.deleted: permanently block that subscription ID, including if delivered before checkout.
+- customer.subscription.paused: block.
 
-Run Streamlit separately with `streamlit run app.py`. Never paste Stripe secret keys into a public interface. Check payouts and balances only in the authenticated Stripe dashboard.
+Scheduling cancel_at_period_end does not itself revoke an already-paid interval; the term still expires and deletion blocks it at the end. A new subscription needs a new verified checkout.
 
-The linked commit has a failing **Vercel** status. This project currently exposes Flask/Gunicorn and Streamlit Python entry points, not a validated Vercel deployment; the Vercel build log was not available in this review. Keep deployment-specific resolution open until its actual error is inspected.
+The local ledger uses unique invoice and checkout keys, monotonic adverse-event timestamps, and terminal tombstones to withstand duplicate/out-of-order deliveries. Same-second invoice and adverse event remains blocked. Public email-based entitlement lookup remains disabled; subscription_store.is_active(subscription_id) is **internal only**, not an authenticated game account or public API.
 
-Do not merge until tests and security review pass. No real charges, payouts, bank transfers or production authority are granted by this patch.
+Tax, discounts, proration, trials, multi-item invoices, incomplete line pagination, and unknown pricing fields deliberately abstain instead of accidentally granting. Support for such real-world cases requires separately reviewed policy and tests.
+
+## Verification and remaining deployment gates
+
+Run from repo root:
+
+    python -B -m unittest discover -s tests -p 'test_*.py' -v
+    python -B -m py_compile cloud_webhook.py subscription_store.py
+
+The local source and mocked-event tests do not verify an actual Stripe signature or a deployed service. Before live enablement: test signed Stripe sandbox deliveries and schema versions, billing retries, cancellation timing, restart/persistence, backups, Stripe Tax settings, and reconciliation. Multiple server replicas require shared transactional storage, not per-instance SQLite.
+
+**Not complete:** customer authentication, secure customer portal, game unlock integration, and migration of historical single-payment entitlement rows. No automatic grant to historical customers; do not trust redirects or caller-supplied email. This branch has no production release or monetary authority.
+
+PAPER_ONLY; PROMOTION_BLOCKED; productionAuthority NONE. No payments, payouts or refunds initiated.
