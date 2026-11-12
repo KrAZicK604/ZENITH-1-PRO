@@ -162,7 +162,7 @@ test('browser presentation uses original local meshes and does not authorize rem
  const app=readFileSync(new URL('../public/ace-flight-app.mjs',import.meta.url),'utf8');
  const render=readFileSync(new URL('../public/ace-flight-render.mjs',import.meta.url),'utf8');
  const core=readFileSync(new URL('../public/ace-flight-core.mjs',import.meta.url),'utf8');
- assert.match(html,/game-ace/);assert.match(html,/pitch/i);assert.match(html,/roll/i);
+ assert.match(html,/ace-flight-app\\.mjs/);assert.match(html,/pitch/i);assert.match(html,/roll/i);
  assert.match(html,/Offline arcade|offline arcade/i);assert.match(html,/No real spacecraft control guidance/);
  assert.match(render,/SHIP=/);assert.match(render,/CONTACT RADAR/);
  assert.equal((app.match(/addEventListener\('keydown'/g)||[]).length,1);
