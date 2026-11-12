@@ -20,7 +20,19 @@ def _field(obj, name, default=None):
 
 
 def _identifier(value, prefix):
-    return isinstance(value, str) and value.startswith(prefix) and len(value) > len(prefix)
+    """Reject empty, example and placeholder IDs before processing signed billing data."""
+    if not (isinstance(value, str) and value.startswith(prefix) and len(value) > len(prefix)):
+        return False
+    upper = value.upper()
+    return not any(token in upper for token in ("YOUR_", "REPLACE", "PLACEHOLDER", "EXAMPLE"))
+
+
+def _webhook_secret(value):
+    """A copied template secret is not configuration."""
+    return (isinstance(value, str) and value.startswith("whsec_")
+            and len(value) > len("whsec_")
+            and not any(token in value.upper() for token in
+                        ("YOUR_", "REPLACE", "PLACEHOLDER", "EXAMPLE")))
 
 
 def _event_created(event):
@@ -33,7 +45,7 @@ def _configured():
     link = os.getenv("RACE_PAYMENT_LINK_ID", "")
     price = os.getenv("RACE_PRICE_ID", "")
     expected_mode = os.getenv("STRIPE_EXPECT_LIVEMODE", "")
-    if (not secret.startswith("whsec_") or "YOUR_" in secret or
+    if (not _webhook_secret(secret) or
         not _identifier(link, "plink_") or not _identifier(price, "price_") or
         expected_mode not in ("true", "false")):
         return None
