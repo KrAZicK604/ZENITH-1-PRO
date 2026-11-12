@@ -88,7 +88,7 @@ test('reject two ephemeris records in same response',()=>{
 test('reject duplicate $$SOE or $$EOE markers',()=>{
  const raw=vector('earth',1,2,3);
  assert.throws(()=>parseHorizonsVector(raw+'\n$$EOE',399),/EPHEMERIS_MARKERS_MISSING_OR_DUPLICATE/);
- assert.throws(()=>parseHorizonsVector(raw.replace('$SOE',()=> '$SOE\n$SOE'),399),/EPHEMERIS_MARKERS_MISSING_OR_DUPLICATE/);
+ assert.throws(()=>parseHorizonsVector(raw.replace('$$SOE',()=> '$$SOE\n$$SOE'),399),/EPHEMERIS_MARKERS_MISSING_OR_DUPLICATE/);
 });
 test('reject duplicate XYZ vectors at one epoch',()=>{
  const raw=vector('earth',1,2,3);
