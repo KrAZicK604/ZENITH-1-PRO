@@ -41,7 +41,9 @@ class LedgerTests(unittest.TestCase):
     def test_period_boundaries(self):
         self.checkout(); self.paid()
         self.assertFalse(ledger.is_active("sub_test", BASE-1))
-        self.assertTrue(ledger.is_active("sub_test", BASE))
+        self.assertFalse(ledger.is_active("sub_test", BASE))
+        self.assertFalse(ledger.is_active("sub_test", BASE+9))
+        self.assertTrue(ledger.is_active("sub_test", BASE+10))
         self.assertTrue(ledger.is_active("sub_test", END-1))
         self.assertFalse(ledger.is_active("sub_test", END))
 

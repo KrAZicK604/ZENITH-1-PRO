@@ -101,7 +101,8 @@ def is_active(subscription_id, now=None):
               AND p.customer_id=s.customer_id
             LEFT JOIN race_blocks b ON b.subscription_id=s.subscription_id
             WHERE s.subscription_id=? AND p.period_start<=? AND p.period_end>?
+              AND s.checkout_event<=? AND p.paid_event<=?
               AND (b.subscription_id IS NULL OR
                    (b.terminal=0 AND p.paid_event>b.blocked_event))
-            LIMIT 1""", (subscription_id, now, now)).fetchone()
+            LIMIT 1""", (subscription_id, now, now, now, now)).fetchone()
     return row is not None
