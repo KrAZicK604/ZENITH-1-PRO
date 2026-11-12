@@ -226,6 +226,7 @@ ui.start.addEventListener("click", () => {
 ui.restart.addEventListener("click", beginNew);
 ui.pause.addEventListener("click", () => {
   resetInputs(); togglePause(game); accumulator = 0; synchronize();
+  canvas.focus({ preventScroll: true });
 });
 document.addEventListener("visibilitychange", () => {
   if (document.hidden && game.status === "running") {
