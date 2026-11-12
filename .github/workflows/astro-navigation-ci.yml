@@ -1,0 +1,64 @@
+name: NASA/JPL ephemeris navigation gate
+on:
+  pull_request:
+    paths:
+      - 'public/astro-*'
+      - 'public/astro-navigation.html'
+      - 'tests/astro-*'
+      - 'docs/ASTRO_CALIBRATION_GATE_V41.md'
+      - '.github/workflows/astro-navigation-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  vector-integrity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check parser, UI and tests
+        run: |
+          node --check public/astro-ephemeris.mjs
+          node --check public/astro-navigation-app.mjs
+          node --check tests/astro-ephemeris.test.mjs
+          node --check tests/astro-calibration.test.mjs
+          node --check tests/astro-browser-smoke.mjs
+      - name: Run NASA Horizons format and 3D distance regressions
+        run: node --test tests/astro-ephemeris.test.mjs tests/astro-calibration.test.mjs
+
+  browser-navigation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    needs: vector-integrity
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Playwright and Chromium for CI
+        run: |
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright@1.58.2
+          npx playwright install --with-deps chromium
+      - name: Serve offline navigation page and test desktop/mobile acceptance
+        run: |
+          python3 -m http.server 8765 --directory public >/tmp/zenith-astro-http.log 2>&1 &
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if curl --fail --silent http://127.0.0.1:8765/astro-navigation.html >/dev/null; then break; fi
+            sleep 1
+          done
+          node tests/astro-browser-smoke.mjs
+      - name: Preserve calibrated UI screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mars-astro-browser-screenshots
+          path: artifacts/astro-*.png
+          if-no-files-found: ignore
+          retention-days: 14
