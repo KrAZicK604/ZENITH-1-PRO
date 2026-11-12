@@ -13,6 +13,9 @@ async function openGame(context,name){
  const res=await page.goto(origin+'/game-ace.html?test=1',{waitUntil:'load'});
  assert.equal(res.status(),200);
  await page.waitForFunction(()=>Boolean(window.__aceTest));
+ await page.waitForTimeout(60);
+ assert.equal(await page.evaluate(()=>document.getElementById('aceScene').getContext('2d').textAlign),
+   'start','renderer must restore canvas text alignment after centered splash overlay');
  return page;
 }
 const state=page=>page.evaluate(()=>window.__aceTest.snapshot());
