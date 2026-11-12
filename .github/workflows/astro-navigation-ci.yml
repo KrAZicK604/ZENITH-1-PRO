@@ -1,0 +1,29 @@
+name: NASA/JPL ephemeris navigation gate
+on:
+  pull_request:
+    paths:
+      - 'public/astro-*'
+      - 'public/astro-navigation.html'
+      - 'tests/astro-*'
+      - '.github/workflows/astro-navigation-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  vector-integrity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check parser, UI and tests
+        run: |
+          node --check public/astro-ephemeris.mjs
+          node --check public/astro-navigation-app.mjs
+          node --check tests/astro-ephemeris.test.mjs
+      - name: Run NASA Horizons format and 3D distance regressions
+        run: node --test tests/astro-ephemeris.test.mjs
