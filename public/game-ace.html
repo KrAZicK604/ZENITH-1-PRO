@@ -50,6 +50,7 @@ kbd{background:#293d58;border:1px solid #50758a;border-bottom-width:2px;color:#f
 @media(max-width:970px){.gameframe{grid-template-columns:1fr}.panel{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;border-left:0;border-top:1px solid #34546e;padding:11px}.panel h2{grid-column:1/-1;margin:0}.readout{border:0;padding:5px}.readout strong{font-size:.9rem}.docs{grid-template-columns:1fr 1fr}}
 @media(max-width:640px){.wrap{padding:12px 9px 28px}.docs{grid-template-columns:1fr}.panel{grid-template-columns:repeat(3,minmax(0,1fr))}.readout small{font-size:.57rem}.readout strong{font-size:.82rem}h1{font-size:2rem}.actions{padding:10px}#message{margin:0;flex-basis:100%}.controls button{min-width:74px;padding:10px 6px;font-size:.75rem}.touch{padding:10px}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+.astro-panel{border:1px solid #365b79;border-radius:16px;background:#101f37;margin:20px 0;padding:19px}.astro-panel h2{color:#98e6ff;font-size:1.1rem;margin:0 0 8px}.astro-note{font-size:.82rem;color:#b6cddd;line-height:1.6}.astro-panel label{display:inline-block;margin:8px 10px 10px 0;color:#d7f3ff;font-weight:700}.astro-panel select{background:#203e58;border:1px solid #5b93ad;color:#f0fbff;border-radius:9px;padding:10px;font:inherit}.astro-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:10px 0}.astro-grid>div{padding:14px;background:#1b344d;border:1px solid #385d79;border-radius:10px}.astro-grid small{display:block;color:#a8c9e1;font-size:.7rem}.astro-grid strong{display:block;font-variant-numeric:tabular-nums;margin:6px 0;font-size:clamp(.86rem,2vw,1.2rem)}#astroMap{display:block;width:100%;height:auto;background:#061224;border:1px solid #315473;border-radius:10px}details{padding:12px;color:#cde3f4;overflow-wrap:anywhere}details summary{cursor:pointer;font-weight:750}#astroStatus{font-size:.8rem;color:#8ee6d7}@media(max-width:600px){.astro-grid{grid-template-columns:1fr}.astro-panel{padding:12px}}
 </style></head>
 <body><main class="wrap">
 <div class="top"><div class="wordmark">ZENITH // ACE VECTOR // FLIGHT TEST 03</div>
@@ -97,5 +98,24 @@ kbd{background:#293d58;border:1px solid #50758a;border-bottom-width:2px;color:#f
 <section><h2>Advanced flight console</h2><p><kbd>J</kbd>/<kbd>L</kbd> strafe · <kbd>U</kbd>/<kbd>O</kbd> ascend/descend · <kbd>F</kbd> toggle inertial assist · <kbd>T</kbd> cycle target · <kbd>Space</kbd> maneuver pulse · <kbd>P</kbd> pause. Targets and radar are simulated noncombat game cues.</p></section>
 <section><h2>Gamepad and mission rules</h2><p>Gamepad: left stick pitch/yaw, right stick roll/throttle, triggers brake/afterburner, shoulders strafe, A pulse, X target, Y assist, Start pause. Shield absorbs limited debris hits; Moon impact can end the flight. Scores are local practice only.</p></section>
 </div>
+<section class="astro-panel" aria-label="Astronomical navigation computer">
+<h2>REAL SPACE NAVIGATION — EARTH / MOON / MARS</h2>
+<p class="astro-note">Date-specific center-to-center distances in actual kilometres, calculated from frozen approximate astronomical ephemeris vectors. Choose a sampled UTC date. This navigation display is independent of the compressed arcade ship controls above.</p>
+<label for="astroEpoch">Ephemeris date (UTC)</label>
+<select id="astroEpoch" aria-label="Select sampled astronomical date"></select>
+<div class="astro-grid">
+<div><small>Earth → Moon</small><strong id="astroEM">Loading…</strong><small>One-way light: <span id="astroLightEM">—</span></small></div>
+<div><small>Earth → Mars</small><strong id="astroER">Loading…</strong><small>One-way light: <span id="astroLightER">—</span></small></div>
+<div><small>Moon → Mars</small><strong id="astroMR">Loading…</strong><small>One-way light: <span id="astroLightMR">—</span></small></div>
+</div>
+<canvas id="astroMap" width="960" height="390" role="img" aria-label="Schematic Earth-to-Mars distance plot with real-scale Moon marker and enlarged Moon inset"></canvas>
+<details><summary>Earth-centered 3D coordinate vectors (X / Y / Z, km)</summary>
+<p><strong>Earth:</strong> <span id="astroEARTH">—</span></p>
+<p><strong>Moon:</strong> <span id="astroMOON">—</span></p>
+<p><strong>Mars:</strong> <span id="astroMARS">—</span></p>
+</details>
+<p id="astroStatus" role="status">Loading offline ephemeris data…</p>
+<p class="astro-note">Reference: Swiss Ephemeris 2.10.03, Moshier analytic backend; sample dates from November 12 through December 10, 2026. Not JPL Horizons or physical spacecraft tracking. The three-dimensional vectors use a heliocentric equatorial-of-date frame before subtraction; these are snapshots, not a continuous ephemeris. Light time is distance divided by 299,792.458 km/s, not radio transmission plus processing delays. Travel distance and flight duration require a separate orbital transfer model. Moon is not visibly separable from Earth at full Earth–Mars scale.</p>
+</section>
 <p class="foot">3D space + time = four-coordinate state; this is not a fourth spatial dimension or real general relativity. Military-style interface is fictional game UX. No real spacecraft control guidance, online combat, paid entry, prizes, Stripe integration or authenticated leaderboard. All ship geometry, UI and visual assets are original.</p>
-</main><script type="module" src="./ace-flight-app.mjs"></script></body></html>
+</main><script type="module" src="./ace-flight-app.mjs"></script><script type="module" src="./astro-navigation-app.mjs"></script></body></html>
