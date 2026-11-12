@@ -37,7 +37,7 @@ class CheckoutMappingTests(unittest.TestCase):
 
     def test_no_mismatched_anchor_prices(self):
         page = (ROOT / "public/index.html").read_text(encoding="utf-8")
-        anchors = re.findall(r'<a class="cta" href="(https://buy\\.stripe\\.com/[^"]+)"[^>]*>([^<]+)</a>', page)
+        anchors = re.findall(r'<a class="cta" href="(https://buy[.]stripe[.]com/[^"]+)"[^>]*>([^<]+)</a>', page)
         self.assertEqual(len(anchors), 3)
         mapping = {url.split("/")[-1]: label for url, label in anchors}
         for name, (suffix, amount) in PRODUCTS.items():
