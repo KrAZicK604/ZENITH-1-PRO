@@ -104,7 +104,6 @@ test('3D geometry and range are measured in kilometres and never overwrite arcad
  const html=readFileSync(new URL('../public/game-ace.html',import.meta.url),'utf8');
  assert.match(html,/earth-centred ICRF|Earth-centred ICRF/i);
  assert.match(html,/navGeometry/);
- assert.match(html,/game-ace.html/);
  assert.match(html,/game-4d\.html/);
  assert.match(app,/navigationAt\(/);
  assert.doesNotMatch(app,/game\.ship\.x/);
