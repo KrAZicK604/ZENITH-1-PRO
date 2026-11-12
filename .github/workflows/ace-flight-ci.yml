@@ -1,5 +1,13 @@
 name: ACE Vector 3D / 4D tactical arcade regression
 on:
+  push:
+    branches:
+      - game/ace-vector-4d-flight-v3-20261112
+    paths:
+      - 'public/ace-flight-*.mjs'
+      - 'public/game-ace.html'
+      - 'tests/ace-flight-*.mjs'
+      - '.github/workflows/ace-flight-ci.yml'
   pull_request:
     paths:
       - 'public/ace-flight-*.mjs'
