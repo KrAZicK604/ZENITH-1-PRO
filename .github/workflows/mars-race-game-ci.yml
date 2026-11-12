@@ -1,0 +1,76 @@
+name: Mars Race browser game regression
+
+on:
+  pull_request:
+    paths:
+      - 'public/game.html'
+      - 'public/game-*.mjs'
+      - 'public/index.html'
+      - 'tests/game-*.mjs'
+      - 'vercel.json'
+      - '.github/workflows/mars-race-game-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'public/game.html'
+      - 'public/game-*.mjs'
+      - 'public/index.html'
+      - 'tests/game-*.mjs'
+      - 'vercel.json'
+      - '.github/workflows/mars-race-game-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-physics:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify JavaScript module syntax
+        run: |
+          node --check public/game-core.mjs
+          node --check public/game-app.mjs
+          node --check tests/game-core.test.mjs
+          node --check tests/game-browser-smoke.mjs
+      - name: Execute deterministic game and security regression tests
+        run: node --test tests/game-core.test.mjs
+
+  desktop-mobile-chromium:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    needs: deterministic-physics
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Playwright test driver (CI only)
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund playwright@1.58.2
+      - name: Install Chromium and required packages
+        run: npx playwright install --with-deps chromium
+      - name: Serve static game and run real-browser smoke tests
+        run: |
+          python3 -m http.server 8765 --directory public >/tmp/zenith-game-http.log 2>&1 &
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if curl --fail --silent http://127.0.0.1:8765/game.html >/dev/null; then break; fi
+            sleep 1
+          done
+          node tests/game-browser-smoke.mjs
+      - name: Preserve browser screenshots (CI evidence, not external certification)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mars-race-browser-screenshots
+          path: artifacts/*.png
+          if-no-files-found: ignore
+          retention-days: 14
