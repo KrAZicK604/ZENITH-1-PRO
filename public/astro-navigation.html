@@ -1,0 +1,56 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ZENITH Mars Race — NASA Ephemeris Navigation</title>
+<style>
+:root{font-family:system-ui,sans-serif;color-scheme:dark;background:#081221;color:#eaf5ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#193c60,#081221 65%);min-height:100vh}
+main{max-width:1160px;margin:auto;padding:20px}a{color:#9ce7f4}h1{font-size:clamp(1.7rem,4vw,3rem);margin:13px 0 8px}
+p{color:#bdd3e6;line-height:1.6}.panel{border:1px solid #3d6885;border-radius:14px;background:#10233a;padding:18px;margin-top:16px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.stat{padding:15px;background:#172f4a;border-radius:11px;border:1px solid #365977}
+.stat small{display:block;color:#a9c5d8;text-transform:uppercase;letter-spacing:.07em;font-size:.72rem}
+.stat strong{font-size:clamp(1rem,2vw,1.55rem);display:block;margin-top:7px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+fieldset{border:1px solid #436783;border-radius:12px;margin:12px 0;padding:12px}
+legend{font-weight:800;color:#a5eafa}textarea{width:100%;min-height:112px;resize:vertical;background:#061527;color:#eaf6ff;border:1px solid #51718c;border-radius:8px;padding:12px;font:12px ui-monospace,monospace}
+button{padding:12px 17px;border-radius:9px;border:1px solid #6ccecf;background:#70e4d9;color:#062631;font:800 1rem system-ui;cursor:pointer}
+button:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid #fff;outline-offset:3px}
+#status{font-weight:750;color:#a5eafa}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.83rem;color:#b5d5e5}
+svg{width:100%;height:auto;background:#061628;border-radius:10px;border:1px solid #294e69}
+@media(max-width:650px){.stats{grid-template-columns:1fr}main{padding:12px}.panel{padding:12px}}
+</style></head><body><main>
+<a href="./game-4d.html">← Back to 4D spacecraft preview</a>
+<h1>NASA/JPL Interplanetary Navigation</h1>
+<p>Calculate the actual <strong>three-dimensional center-to-center separation</strong> between Earth, the Moon and Mars for one ephemeris epoch. All three vectors must come from NASA/JPL Horizons in the <strong>same barycentric ICRF reference frame, KM-S units and TDB timestamp</strong>. This module never invents a current position.</p>
+<section class="panel">
+<h2>Published reference ranges (not today's positions)</h2>
+<div class="stats">
+<div class="stat"><small>Earth → Moon mean</small><strong>384,400 km</strong></div>
+<div class="stat"><small>Earth → Mars approximate minimum</small><strong>54.6 million km</strong></div>
+<div class="stat"><small>Earth → Mars approximate maximum</small><strong>401.4 million km</strong></div>
+</div>
+<p>Moon → Mars has no single fixed distance. The real value is computed only when all three date-matched position vectors are provided. Straight-line separation is <em>not</em> spacecraft route length, flight duration or fuel requirement.</p>
+</section>
+<section class="panel">
+<h2>Load Horizons position vectors (offline)</h2>
+<p>Use <a href="https://ssd.jpl.nasa.gov/horizons/app.html">JPL Horizons</a> with target body <code>399</code> (Earth), <code>301</code> (Moon), then <code>499</code> (Mars). For all three: Ephemeris type <strong>Vector Table</strong>, center <strong>Solar System Barycenter (500@0)</strong>, reference frame <strong>ICRF</strong>, output units <strong>KM-S</strong>, time scale <strong>TDB</strong>, and the same start epoch with exactly one vector record. Copy the complete plain-text results including the header and <code>$$SOE</code>/<code>$$EOE</code> markers into the corresponding fields.</p>
+<form id="load">
+<fieldset><legend>Earth (399)</legend><textarea id="earth" aria-label="Earth Horizons vectors" maxlength="250000" placeholder="Paste original Horizons Earth VECTORS output" required></textarea></fieldset>
+<fieldset><legend>Moon (301)</legend><textarea id="moon" aria-label="Moon Horizons vectors" maxlength="250000" placeholder="Paste original Horizons Moon VECTORS output" required></textarea></fieldset>
+<fieldset><legend>Mars (499)</legend><textarea id="mars" aria-label="Mars Horizons vectors" maxlength="250000" placeholder="Paste original Horizons Mars VECTORS output" required></textarea></fieldset>
+<button type="submit">Validate and calculate real distances</button>
+</form>
+<p id="status" role="status" aria-live="polite">AWAITING REAL EPHEMERIS — no date-specific distances have been loaded.</p>
+<div class="stats">
+<div class="stat"><small>Earth → Moon</small><strong id="em">—</strong></div>
+<div class="stat"><small>Earth → Mars</small><strong id="er">—</strong></div>
+<div class="stat"><small>Moon → Mars</small><strong id="mr">—</strong></div>
+</div>
+<h3>Spatial diagram (normalized to screen, not to scale)</h3>
+<svg id="diagram" viewBox="0 0 900 330" role="img" aria-label="Spatial projection of the three astronomical positions when valid data are loaded">
+<text x="450" y="165" text-anchor="middle" fill="#b3cbe0" font-size="20">Waiting for verified-format position vectors</text>
+</svg>
+<pre id="details">The calculator will display the exact supplied TDB Julian date and relative Earth-centered ICRF coordinates in kilometers.</pre>
+</section>
+<p>This is a scientific navigation reference for the game, not a real-time orbital mechanics engine. Source text pasted by a user is format-checked but is not cryptographically authenticated. No network calls, payment integration or production autopilot.</p>
+<script type="module" src="./astro-navigation-app.mjs"></script>
+</main></body></html>
