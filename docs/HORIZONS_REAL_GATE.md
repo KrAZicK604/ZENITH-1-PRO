@@ -17,3 +17,17 @@ References: https://ssd-api.jpl.nasa.gov/doc/horizons.html and https://ssd.jpl.n
 ## Live parser falsification
 
 The first GitHub-run real Horizons response for Earth was retrieved and preserved, but did **not** contain the synthetic fixture's `Coordinate systm` header. Strict header-based verification correctly abstained (`UNVERIFIED_EQUATORIAL`). The parser was changed to rely on the explicitly pinned request `REF_PLANE=FRAME`, while recording that the response header does not independently attest the plane. This is a provenance limitation, not an independently measured coordinate-system guarantee. The original failed run is https://github.com/KrAZicK604/ZENITH-1-PRO/actions/runs/43331470962 and the raw Earth response is retained as a GitHub Actions artifact.
+
+## Real acquisition result (GitHub-hosted execution)
+
+The **actual** GitHub Actions run [43331560278](https://github.com/KrAZicK604/ZENITH-1-PRO/actions/runs/43331560278) completed successfully on source commit `1ace2cb7fbcd8f23270f8391d7239d7ac283407b`, with 4 original Horizons JSON responses and a machine-readable receipt retained in [artifact 13994264228](https://github.com/KrAZicK604/ZENITH-1-PRO/actions/runs/43331560278/artifacts/13994264228).
+
+- Epoch: JD(TDB) `2461356.500000000` (fixed future research epoch; **not today's current position**).
+- Horizons Earth–Moon center separation: **404167.02830620465 km**.
+- Horizons Earth–Mars center separation: **200668210.37076584 km**.
+- Horizons Moon–Mars center separation: **200845354.18174806 km**.
+- Horizons vs separately executed Skyfield DE440s barycentric XYZ residual: Earth **0.000027136247063612894 km**, Moon **0.002208555288685525 km**, Mars **system barycenter** **0.000000029802322387695312 km**.
+- Kernel SHA-256: `c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2`.
+- Numerical gate status: `PARTIAL_INDEPENDENT_NUMERICAL_CROSSCHECK`. Mars **body-center 499** remains `ABSTAIN_NO_MARS_CENTER_KERNEL`; the kernel only checked the Mars-system barycenter (4). No production or flight-dynamics authorization.
+- Source payloads were obtained via HTTPS in GitHub Actions and hashed, but the API is not a cryptographically signed measurement and GitHub-hosted timestamps are not independently attested custody. The raw output omitted the explicit coordinate-plane declaration, so the FRAME property is supported by the pinned request rather than an independent response-header assertion.
+- The first strict parser correctly failed on the missing output coordinate header; its error and corrected replay are preserved in GitHub run history. No scientific threshold was relaxed to achieve this passing result.
