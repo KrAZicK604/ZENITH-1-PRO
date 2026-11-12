@@ -20,7 +20,7 @@ svg{width:100%;height:auto;background:#061628;border-radius:10px;border:1px soli
 </style></head><body><main>
 <a href="./game-4d.html">← Back to 4D spacecraft preview</a>
 <h1>NASA/JPL Interplanetary Navigation</h1>
-<p>Calculate the actual <strong>three-dimensional center-to-center separation</strong> between Earth, the Moon and Mars for one ephemeris epoch. All three vectors must come from NASA/JPL Horizons in the <strong>same barycentric ICRF reference frame, KM-S units and TDB timestamp</strong>. This module never invents a current position.</p>
+<p>Calculate the <strong>three-dimensional center-to-center separation implied by supplied position vectors</strong> between Earth, the Moon and Mars for one ephemeris epoch. All three vectors must come from NASA/JPL Horizons in the <strong>same barycentric ICRF reference frame, KM-S units and TDB timestamp</strong>. This module never invents a current position.</p>
 <section class="panel">
 <h2>Published reference ranges (not today's positions)</h2>
 <div class="stats">
@@ -28,7 +28,7 @@ svg{width:100%;height:auto;background:#061628;border-radius:10px;border:1px soli
 <div class="stat"><small>Earth → Mars approximate minimum</small><strong>54.6 million km</strong></div>
 <div class="stat"><small>Earth → Mars approximate maximum</small><strong>401.4 million km</strong></div>
 </div>
-<p>Moon → Mars has no single fixed distance. The real value is computed only when all three date-matched position vectors are provided. Straight-line separation is <em>not</em> spacecraft route length, flight duration or fuel requirement.</p>
+<p>Moon → Mars has no single fixed distance. The value is computed from the submitted vectors only when all three date-matched positions are provided; the submitted source is not independently authenticated. Straight-line separation is <em>not</em> spacecraft route length, flight duration or fuel requirement.</p>
 </section>
 <section class="panel">
 <h2>Load Horizons position vectors (offline)</h2>
