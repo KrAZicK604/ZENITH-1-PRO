@@ -77,7 +77,9 @@ def parse(raw, body):
     for label, pattern in checks.items():
         if len(re.findall(pattern, raw, re.M | re.I)) != 1:
             raise ValueError("UNVERIFIED_" + label.upper())
-    if re.search(r"^Coordinate\\s+(?:systm|system)\\s*:", raw, re.M | re.I):\n        raise ValueError("UNEXPECTED_COORDINATE_HEADER_REVIEW_REQUIRED")\n    if raw.count("$$SOE") != 1 or raw.count("$$EOE") != 1:
+    if re.search(r"^Coordinate\s+(?:systm|system)\s*:", raw, re.M | re.I):
+        raise ValueError("UNEXPECTED_COORDINATE_HEADER_REVIEW_REQUIRED")
+    if raw.count("$$SOE") != 1 or raw.count("$$EOE") != 1:
         raise ValueError("WRONG_MARKERS")
     block = raw.split("$$SOE", 1)[1].split("$$EOE", 1)[0]
     epoch_lines = re.findall(r"^\s*(\d{7}\.\d+)\s*=\s*[^\r\n]*\bTDB\s*$", block, re.M)
