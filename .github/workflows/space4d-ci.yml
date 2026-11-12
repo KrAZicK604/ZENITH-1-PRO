@@ -27,3 +27,27 @@ jobs:
           node --check tests/space4d-core.test.mjs
       - name: Run deterministic 4D spacetime / 3D rigid body regression
         run: node --test tests/space4d-core.test.mjs
+
+  desktop-mobile-chromium:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    needs: three-dimensional-dynamics
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated browser test dependency
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund playwright@1.58.2
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run desktop/mobile 4D flight browser smoke
+        run: |
+          python3 -m http.server 8765 --directory public >/tmp/zenith-4d-http.log 2>&1 &
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if curl --fail --silent http://127.0.0.1:8765/game-4d.html >/dev/null; then break; fi
+            sleep 1
+          done
+          node tests/space4d-browser-smoke.mjs
