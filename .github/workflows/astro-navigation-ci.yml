@@ -1,0 +1,78 @@
+name: Real Earth Moon Mars astronomical navigation gate
+on:
+  pull_request:
+    paths:
+      - 'public/astro-*'
+      - 'public/data/earth-moon-mars-*'
+      - 'public/game-ace.html'
+      - 'tests/astro-*'
+      - 'tools/replay_astro_moshier.py'
+      - '.github/workflows/astro-navigation-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  geometry:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check ephemeris modules
+        run: |
+          node --check public/astro-ephemeris.mjs
+          node --check public/astro-navigation-app.mjs
+          node --check public/data/earth-moon-mars-2026.mjs
+          node --check tests/astro-ephemeris.test.mjs
+      - name: Recalculate all real distances and reject bad catalogs
+        run: node --test tests/astro-ephemeris.test.mjs
+  replay-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned Swiss Ephemeris runtime
+        run: python -m pip install --disable-pip-version-check --no-input pyswisseph==2.10.3.2
+      - name: Independently recompute frozen Moshier vectors
+        run: python -B -I tools/replay_astro_moshier.py
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    needs: geometry
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium test runtime
+        run: |
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright@1.58.2
+          npx playwright install --with-deps chromium
+      - name: Test real date-selected distances in desktop and mobile browsers
+        run: |
+          mkdir -p artifacts
+          python3 -m http.server 8765 --directory public >/tmp/astro-nav-http.log 2>&1 &
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if curl --fail --silent http://127.0.0.1:8765/game-ace.html >/dev/null; then break; fi
+            sleep 1
+          done
+          node tests/astro-browser.test.mjs
+      - name: Preserve screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: earth-moon-mars-navigation-screenshots
+          path: artifacts/astro-*.png
+          if-no-files-found: ignore
+          retention-days: 14
