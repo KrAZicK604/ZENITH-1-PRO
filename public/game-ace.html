@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="ZENITH ACE Vector: an original polygonal arcade-style spacecraft with 3D/4D flight dynamics and advanced game controls.">
+<title>ACE Vector | ZENITH Mars Race — Tactical 3D Flight</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#040917;color:#e9f7ff;--muted:#a5bed5;--cyan:#71def4;--line:#35536d;--amber:#ffc280}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 48% -18%,#22426b,#040917 64%);color:#e9f7ff}
+.wrap{max-width:1320px;margin:auto;padding:18px 20px 46px}
+.top{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+.wordmark{font-size:.76rem;font-weight:900;letter-spacing:.19em;color:var(--cyan)}
+.links{display:flex;gap:9px;flex-wrap:wrap}
+.links a{border:1px solid #426b87;border-radius:10px;background:#132641;color:#c5edf7;padding:9px 13px;text-decoration:none;font-size:.84rem;font-weight:760}
+a:focus-visible,button:focus-visible{outline:3px solid #b0fdff;outline-offset:3px}
+.mast{display:flex;justify-content:space-between;gap:20px;align-items:end;flex-wrap:wrap;margin-bottom:18px}
+.eyebrow{font-size:.74rem;letter-spacing:.16em;color:#85e6df;font-weight:850}
+h1{font-size:clamp(2rem,5vw,3.9rem);margin:5px 0;line-height:1.05;letter-spacing:-.06em}
+.subtitle{max-width:800px;color:var(--muted);line-height:1.65;margin:10px 0 0}
+.pill{display:inline-flex;border:1px solid #436e70;border-radius:99px;padding:8px 13px;color:#a6eedd;background:#15353b;font-size:.76rem;font-weight:780;white-space:nowrap}
+.gameframe{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:0;overflow:hidden;background:#0b1830;border:1px solid #496c82;border-radius:19px;box-shadow:0 20px 80px #0008}
+.viewport{min-width:0;background:#020814;position:relative}
+.viewport::before{content:"";position:absolute;inset:0;border:12px solid transparent;box-shadow:inset 0 0 32px #0007;pointer-events:none;z-index:1}
+canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;background:#030817;outline-offset:-5px}
+.panel{background:linear-gradient(180deg,#162945,#0b1930);border-left:1px solid #34546e;padding:20px 16px}
+.panel h2{font-size:.83rem;letter-spacing:.18em;color:#9deaff;margin:0 0 19px}
+.readout{padding:11px 0;border-bottom:1px solid #2e4a63}
+.readout small{display:block;color:#91b1cd;letter-spacing:.12em;font-size:.65rem;font-weight:850;text-transform:uppercase;margin-bottom:5px}
+.readout strong{font-variant-numeric:tabular-nums;font-size:1.07rem;overflow-wrap:anywhere}
+#phase[data-phase="running"]{color:#93ffdd}#phase[data-phase="crashed"]{color:#fa897d}#phase[data-phase="won"]{color:#ffd18c}
+#targetQuality{color:#91eadd}
+.actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap;padding:14px;background:#13253e;border-top:1px solid #315171}
+button{border:1px solid #487f98;color:#f1faff;border-radius:10px;background:#21455e;padding:11px 14px;min-height:44px;font:750 .87rem system-ui;cursor:pointer;touch-action:none}
+button.primary{background:#81eee1;color:#062b34;border-color:#81eee1}
+button.secondary{background:#3a314e;border-color:#8a669c}
+button:hover:not(:disabled){filter:brightness(1.17)}button:disabled{opacity:.44;cursor:default}
+#message{margin-left:auto;max-width:350px;line-height:1.5;color:#bdd8e9;font-size:.83rem}
+.touch{margin-top:13px;border:1px solid #355673;border-radius:14px;padding:15px;background:#0d2037}
+.touch h2{margin:0 0 11px;font-size:.8rem;text-transform:uppercase;letter-spacing:.15em;color:#96d8ea}
+.controls{display:flex;gap:8px;flex-wrap:wrap}
+.controls button{flex:1 1 auto;min-width:92px;background:#153950}
+.controls button.pressed{background:#82ebdf;color:#0b2932}
+.controls button.burn{background:#583727;border-color:#cb7b3f}
+.docs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin:16px 0}
+.docs section{border:1px solid #30506f;border-radius:13px;padding:17px;background:#101d35}
+.docs h2{font-size:.91rem;color:#a4f2fa;margin:0 0 9px}
+.docs p{font-size:.81rem;line-height:1.72;color:#b8d1e7;margin:0}
+kbd{background:#293d58;border:1px solid #50758a;border-bottom-width:2px;color:#f1faff;border-radius:4px;padding:2px 5px;font-size:.78rem;display:inline-block;margin:1px}
+.foot{color:#9db5cd;font-size:.76rem;line-height:1.6;padding-top:8px}
+@media(max-width:970px){.gameframe{grid-template-columns:1fr}.panel{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;border-left:0;border-top:1px solid #34546e;padding:11px}.panel h2{grid-column:1/-1;margin:0}.readout{border:0;padding:5px}.readout strong{font-size:.9rem}.docs{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){.wrap{padding:12px 9px 28px}.docs{grid-template-columns:1fr}.panel{grid-template-columns:repeat(3,minmax(0,1fr))}.readout small{font-size:.57rem}.readout strong{font-size:.82rem}h1{font-size:2rem}.actions{padding:10px}#message{margin:0;flex-basis:100%}.controls button{min-width:74px;padding:10px 6px;font-size:.75rem}.touch{padding:10px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style></head>
+<body><main class="wrap">
+<div class="top"><div class="wordmark">ZENITH // ACE VECTOR // FLIGHT TEST 03</div>
+<div class="links"><a href="./game-4d.html">Previous 4D version</a><a href="./game.html">Solo arcade</a><a href="./">Plans</a></div></div>
+<header class="mast"><div><div class="eyebrow">POLYGONAL SPACE COMBAT AESTHETIC · ORIGINAL SPACECRAFT</div>
+<h1>ACE Vector: Tactical Flight</h1>
+<p class="subtitle">A custom low-polygon starfighter with enhanced lighting, banking animations, 3D thrust and a mission cockpit. The fourth coordinate is simulation time. Fly through obstacles to Mars in a free, offline arcade exercise—not an operational military system or a copy of another game's craft.</p></div>
+<span class="pill">FREE PLAYABLE PREVIEW · NO PAYMENTS</span></header>
+<div class="gameframe">
+<div class="viewport"><canvas id="aceScene" width="960" height="540" tabindex="0" role="img" aria-label="Polygonal 3D spacecraft in an asteroid-filled flight corridor, with targeting reticle and tactical radar.">A modern browser supporting Canvas is needed.</canvas></div>
+<aside class="panel" aria-label="Flight instrumentation">
+<h2>Flight computer</h2>
+<div class="readout"><small>Status</small><strong id="phase" data-phase="ready">READY</strong></div>
+<div class="readout"><small>Simulation time</small><strong id="time">0.0s</strong></div>
+<div class="readout"><small>Velocity</small><strong id="velocity">0 gu/s</strong></div>
+<div class="readout"><small>Shield</small><strong id="shield">100%</strong></div>
+<div class="readout"><small>Engine temperature</small><strong id="thermal">0%</strong></div>
+<div class="readout"><small>Throttle</small><strong id="throttle">63%</strong></div>
+<div class="readout"><small>Pitch / yaw / roll</small><strong id="attitude">0° / 0° / 0°</strong></div>
+<div class="readout"><small>Target acquisition</small><strong id="targetQuality">SEARCH / 0%</strong></div>
+<div class="readout"><small>Coordinates</small><strong id="position">X 40 · Y 0 · Z 0</strong></div>
+</aside></div>
+<div class="actions">
+<button class="primary" id="launch">Launch spacecraft</button>
+<button id="pause" disabled>Pause</button>
+<button id="reset">Restart mission</button>
+<button id="assist" class="secondary">Flight assist: ON</button>
+<button id="target">Target: MARS</button>
+<button id="pulse">Maneuver pulse (3)</button>
+<span id="message" role="status" aria-live="polite">Systems check complete. Launch when ready.</span>
+</div>
+<section class="touch" aria-label="Touch flight input panel">
+<h2>Touch flight console — hold controls to maneuver</h2>
+<div class="controls">
+<button data-control="pitchUp">Pitch up</button><button data-control="pitchDown">Pitch down</button>
+<button data-control="yawLeft">Yaw left</button><button data-control="yawRight">Yaw right</button>
+<button data-control="rollLeft">Bank left</button><button data-control="rollRight">Bank right</button>
+<button data-control="throttleUp">Throttle +</button><button data-control="throttleDown">Throttle −</button>
+<button data-control="strafeLeft">Strafe left</button><button data-control="strafeRight">Strafe right</button>
+<button data-control="liftUp">Ascend</button><button data-control="liftDown">Descend</button>
+<button class="burn" data-control="afterburner">Afterburner</button><button data-control="brake">Air brake</button>
+</div></section>
+<div class="docs">
+<section><h2>Attitude / piloting</h2><p><kbd>W</kbd>/<kbd>S</kbd> pitch · <kbd>A</kbd>/<kbd>D</kbd> yaw · <kbd>Q</kbd>/<kbd>E</kbd> roll. Rotations change the actual 3D thrust vector. <kbd>↑</kbd>/<kbd>↓</kbd> throttle. <kbd>Shift</kbd> afterburner · <kbd>B</kbd> brake. Heat limits continuous burn.</p></section>
+<section><h2>Advanced flight console</h2><p><kbd>J</kbd>/<kbd>L</kbd> strafe · <kbd>U</kbd>/<kbd>O</kbd> ascend/descend · <kbd>F</kbd> toggle inertial assist · <kbd>T</kbd> cycle target · <kbd>Space</kbd> maneuver pulse · <kbd>P</kbd> pause. Targets and radar are simulated noncombat game cues.</p></section>
+<section><h2>Gamepad and mission rules</h2><p>Gamepad: left stick pitch/yaw, right stick roll/throttle, triggers brake/afterburner, shoulders strafe, A pulse, X target, Y assist, Start pause. Shield absorbs limited debris hits; Moon impact can end the flight. Scores are local practice only.</p></section>
+</div>
+<p class="foot">3D space + time = four-coordinate state; this is not a fourth spatial dimension or real general relativity. Military-style interface is fictional game UX. No real spacecraft control guidance, online combat, paid entry, prizes, Stripe integration or authenticated leaderboard. All ship geometry, UI and visual assets are original.</p>
+</main><script type="module" src="./ace-flight-app.mjs"></script></body></html>

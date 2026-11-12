@@ -1,0 +1,98 @@
+import assert from 'node:assert/strict';
+import {mkdirSync} from 'node:fs';
+import {chromium} from 'playwright';
+
+const origin='http://127.0.0.1:8765';
+const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+const errors=[],external=[],results=[];
+mkdirSync('artifacts',{recursive:true});
+async function openGame(context,name){
+ const page=await context.newPage();
+ page.on('pageerror',err=>errors.push(name+': '+err.message));
+ page.on('request',req=>{if(!req.url().startsWith(origin+'/')&&!req.url().startsWith('data:'))external.push(req.url());});
+ const res=await page.goto(origin+'/game-ace.html?test=1',{waitUntil:'load'});
+ assert.equal(res.status(),200);
+ await page.waitForFunction(()=>Boolean(window.__aceTest));
+ await page.waitForTimeout(60);
+ assert.equal(await page.evaluate(()=>document.getElementById('aceScene').getContext('2d').textAlign),
+   'start','renderer must restore canvas text alignment after centered splash overlay');
+ return page;
+}
+const state=page=>page.evaluate(()=>window.__aceTest.snapshot());
+try{
+ const desktop=await browser.newContext({viewport:{width:1440,height:1000}});
+ const page=await openGame(desktop,'desktop');
+ assert.equal((await state(page)).phase,'ready');
+ assert.ok(await page.getByRole('button',{name:'Launch spacecraft'}).isVisible());
+ await page.screenshot({path:'artifacts/ace-desktop-ready.png',fullPage:true});
+ await page.getByRole('button',{name:'Launch spacecraft'}).click();
+ await page.waitForTimeout(180);
+ assert.equal((await state(page)).phase,'running');
+ const a=await state(page);
+ await page.keyboard.down('KeyW');
+ await page.keyboard.down('KeyD');
+ await page.keyboard.down('KeyQ');
+ await page.waitForTimeout(340);
+ await page.keyboard.up('KeyW');
+ await page.keyboard.up('KeyD');
+ await page.keyboard.up('KeyQ');
+ const b=await state(page);
+ assert.ok(b.pitch>a.pitch,'pitch must change from W');
+ assert.ok(b.yaw>a.yaw,'yaw must change from D');
+ assert.ok(b.roll<a.roll,'bank must change from Q');
+ assert.ok(b.ticks>a.ticks);
+ await page.keyboard.down('ShiftLeft');
+ await page.waitForTimeout(280);
+ await page.keyboard.up('ShiftLeft');
+ assert.ok((await state(page)).heat>0.01,'afterburner should heat');
+ await page.keyboard.press('Space');
+ await page.waitForTimeout(90);
+ assert.equal((await state(page)).boosts,2,'pulse should be consumed once');
+ await page.getByRole('button',{name:'Flight assist: ON'}).click();
+ await page.waitForTimeout(80);
+ assert.equal((await state(page)).assist,false);
+ await page.getByRole('button',{name:'Target: MARS'}).click();
+ await page.waitForTimeout(90);
+ assert.notEqual((await state(page)).target,'MARS');
+ await page.getByRole('button',{name:'Pause',exact:true}).click();
+ const stopped=await state(page);
+ assert.equal(stopped.phase,'paused');
+ await page.waitForTimeout(180);
+ assert.equal((await state(page)).ticks,stopped.ticks);
+ await page.getByRole('button',{name:'Resume'}).click();
+ await page.getByRole('button',{name:'Restart mission'}).click();
+ const fresh=await state(page);
+ assert.equal(fresh.phase,'running');assert.equal(fresh.boosts,3);
+ assert.equal(fresh.assist,true);assert.equal(fresh.target,'MARS');
+ await page.screenshot({path:'artifacts/ace-desktop-flight.png',fullPage:true});
+ results.push('desktop: 3D pitch/yaw/roll, heat, one-shot pulse, inertial assist, targeting, pause and restart');
+ await desktop.close();
+
+ const mobile=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
+ const phone=await openGame(mobile,'mobile');
+ assert.ok(await phone.getByRole('button',{name:'Pitch up'}).isVisible());
+ await phone.getByRole('button',{name:'Launch spacecraft'}).click();
+ const touch=async(name,duration=230)=>{
+  const el=phone.getByRole('button',{name,exact:true});
+  await el.evaluate(b=>b.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:30,pointerType:'touch'})));
+  await phone.waitForTimeout(duration);
+  await el.evaluate(b=>b.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:30,pointerType:'touch'})));
+ };
+ await touch('Pitch up');
+ assert.ok((await state(phone)).pitch>0);
+ await touch('Yaw right');
+ assert.ok((await state(phone)).yaw>0);
+ await touch('Bank left');
+ assert.ok((await state(phone)).roll<0);
+ await touch('Afterburner');
+ assert.ok((await state(phone)).heat>0);
+ const width=await phone.evaluate(()=>document.documentElement.scrollWidth-window.innerWidth);
+ assert.ok(width<=1,'mobile horizontal overflow '+width);
+ await phone.screenshot({path:'artifacts/ace-mobile-flight.png',fullPage:true});
+ results.push('mobile: no horizontal overflow, independent pitch/yaw/roll touch, afterburner');
+ await mobile.close();
+ assert.deepEqual(errors,[]);
+ assert.deepEqual(external,[]);
+ results.push('zero JS page errors; zero external game requests');
+ console.log('ACE_BROWSER_PASS',results.join(' | '));
+}finally{await browser.close();}
