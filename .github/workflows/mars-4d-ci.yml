@@ -26,3 +26,36 @@ jobs:
           node --check tests/game-4d-core.test.mjs
       - name: Run deterministic 3D physics and swept collision tests
         run: node --test tests/game-4d-core.test.mjs
+
+  chromium-flight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    needs: math-and-safety
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright and Chromium for CI
+        run: |
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright@1.58.2
+          npx playwright install --with-deps chromium
+      - name: Serve preview and test desktop/mobile 3D controls
+        run: |
+          mkdir -p artifacts
+          python3 -m http.server 8765 --directory public >/tmp/zenith-4d-http.log 2>&1 &
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if curl --fail --silent http://127.0.0.1:8765/game-4d.html >/dev/null; then break; fi
+            sleep 1
+          done
+          node tests/game-4d-browser-smoke.mjs
+      - name: Preserve browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mars-4d-flight-screenshots
+          path: artifacts/4d-*.png
+          if-no-files-found: ignore
+          retention-days: 14
