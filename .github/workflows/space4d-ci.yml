@@ -1,0 +1,29 @@
+name: Mars Race 4D spacetime / 3D ship regression
+on:
+  pull_request:
+    paths:
+      - 'public/space4d-*.mjs'
+      - 'public/game-4d.html'
+      - 'tests/space4d-*.mjs'
+      - '.github/workflows/space4d-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  three-dimensional-dynamics:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate 3D game source and tests
+        run: |
+          node --check public/space4d-core.mjs
+          node --check public/space4d-app.mjs
+          node --check tests/space4d-core.test.mjs
+      - name: Run deterministic 4D spacetime / 3D rigid body regression
+        run: node --test tests/space4d-core.test.mjs
