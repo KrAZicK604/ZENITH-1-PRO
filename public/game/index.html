@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ZENITH Mars Race v38 — Playable Preview</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#080d1d;color:#e9f7ff}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at top,#16264a,#080d1d 70%);padding:20px}
+main{max-width:780px;margin:auto}h1{margin-bottom:5px}.sub{color:#a7bbd4;margin:0 0 16px}
+.panel{border:1px solid #3a5775;border-radius:18px;background:#0d172c;padding:16px}
+canvas{width:100%;height:auto;aspect-ratio:9/7;background:#020710;border:2px solid #42c9ec;border-radius:12px;display:block}
+.hud,.actions,.pad{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin:12px 0}
+.hud span{background:#172946;padding:8px;border-radius:9px}
+button{background:#19395a;color:#fff;border:1px solid #55b9d7;border-radius:10px;padding:12px 16px;font:inherit;font-weight:650;cursor:pointer;touch-action:none;min-height:44px}
+button:hover,button:focus-visible{background:#28608b;outline:2px solid #a8e9ff;outline-offset:2px}
+button:disabled{opacity:.5;cursor:default}.pad button{min-width:60px;flex:1}
+#status{min-height:1.5em;font-weight:700;color:#7fffd5}
+small{color:#a7bbd4}a{color:#8cdefc}
+</style></head><body><main>
+<h1>🚀 ZENITH Mars Race <small>v38</small></h1>
+<p class="sub">Offline solo prototype · No subscription required · No prizes or verified online rankings</p>
+<div class="panel">
+<div class="hud"><span>Time: <strong id="time">0.0</strong>s</span><span>Boosts: <strong id="boosts">3</strong></span><span>Score: <strong id="score">0</strong></span></div>
+<canvas id="race" width="360" height="280" aria-label="Mars racing field with ship, asteroids, moon and destination"></canvas>
+<p id="status" role="status" aria-live="polite">Ready — press Start Race</p>
+<div class="actions"><button id="start">Start Race</button><button id="reset">New Race</button><button id="boost">Boost (Space)</button><button id="pause">Pause</button></div>
+<div class="pad" aria-label="Touch steering"><button data-control="left" aria-label="Steer left">←</button><button data-control="up" aria-label="Steer up">↑</button><button data-control="down" aria-label="Steer down">↓</button><button data-control="right" aria-label="Steer right">→</button></div>
+<small>Steer with arrow keys or hold touch controls. Avoid asteroids and the moon; reach Mars (orange). Boosts are limited to three. Restarting resets all controls and scores. Physics is illustrative, not a spacecraft simulator.</small>
+</div><p><a href="/">← Back to ZENITH storefront</a></p></main>
+<script src="./mars-engine.js"></script>
+<script>
+'use strict';
+const engine=window.MarsRaceEngine;
+const canvas=document.getElementById('race'),ctx=canvas.getContext('2d');
+const ui={time:document.getElementById('time'),boosts:document.getElementById('boosts'),score:document.getElementById('score'),status:document.getElementById('status'),start:document.getElementById('start'),pause:document.getElementById('pause')};
+const held={left:false,right:false,up:false,down:false};
+let state=engine.newGame(42),last=null,accumulator=0,paused=false,boostQueued=false,seed=42,raf=0;
+function clearControls(){for(const k of Object.keys(held))held[k]=false;boostQueued=false;}
+function reset(){seed+=1;state=engine.newGame(seed);clearControls();paused=false;last=null;accumulator=0;ui.status.textContent='Ready — press Start Race';render();}
+function start(){if(state.phase==='ready'){state=engine.start(state);paused=false;last=null;ui.status.textContent='Race running';render();}}
+function boost(){if(state.phase==='running'&&!paused)boostQueued=true;}
+function togglePause(){if(state.phase!=='running')return;paused=!paused;last=null;ui.status.textContent=paused?'Paused':'Race running';render();}
+ui.start.addEventListener('click',start);
+document.getElementById('reset').addEventListener('click',reset);
+document.getElementById('boost').addEventListener('click',boost);
+ui.pause.addEventListener('click',togglePause);
+const mapping={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down'};
+document.addEventListener('keydown',e=>{if(mapping[e.key]){held[mapping[e.key]]=true;e.preventDefault();}else if(e.code==='Space'){if(!e.repeat)boost();e.preventDefault();}});
+document.addEventListener('keyup',e=>{if(mapping[e.key]){held[mapping[e.key]]=false;e.preventDefault();}});
+window.addEventListener('blur',clearControls);
+document.querySelectorAll('[data-control]').forEach(button=>{
+ const key=button.dataset.control;
+ button.addEventListener('pointerdown',e=>{held[key]=true;button.setPointerCapture(e.pointerId);e.preventDefault();});
+ const release=()=>{held[key]=false;};
+ button.addEventListener('pointerup',release);button.addEventListener('pointercancel',release);button.addEventListener('lostpointercapture',release);
+});
+function dot(x,y,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();}
+function render(){
+ ctx.fillStyle='#020710';ctx.fillRect(0,0,360,280);
+ for(let i=0;i<80;i++){ctx.fillStyle=i%5?'#40536b':'#96c5db';ctx.fillRect((i*137)%360,(i*211)%280,1,1);}
+ dot(state.moon.x,state.moon.y,state.moon.r,'#6c839b');
+ dot(state.target.x,state.target.y,state.target.r,'#e87c45');
+ state.asteroids.forEach(a=>dot(a.x,a.y,a.r,'#a0aab7'));
+ dot(state.ship.x,state.ship.y,engine.R,'#6df5f5');
+ ui.time.textContent=state.time.toFixed(1);ui.boosts.textContent=state.boosts;ui.score.textContent=state.score;
+ ui.start.disabled=state.phase!=='ready';ui.pause.disabled=state.phase!=='running';
+ ui.pause.textContent=paused?'Resume':'Pause';
+ if(state.phase==='crashed')ui.status.textContent='Crash — try a new race';
+ if(state.phase==='won')ui.status.textContent='Mars reached! Local practice score: '+state.score;
+}
+function frame(now){
+ if(last===null)last=now;
+ const elapsed=Math.min(Math.max((now-last)/1000,0),0.1);last=now;
+ if(state.phase==='running'&&!paused){
+   accumulator=Math.min(accumulator+elapsed,0.1);
+   while(accumulator>=engine.DT&&state.phase==='running'){
+     state=engine.step(state,{...held,boost:boostQueued},engine.DT);
+     boostQueued=false;accumulator-=engine.DT;
+   }
+ }else{accumulator=0;}
+ render();raf=requestAnimationFrame(frame);
+}
+render();raf=requestAnimationFrame(frame);
+</script></body></html>
