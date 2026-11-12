@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - '**/*.py'
+      - '**/*.ps1'
       - 'requirements.txt'
       - '.github/workflows/python-security.yml'
   push:
@@ -33,6 +34,6 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r requirements.txt
       - name: Check Python syntax
-        run: python -B -m py_compile app.py cloud_webhook.py webhook_server.py tests/test_cloud_webhook_security.py
+        run: python -B -m py_compile app.py cloud_webhook.py webhook_server.py tests/test_cloud_webhook_security.py stripe_connector.py check_pending.py tests/test_financial_truth.py
       - name: Run isolated webhook security tests
         run: python -B -m unittest discover -s tests -p 'test_*.py' -v
