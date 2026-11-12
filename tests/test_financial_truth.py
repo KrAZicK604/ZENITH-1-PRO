@@ -115,7 +115,7 @@ class FinancialTruthTests(unittest.TestCase):
         wrapper = (ROOT / "redirect_all_funds.ps1").read_text(encoding="utf-8")
         self.assertIn('if ($Action -eq "payout")', script)
         self.assertIn("exit 2", script)
-        self.assertNotIn("-Method POST", script.upper())
+        self.assertNotIn("-METHOD POST", script.upper())
         self.assertNotIn("Read-Host", script)
         self.assertIn("exit 2", wrapper)
         self.assertNotIn("stripe_payout.ps1 -Action payout", wrapper)
