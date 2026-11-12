@@ -1,0 +1,38 @@
+name: Real Horizons vectors and DE440s independent numerical gate
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - gate/horizons-real-vectors-kernel-crosscheck-20261112
+    paths:
+      - tools/horizons_real_gate.py
+      - .github/workflows/horizons-real-gate.yml
+      - docs/HORIZONS_REAL_GATE.md
+permissions:
+  contents: read
+jobs:
+  source-and-kernel:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check script syntax
+        run: python -B -m py_compile tools/horizons_real_gate.py
+      - name: Install isolated numerical kernel reader
+        run: python -m pip install --disable-pip-version-check skyfield==1.53
+      - name: Fetch real JPL data and independently recompute barycentric positions
+        run: python -B tools/horizons_real_gate.py
+      - name: Retain source API evidence and fail-closed receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-horizons-gate-receipts
+          path: |
+            artifacts/real-horizons-gate/*.json
+          if-no-files-found: error
+          retention-days: 30
