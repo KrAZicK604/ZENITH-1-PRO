@@ -2,31 +2,69 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="ZENITH-1-PRO game storefront and verified checkout links.">
-<title>ZENITH-1-PRO | VR Racing</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="ZENITH-1-PRO official checkout choices with clear Canadian-dollar prices and billing periods.">
+<title>ZENITH-1-PRO | Race Subscription & Training</title>
 <style>
-:root{color-scheme:dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#0c1020;color:#f6f8ff}
-*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px}
-main{max-width:760px;width:100%;border:1px solid #36415c;background:#121a30;border-radius:18px;padding:clamp(22px,5vw,48px)}
-h1{font-size:clamp(2rem,6vw,3.5rem);margin:0}p{color:#ced7e9;line-height:1.6}
-.actions{display:flex;gap:12px;flex-wrap:wrap;margin:26px 0}
-a{display:inline-block;padding:14px 18px;border:1px solid #6ee7b7;border-radius:12px;color:#0b1511;background:#6ee7b7;text-decoration:none;font-weight:700}
-a.secondary{color:#f7fafc;background:transparent;border-color:#74819b}
-small{display:block;color:#aebed7;line-height:1.5} 
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#090e1d;color:#edf4ff}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at top,#16365a 0,#090e1d 55%);padding:28px 18px}
+main{max-width:1040px;margin:0 auto}header{text-align:center;padding:38px 0 30px}
+.kicker{text-transform:uppercase;letter-spacing:.22em;font-size:.82rem;font-weight:800;color:#79dfed}
+h1{font-size:clamp(2.1rem,6vw,4.3rem);line-height:1.08;margin:10px 0 15px}header p{max-width:680px;margin:auto;color:#bfd0e8;line-height:1.65}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.card{background:#131f37;border:1px solid #39516e;border-radius:20px;padding:26px;display:flex;flex-direction:column;box-shadow:0 12px 35px #0003}
+.card.featured{border:2px solid #60d6e9;background:linear-gradient(155deg,#14364e,#142039 55%)}
+.tag{font-size:.78rem;text-transform:uppercase;letter-spacing:.12em;color:#83dce4;font-weight:800}
+h2{font-size:1.35rem;margin:15px 0 4px}
+.price{font-size:2.5rem;font-weight:850;letter-spacing:-.05em;margin:12px 0 2px}
+.price small{font-size:1rem;letter-spacing:0;color:#bbd0e7;font-weight:500}
+.period{color:#c3d4e8;min-height:36px;font-size:.95rem}
+.desc{line-height:1.6;color:#c8d6ec;flex:1}
+a.cta{display:block;padding:15px;text-align:center;border-radius:12px;background:#6de0ea;color:#07232b;text-decoration:none;font-weight:800;margin-top:18px}
+a.cta:focus-visible{outline:3px solid #fff;outline-offset:4px}
+.card:not(.featured) a.cta{background:#e3eeff;color:#112034}
+.note{border:1px solid #485a75;background:#111b30;border-radius:16px;padding:21px 24px;margin-top:24px;color:#cfdbed;line-height:1.65}
+.note strong{color:white}footer{text-align:center;color:#a5b7cf;padding:26px;font-size:.85rem}
+@media(max-width:780px){.grid{grid-template-columns:1fr;max-width:520px;margin:auto}}
 </style>
 </head>
 <body>
 <main>
-<p>ZENITH-1-PRO / VR RACING</p>
-<h1>Welcome to ZENITH</h1>
-<p>Explore VR racing and training. Purchases are handled on Stripe's hosted checkout. Prices and availability should be verified on the checkout page.</p>
-<div class="actions">
-<a href="https://buy.stripe.com/cNicMY68hfdN5N35148bS03" rel="noopener noreferrer">Race checkout</a>
-<a href="https://buy.stripe.com/00wfZa7cle9J5N379c8bS02" class="secondary" rel="noopener noreferrer">Course checkout</a>
-<a href="https://buy.stripe.com/bJebIU54dghRa3j2SW8bS01" class="secondary" rel="noopener noreferrer">School checkout</a>
-</div>
-<small>This is a static frontend. It does not collect Stripe secret keys, verify payments, or automatically unlock game access. Paid access requires a separate authenticated backend and a verified Stripe webhook. Do not consider a redirect proof of payment.</small>
+<header>
+<div class="kicker">ZENITH-1-PRO · Official pricing display</div>
+<h1>Race, learn, explore.</h1>
+<p>Choose your product with transparent CAD pricing. Each button leads directly to its matching Stripe checkout page. Confirm the final total and billing terms before paying.</p>
+</header>
+<section class="grid" aria-label="Plans and pricing">
+<article class="card featured">
+<div class="tag">Monthly subscription</div>
+<h2>Mars Race</h2>
+<div class="price">$29 <small>CAD</small></div>
+<div class="period">Per month · recurring subscription</div>
+<p class="desc">Mars race subscription. This checkout renews monthly; it is not a one-time race ticket. Race access must be verified by the service.</p>
+<a class="cta" href="https://buy.stripe.com/bJebIU54dghRa3j2SW8bS01" rel="noopener noreferrer">View $29/month checkout</a>
+</article>
+<article class="card">
+<div class="tag">One-time purchase</div>
+<h2>Complete Course</h2>
+<div class="price">$199 <small>CAD</small></div>
+<div class="period">One-time payment</div>
+<p class="desc">REALITY OS Complete Course. One payment; not a recurring subscription.</p>
+<a class="cta" href="https://buy.stripe.com/00wfZa7cle9J5N379c8bS02" rel="noopener noreferrer">View $199 checkout</a>
+</article>
+<article class="card">
+<div class="tag">One-time license</div>
+<h2>School License</h2>
+<div class="price">$999 <small>CAD</small></div>
+<div class="period">One-time payment</div>
+<p class="desc">REALITY OS School License. One payment for the named school product.</p>
+<a class="cta" href="https://buy.stripe.com/cNicMY68hfdN5N35148bS03" rel="noopener noreferrer">View $999 checkout</a>
+</article>
+</section>
+<aside class="note">
+<strong>Important billing information.</strong> Prices above match the current live Stripe Payment Link line items and are in Canadian dollars, before any applicable taxes or checkout adjustments. The Mars Race item is currently configured in Stripe as a monthly subscription, not a single race entry. There is no verified cash-prize, earnings, or automatic-access promise. Payment confirmation and entitlement validation occur outside this static site; clicking a link or returning from checkout is not proof of paid access.
+</aside>
+<footer>ZENITH-1-PRO · Secure checkout is provided by Stripe</footer>
 </main>
 </body>
 </html>
