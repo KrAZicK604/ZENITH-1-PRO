@@ -1,0 +1,63 @@
+name: ACE Vector 3D / 4D tactical arcade regression
+on:
+  pull_request:
+    paths:
+      - 'public/ace-flight-*.mjs'
+      - 'public/game-ace.html'
+      - 'tests/ace-flight-*.mjs'
+      - '.github/workflows/ace-flight-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deterministic-flight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check independent JS modules
+        run: |
+          node --check public/ace-flight-core.mjs
+          node --check public/ace-flight-render.mjs
+          node --check public/ace-flight-app.mjs
+          node --check tests/ace-flight-core.test.mjs
+          node --check tests/ace-flight-browser.test.mjs
+      - name: Verify old 4D and new ACE 6DOF dynamics
+        run: node --test tests/game-4d-core.test.mjs tests/ace-flight-core.test.mjs
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    needs: deterministic-flight
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Playwright and Chromium
+        run: |
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright@1.58.2
+          npx playwright install --with-deps chromium
+      - name: Render original polygon starfighter and test desktop/mobile
+        run: |
+          mkdir -p artifacts
+          python3 -m http.server 8765 --directory public >/tmp/ace-flight-http.log 2>&1 &
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if curl --fail --silent http://127.0.0.1:8765/game-ace.html >/dev/null; then break; fi
+            sleep 1
+          done
+          node tests/ace-flight-browser.test.mjs
+      - name: Preserve game screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ace-vector-desktop-mobile
+          path: artifacts/ace-*.png
+          retention-days: 14
+          if-no-files-found: ignore
