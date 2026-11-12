@@ -27,6 +27,19 @@ jobs:
         run: python -m pip install --disable-pip-version-check skyfield==1.53
       - name: Fetch real JPL data and independently recompute barycentric positions
         run: python -B tools/horizons_real_gate.py
+      - name: Show source header metadata for failed format validation
+        if: failure()
+        run: |
+          python - <<'PY'
+          import glob,json,re
+          for path in glob.glob('artifacts/real-horizons-gate/*.json'):
+              if path.endswith('receipt.json'): continue
+              data=json.load(open(path))
+              print('SOURCE_HEADER',path)
+              for line in data.get('result','').splitlines():
+                  if re.search(r'coordinate|reference frame|output type|output units|center body|center-site|JDTDB|target body|output format',line,re.I):
+                      print(repr(line[:200]))
+          PY
       - name: Retain source API evidence and fail-closed receipt
         if: always()
         uses: actions/upload-artifact@v4
