@@ -1,0 +1,25 @@
+name: Mars Race v38 gameplay regression
+on:
+  pull_request:
+    paths:
+      - 'public/game/**'
+      - 'game-tests/**'
+      - '.github/workflows/gameplay-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  engine:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check deterministic game engine
+        run: node --check public/game/mars-engine.js
+      - name: Run seeded gameplay and safety regression tests
+        run: node --test game-tests/mars-engine.test.cjs
