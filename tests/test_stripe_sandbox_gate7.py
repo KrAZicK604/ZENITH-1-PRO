@@ -6,6 +6,7 @@ HMAC events in this suite are locally constructed, not Stripe-delivered.
 import copy
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -41,6 +42,17 @@ class SandboxReadinessTests(unittest.TestCase):
             "enabled_events": sorted(REQUIRED_EVENTS),
         })
         return s
+
+    def test_command_line_require_ready_exits_blocked(self):
+        result = subprocess.run(
+            [sys.executable, "-I", str(ROOT / "tools" / "stripe_sandbox_preflight.py"),
+             "--snapshot", str(DEFAULT_SNAPSHOT), "--require-ready"],
+            cwd=str(ROOT), capture_output=True, text=True, timeout=10
+        )
+        self.assertEqual(result.returncode, 2, result.stderr)
+        output = json.loads(result.stdout)
+        self.assertFalse(output["ready"])
+        self.assertEqual(output["production_authority"], "NONE")
 
     def test_actual_observed_sandbox_blocks_paid_test(self):
         result = inspect(self.snap)
