@@ -7,9 +7,13 @@ Target body name: ${body===399?'Earth':body===301?'Moon':'Mars'} (${body})
 Center body name: ${center} (0)
 *******************************************************************************
 Reference frame : ${frame}
+Coordinate systm: Earth Mean Equator and Equinox of Reference Epoch
 Output units : ${units}
-Time format : CAL
-$$SOE
+Output type : GEOMETRIC cartesian states
+Output format : 3 (position, velocity, LT, range, range-rate)
+Calendar mode : Mixed Julian/Gregorian
+JDTDB
+$SOE
 ${jd} = A.D. 2026-Nov-21 00:00:00.0000 TDB
  X = ${x.toExponential(14)} Y = ${y.toExponential(14)} Z = ${z.toExponential(14)}
  VX= 0 VY= 0 VZ= 0
@@ -21,8 +25,8 @@ test('NASA mean Earth-Moon reference is 384400 km',()=>assert.equal(NASA_REFEREN
 test('parse correct body ID, barycenter, ICRF, KM-S and TDB',()=>{const p=parseHorizonsVector(source().earth,399);assert.equal(p.x,1e8);assert.equal(p.jdTdb,JD);});
 test('reject target ID substitution',()=>assert.throws(()=>parseHorizonsVector(source().moon,399),/TARGET_MISMATCH/));
 test('reject Earth-centered vectors falsely called barycentric',()=>assert.throws(()=>parseHorizonsVector(fixture(399,1,2,3,JD,'Earth'),399),/CENTER_MISMATCH/));
-test('reject wrong coordinate frame',()=>assert.throws(()=>parseHorizonsVector(fixture(399,1,2,3,JD,'ECLIPTIC'),399),/FRAME_MISMATCH/));
-test('reject AU-D output units',()=>assert.throws(()=>parseHorizonsVector(fixture(399,1,2,3,JD,'AU-D'),399),/UNITS_MISMATCH/));
+test('reject wrong coordinate frame',()=>assert.throws(()=>parseHorizonsVector(fixture(399,1,2,3,JD,'Solar System Barycenter','KM-S','ECLIPTIC'),399),/FRAME_MISMATCH/));
+test('reject AU-D output units',()=>assert.throws(()=>parseHorizonsVector(fixture(399,1,2,3,JD,'Solar System Barycenter','AU-D'),399),/UNITS_MISMATCH/));
 test('reject multiple epochs',()=>{const t=source().earth.replace('$$EOE',`${JD+1} = A.D. 2026-Nov-22 00:00:00.0000 TDB\n X = 1 Y = 2 Z = 3\n$$EOE`);assert.throws(()=>parseHorizonsVector(t,399),/ONE_EPOCH_REQUIRED/);});
 test('reject mismatched Earth/Moon/Mars epoch',()=>assert.throws(()=>assembleHorizonsSnapshot({...source(),mars:fixture(499,3e8,0,0,JD+1)}),/INVALID_VECTOR_MARS/));
 test('reject incomplete vectors',()=>assert.throws(()=>assembleHorizonsSnapshot({...source(),mars:'garbage'})));
