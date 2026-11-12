@@ -13,3 +13,7 @@ GitHub Actions runs the acquisition, uploads source JSON and receipt, and fails 
 References: https://ssd-api.jpl.nasa.gov/doc/horizons.html and https://ssd.jpl.nasa.gov/horizons/manual.html
 
 `PAPER_ONLY` · `ABSTAIN_EXTERNAL_PROVENANCE` · `ABSTAIN_PHYSICAL_METROLOGY` · `PROMOTION_BLOCKED` · `productionAuthority NONE`.
+
+## Live parser falsification
+
+The first GitHub-run real Horizons response for Earth was retrieved and preserved, but did **not** contain the synthetic fixture's `Coordinate systm` header. Strict header-based verification correctly abstained (`UNVERIFIED_EQUATORIAL`). The parser was changed to rely on the explicitly pinned request `REF_PLANE=FRAME`, while recording that the response header does not independently attest the plane. This is a provenance limitation, not an independently measured coordinate-system guarantee. The original failed run is https://github.com/KrAZicK604/ZENITH-1-PRO/actions/runs/43331470962 and the raw Earth response is retained as a GitHub Actions artifact.
