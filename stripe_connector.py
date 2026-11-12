@@ -72,7 +72,7 @@ def main():
             for entry in getattr(balance, category, []):
                 print(f"{category}: {entry.amount} {entry.currency.upper()} minor units")
         print("See the Stripe Dashboard for actual payout dates and bank status.")
-    except (RuntimeError, stripe.StripeError) as exc:
+    except Exception:
         # Never include credential values in error messages.
         print("Stripe balance unavailable or account access denied.")
         return 1
