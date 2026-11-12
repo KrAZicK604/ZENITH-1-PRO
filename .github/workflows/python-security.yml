@@ -36,6 +36,6 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r requirements.txt
       - name: Check Python syntax
-        run: python -B -m py_compile app.py cloud_webhook.py subscription_store.py webhook_server.py tests/test_cloud_webhook_security.py tests/test_subscription_store.py tests/test_checkout_mapping.py tests/test_webhook_crypto.py tests/test_webhook_journal.py
+        run: python -B -m py_compile app.py cloud_webhook.py subscription_store.py webhook_server.py tests/test_cloud_webhook_security.py tests/test_subscription_store.py tests/test_checkout_mapping.py tests/test_webhook_crypto.py tests/test_webhook_journal.py tests/test_stripe_sandbox_gate7.py tools/stripe_sandbox_preflight.py
       - name: Run isolated webhook security tests
         run: python -B -m unittest discover -s tests -p 'test_*.py' -v

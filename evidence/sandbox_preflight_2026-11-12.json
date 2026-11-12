@@ -1,0 +1,59 @@
+{
+  "schema": "zenith-stripe-sandbox-preflight-v1",
+  "observed_date_utc": "2026-11-12",
+  "provenance": "read-only connected Stripe API inspection; locally compiled summary; no external attestation",
+  "account_name": "Qoiin sandbox",
+  "livemode": false,
+  "stripe_context": "acct_1U2sFM5ibR43v2XM",
+  "expected_product": {
+    "name": "Mars Race",
+    "currency": "cad",
+    "unit_amount": 2900,
+    "recurring_interval": "month"
+  },
+  "prices": [
+    {
+      "id": "price_1U2siJ5ibR43v2XMexaj4NlC",
+      "currency": "usd",
+      "unit_amount": 68000,
+      "recurring_interval": null,
+      "product_name": "Quantum Pack"
+    },
+    {
+      "id": "price_1U2siJ5ibR43v2XM2wMfOjRN",
+      "currency": "usd",
+      "unit_amount": 19500,
+      "recurring_interval": null,
+      "product_name": "Explorer Pack"
+    },
+    {
+      "id": "price_1U2siI5ibR43v2XMPwLfNU48",
+      "currency": "usd",
+      "unit_amount": 4900,
+      "recurring_interval": null,
+      "product_name": "Starter Pack"
+    }
+  ],
+  "payment_links": [],
+  "webhook_endpoints": [],
+  "v2_event_destinations": [],
+  "subscription_count": 0,
+  "checkout_session_count": 0,
+  "events_count": 33,
+  "event_type_counts": {
+    "account.updated": 15,
+    "capability.updated": 17,
+    "person.created": 1
+  },
+  "event_api_versions": [
+    "2026-07-29.dahlia"
+  ],
+  "pagination": {
+    "prices_has_more": false,
+    "links_has_more": false,
+    "webhooks_has_more": false,
+    "subscriptions_has_more": false,
+    "checkout_has_more": false,
+    "events_has_more": false
+  }
+}
