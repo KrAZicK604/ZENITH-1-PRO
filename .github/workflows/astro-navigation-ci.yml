@@ -25,5 +25,6 @@ jobs:
           node --check public/astro-ephemeris.mjs
           node --check public/astro-navigation-app.mjs
           node --check tests/astro-ephemeris.test.mjs
+          node --check tests/astro-calibration.test.mjs
       - name: Run NASA Horizons format and 3D distance regressions
-        run: node --test tests/astro-ephemeris.test.mjs
+        run: node --test tests/astro-ephemeris.test.mjs tests/astro-calibration.test.mjs
