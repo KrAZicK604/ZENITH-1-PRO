@@ -1,0 +1,40 @@
+name: JPL Horizons real navigation catalog (research preview)
+
+on:
+  pull_request:
+    paths:
+      - 'tools/generate_jpl_nav.py'
+      - 'public/catalogs/**'
+      - 'public/real-nav-*.mjs'
+      - 'tests/real-nav-*.mjs'
+      - '.github/workflows/mars-horizons-data.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  independently-query-jpl:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Query geometric Earth, Moon, Mars vectors from official NASA/JPL Horizons API
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          python -B -I tools/generate_jpl_nav.py | tee artifacts/jpl_horizons_2026_11_12_to_12_13.txt
+      - name: Save source-attributed row output (no secrets)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jpl-horizons-navigation-vectors
+          path: artifacts/jpl_horizons_2026_11_12_to_12_13.txt
+          if-no-files-found: ignore
+          retention-days: 14

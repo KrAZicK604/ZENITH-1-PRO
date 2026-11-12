@@ -3,6 +3,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="ZENITH ACE Vector: an original polygonal arcade-style spacecraft with 3D/4D flight dynamics and advanced game controls.">
 <title>ACE Vector | ZENITH Mars Race — Tactical 3D Flight</title>
+<link rel="stylesheet" href="./real-nav.css">
 <style>
 :root{color-scheme:dark;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#040917;color:#e9f7ff;--muted:#a5bed5;--cyan:#71def4;--line:#35536d;--amber:#ffc280}
 *{box-sizing:border-box}
@@ -92,10 +93,37 @@ kbd{background:#293d58;border:1px solid #50758a;border-bottom-width:2px;color:#f
 <button data-control="liftUp">Ascend</button><button data-control="liftDown">Descend</button>
 <button class="burn" data-control="afterburner">Afterburner</button><button data-control="brake">Air brake</button>
 </div></section>
+<section class="real-nav" id="jplNavPanel" aria-labelledby="navTitle">
+<div class="source-tag" id="navStatus" role="status" aria-live="polite">Loading catalog sample</div>
+<h2 id="navTitle">Celestial navigation · NASA/JPL Horizons</h2>
+<p class="sub">Actual Earth-centred ICRF position vectors and calculated straight-line distances. Choose a recorded <strong>00:00 TDB</strong> date; this is a frozen daily catalog, not continuous live planetary tracking.</p>
+<div class="nav-selectors">
+<label for="navDate">Ephemeris sample date<select id="navDate" aria-label="JPL observation date"></select></label>
+<label for="navRoute">Distance and direction route<select id="navRoute" aria-label="Celestial route">
+<option value="earthMars">Earth → Mars</option><option value="earthMoon">Earth → Moon</option><option value="moonMars">Moon → Mars</option>
+</select></label></div>
+<div class="distance-grid" aria-label="Three center-to-center distances in kilometres">
+<div class="distance-item"><small>Earth to Moon</small><strong id="distEMoon">—</strong></div>
+<div class="distance-item"><small>Earth to Mars</small><strong id="distEMars">—</strong></div>
+<div class="distance-item"><small>Moon to Mars</small><strong id="distMMars">—</strong></div>
+</div>
+<canvas id="navGeometry" class="map" width="960" height="300" role="img"
+ aria-label="Two separate-scale ICRF X Y coordinate projections: Earth and Moon, then Earth and Mars. Coordinates in Z are in the numeric table."></canvas>
+<div class="more">
+<div class="datum"><small>Earth-centred ICRF coordinates (X,Y,Z)</small><strong>Earth: (0 · 0 · 0) km</strong>
+<strong>Moon: <span id="moonXYZ">—</span></strong><strong>Mars: <span id="marsXYZ">—</span></strong></div>
+<div class="datum"><small id="navSelected">Selected route</small><strong id="navVector">—</strong>
+<strong id="navBearing">—</strong><strong id="navRate">—</strong>
+<strong id="navLight">—</strong><strong>JDTDB: <span id="navJD">—</span></strong></div>
+</div>
+<p class="disclaimer"><strong>Scale and accuracy:</strong> Positions are geometric centres, in kilometres, using identical Earth-centred ICRF axes and the same sampled TDB epoch. The diagrams use <em>two different linear scales</em> and show only X/Y projections; Z is listed above. The three distances are full 3D Euclidean norms. Negative radial velocity means the separation is decreasing at that instant. Light-time shown is distance divided by c, <strong>not spacecraft flight duration</strong>. Arcade ship coordinates and velocities remain in independent game units; the game does not pretend to fly 200 million km in 90 seconds. Horizons values change with date; no samples are invented between listed dates.</p>
+<p class="disclaimer"><a id="navSourceLink" href="https://ssd.jpl.nasa.gov/horizons/" target="_blank" rel="noopener noreferrer">See the exact JPL Horizons query used</a> · <a href="https://ssd-api.jpl.nasa.gov/doc/horizons.html" target="_blank" rel="noopener noreferrer">Horizons API documentation</a> · Preview catalog: 12 Nov–13 Dec 2026. The dataset was retrieved with JPL source attribution and unsigned SHA-256 response digests, not independent authenticated custody.</p>
+</section>
 <div class="docs">
 <section><h2>Attitude / piloting</h2><p><kbd>W</kbd>/<kbd>S</kbd> pitch · <kbd>A</kbd>/<kbd>D</kbd> yaw · <kbd>Q</kbd>/<kbd>E</kbd> roll. Rotations change the actual 3D thrust vector. <kbd>↑</kbd>/<kbd>↓</kbd> throttle. <kbd>Shift</kbd> afterburner · <kbd>B</kbd> brake. Heat limits continuous burn.</p></section>
 <section><h2>Advanced flight console</h2><p><kbd>J</kbd>/<kbd>L</kbd> strafe · <kbd>U</kbd>/<kbd>O</kbd> ascend/descend · <kbd>F</kbd> toggle inertial assist · <kbd>T</kbd> cycle target · <kbd>Space</kbd> maneuver pulse · <kbd>P</kbd> pause. Targets and radar are simulated noncombat game cues.</p></section>
 <section><h2>Gamepad and mission rules</h2><p>Gamepad: left stick pitch/yaw, right stick roll/throttle, triggers brake/afterburner, shoulders strafe, A pulse, X target, Y assist, Start pause. Shield absorbs limited debris hits; Moon impact can end the flight. Scores are local practice only.</p></section>
 </div>
 <p class="foot">3D space + time = four-coordinate state; this is not a fourth spatial dimension or real general relativity. Military-style interface is fictional game UX. No real spacecraft control guidance, online combat, paid entry, prizes, Stripe integration or authenticated leaderboard. All ship geometry, UI and visual assets are original.</p>
-</main><script type="module" src="./ace-flight-app.mjs"></script></body></html>
+</main><script type="module" src="./ace-flight-app.mjs"></script>
+<script type="module" src="./real-nav-app.mjs"></script></body></html>

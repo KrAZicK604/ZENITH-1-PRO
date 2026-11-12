@@ -1,0 +1,23 @@
+/* JPL navigation panel: two independent map scales, no fake game-to-km conversion. */
+.real-nav{margin-top:18px;padding:19px 18px;background:linear-gradient(120deg,#112440,#081b32);border:1px solid #396782;border-radius:16px;box-shadow:0 8px 30px #0004}
+.real-nav *{box-sizing:border-box}
+.real-nav h2{font-size:1.2rem;letter-spacing:.012em;margin:0 0 7px;color:#b2f5ff}
+.real-nav .sub{margin:0 0 15px;color:#afcadd;line-height:1.55;font-size:.84rem}
+.real-nav .source-tag{font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;color:#92e5c8;font-weight:800}
+.real-nav .nav-selectors{display:flex;flex-wrap:wrap;align-items:end;gap:12px;margin:14px 0 17px}
+.real-nav label{font-size:.77rem;font-weight:750;color:#b8d9ed;display:flex;flex-direction:column;gap:5px}
+.real-nav select{font:700 .88rem system-ui;border:1px solid #548aa6;background:#163655;color:#f6fbff;border-radius:9px;padding:10px 14px;min-height:44px}
+.real-nav select:focus-visible{outline:3px solid #e4fffc;outline-offset:2px}
+.real-nav .distance-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.real-nav .distance-item{background:#152e4b;border:1px solid #406380;padding:14px;border-radius:12px;min-width:0}
+.real-nav .distance-item small{font-size:.69rem;text-transform:uppercase;letter-spacing:.1em;color:#a5d8e5;font-weight:770;display:block}
+.real-nav .distance-item strong{font-size:clamp(1rem,2.2vw,1.4rem);font-variant-numeric:tabular-nums;display:block;margin:5px 0 0;overflow-wrap:anywhere;color:#eaf8ff}
+.real-nav .map{width:100%;height:auto;aspect-ratio:16/5;background:#08172c;display:block;border:1px solid #325d78;border-radius:11px;margin:15px 0}
+.real-nav .more{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.real-nav .datum{background:#0e263f;border:1px solid #345774;border-radius:12px;padding:11px 13px}
+.real-nav .datum small{display:block;font-size:.67rem;text-transform:uppercase;letter-spacing:.08em;color:#9ed6e2}
+.real-nav .datum strong{display:block;word-break:break-word;font:700 .88rem ui-monospace,SFMono-Regular,Consolas,monospace;color:#f1fcff;margin-top:7px}
+.real-nav .disclaimer{color:#b9d2e2;font-size:.79rem;line-height:1.65;margin-top:13px}
+.real-nav .disclaimer strong{color:#c4ffee}
+.real-nav a{color:#90e8ff}
+@media(max-width:700px){.real-nav{padding:14px 10px}.real-nav .distance-grid{grid-template-columns:1fr}.real-nav .distance-item{padding:10px}.real-nav .more{grid-template-columns:1fr}.real-nav .map{aspect-ratio:16/9}.real-nav .nav-selectors>*{flex:1}}
