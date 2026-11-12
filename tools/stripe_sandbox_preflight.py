@@ -67,6 +67,7 @@ def inspect(snapshot):
         and ep.get("livemode") is False
         and isinstance(ep.get("url"), str) and ep["url"].startswith("https://")
         and isinstance(ep.get("enabled_events"), list)
+        and all(isinstance(name, str) for name in ep["enabled_events"])
         and (set(ep["enabled_events"]) >= REQUIRED_EVENTS or "*" in ep["enabled_events"])
     ]
     if len(destinations) < 1:
