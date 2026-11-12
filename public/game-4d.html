@@ -1,0 +1,59 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ZENITH Mars Race | 4D dynamics, 3D ship</title>
+<style>
+:root{font:16px system-ui,sans-serif;color-scheme:dark;background:#061020;color:#e9f5ff}*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 50% -20%,#214064,#061020 70%);min-height:100vh}
+main{max-width:1180px;margin:auto;padding:18px}
+h1{font-size:clamp(1.8rem,5vw,3.1rem);margin:12px 0 5px}p{color:#b9ccdf;line-height:1.55}
+a{color:#86dff6}a:focus-visible,button:focus-visible,canvas:focus-visible{outline:3px solid #a7f5f7;outline-offset:3px}
+.pill{display:inline-block;background:#183d54;color:#9cf6ec;padding:5px 12px;border:1px solid #47798c;border-radius:99px;font-size:.75rem;font-weight:800}
+.hud{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1px;background:#37516b;border:1px solid #37516b;border-radius:12px;overflow:hidden;margin:14px 0}
+.hud div{padding:12px 9px;background:#102238;min-width:0}
+.hud small{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:#9db7cb}
+.hud strong{display:block;font-size:clamp(.75rem,1.6vw,1.1rem);overflow-wrap:anywhere;margin-top:4px;font-variant-numeric:tabular-nums}
+canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;background:#050c19;border:2px solid #4c9fba;border-radius:13px}
+.controls,.touch{display:flex;flex-wrap:wrap;gap:9px;margin:13px 0}
+button{font:700 .92rem system-ui;border:1px solid #559cb2;background:#183c57;color:#f0fbff;padding:12px 16px;border-radius:9px;min-height:46px;cursor:pointer;touch-action:none}
+button:disabled{opacity:.45}button.primary{background:#76ebd7;color:#0a2832}button.held{background:#75e8d8;color:#08272e}
+#message{color:#9cf4df;font-weight:700;min-height:1.5em}
+.info{border:1px solid #345771;background:#102239;border-radius:12px;padding:15px;margin-top:16px}
+.info h2{font-size:1.08rem;margin:0 0 8px}
+kbd{background:#294158;border:1px solid #53758c;border-radius:5px;padding:2px 5px;font:700 .8rem system-ui;color:white}
+.touch{display:none}.touch button{flex:1;min-width:66px;user-select:none}
+@media(max-width:800px){.hud{grid-template-columns:repeat(3,minmax(0,1fr))}.touch{display:flex}}
+@media(hover:none),(pointer:coarse){.touch{display:flex}}
+@media(max-width:480px){main{padding:11px}.hud div{padding:9px 5px}.hud small{font-size:.58rem}.touch button{min-width:58px;padding:12px 8px}}
+</style></head><body><main>
+<a href="./game.html">← Return to original 2D preview</a>
+<h1>ZENITH Mars Race: 4D Flight</h1>
+<span class="pill">3D position + time · 3D spacecraft · Experimental solo preview</span>
+<p>Fly in three spatial dimensions with a rotating 3D ship. Time is the fourth coordinate: every 60 Hz simulation step advances the ship's position, velocity and orientation. This is an arcade model, not general relativity or a fourth spatial axis.</p>
+<div class="hud">
+<div><small>Flight</small><strong id="state">READY</strong></div>
+<div><small>Time</small><strong id="clock">0.00 s</strong></div>
+<div><small>Speed</small><strong id="speed">0.0</strong></div>
+<div><small>Boosts</small><strong id="boosts">3</strong></div>
+<div><small>Mars range</small><strong id="distance">0</strong></div>
+<div><small>Orientation q</small><strong id="attitude">1,0,0,0</strong></div>
+</div>
+<canvas id="view" width="960" height="540" tabindex="0" aria-label="Perspective 3D flight view with spacecraft, Moon, asteroids and Mars" aria-describedby="instructions">3D view requires a Canvas-enabled browser.</canvas>
+<div class="controls">
+<button class="primary" id="launch" type="button">Launch</button>
+<button id="pause" type="button" disabled>Pause</button>
+<button id="restart" type="button">Restart</button>
+<button id="camera" type="button">Camera: chase</button>
+<button id="boostButton" type="button">Boost (3 max)</button>
+</div>
+<div id="message" role="status" aria-live="polite">Launch to begin</div>
+<div class="touch" aria-label="Touch flight controls">
+<button type="button" data-hold="throttle">Thrust</button><button type="button" data-hold="reverse">Brake</button>
+<button type="button" data-hold="yawLeft">Yaw ◀</button><button type="button" data-hold="yawRight">Yaw ▶</button>
+<button type="button" data-hold="pitchUp">Pitch ↑</button><button type="button" data-hold="pitchDown">Pitch ↓</button>
+<button type="button" data-hold="rollLeft">Roll ↶</button><button type="button" data-hold="rollRight">Roll ↷</button>
+<button type="button" data-hold="liftUp">Rise</button><button type="button" data-hold="liftDown">Descend</button>
+<button type="button" data-hold="strafeLeft">Strafe ◀</button><button type="button" data-hold="strafeRight">Strafe ▶</button>
+</div>
+<div class="info" id="instructions"><h2>Flight controls</h2>
+<p><kbd>W</kbd> forward thrust, <kbd>S</kbd> reverse; <kbd>A</kbd>/<kbd>D</kbd> yaw, <kbd>↑</kbd>/<kbd>↓</kbd> pitch, <kbd>←</kbd>/<kbd>→</kbd> roll, <kbd>Q</kbd>/<kbd>E</kbd> strafe, <kbd>R</kbd>/<kbd>F</kbd> vertical translation, <kbd>Space</kbd> boost, <kbd>P</kbd> pause. On mobile hold touch buttons. Reach Mars in 120 seconds without colliding with the Moon or asteroids. The camera follows the ship, while the 3D ship rotates in pitch, yaw and roll.</p></div>
+<p>Free practice only. No verified online rankings, cash prizes, account authorization, payment unlock, or networked multiplayer. All dimensions and forces are synthetic arcade units.</p>
+</main><script type="module" src="./space4d-app.mjs"></script></body></html>
