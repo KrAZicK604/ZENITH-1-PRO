@@ -40,6 +40,7 @@ function beginNew() {
   accumulator = 0;
   startGame(game);
   synchronize();
+  canvas.focus({ preventScroll: true });
 }
 
 function colorCircle(x, y, r, fill, glow = 0) {
@@ -220,6 +221,7 @@ ui.start.addEventListener("click", () => {
   if (game.status === "ready") startGame(game);
   else if (["won", "crashed", "timeout"].includes(game.status)) beginNew();
   synchronize();
+  canvas.focus({ preventScroll: true });
 });
 ui.restart.addEventListener("click", beginNew);
 ui.pause.addEventListener("click", () => {
