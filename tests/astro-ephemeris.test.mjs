@@ -13,7 +13,7 @@ Output type : GEOMETRIC cartesian states
 Output format : 3 (position, velocity, LT, range, range-rate)
 Calendar mode : Mixed Julian/Gregorian
 JDTDB
-$SOE
+$$SOE
 ${jd} = A.D. 2026-Nov-21 00:00:00.0000 TDB
  X = ${x.toExponential(14)} Y = ${y.toExponential(14)} Z = ${z.toExponential(14)}
  VX= 0 VY= 0 VZ= 0
