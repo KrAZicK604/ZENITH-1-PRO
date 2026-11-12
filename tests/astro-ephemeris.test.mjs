@@ -27,7 +27,7 @@ test('reject target ID substitution',()=>assert.throws(()=>parseHorizonsVector(s
 test('reject Earth-centered vectors falsely called barycentric',()=>assert.throws(()=>parseHorizonsVector(fixture(399,1,2,3,JD,'Earth'),399),/CENTER_MISMATCH/));
 test('reject wrong coordinate frame',()=>assert.throws(()=>parseHorizonsVector(fixture(399,1,2,3,JD,'Solar System Barycenter','KM-S','ECLIPTIC'),399),/FRAME_MISMATCH/));
 test('reject AU-D output units',()=>assert.throws(()=>parseHorizonsVector(fixture(399,1,2,3,JD,'Solar System Barycenter','AU-D'),399),/UNITS_MISMATCH/));
-test('reject multiple epochs',()=>{const t=source().earth.replace('$$EOE',`${JD+1} = A.D. 2026-Nov-22 00:00:00.0000 TDB\n X = 1 Y = 2 Z = 3\n$$EOE`);assert.throws(()=>parseHorizonsVector(t,399),/ONE_EPOCH_REQUIRED/);});
+test('reject multiple epochs',()=>{const t=source().earth.replace('$EOE',()=>`${JD+1} = A.D. 2026-Nov-22 00:00:00.0000 TDB\n X = 1 Y = 2 Z = 3\n$EOE`);assert.throws(()=>parseHorizonsVector(t,399),/ONE_EPOCH_REQUIRED/);});
 test('reject mismatched Earth/Moon/Mars epoch',()=>assert.throws(()=>assembleHorizonsSnapshot({...source(),mars:fixture(499,3e8,0,0,JD+1)}),/INVALID_VECTOR_MARS/));
 test('reject incomplete vectors',()=>assert.throws(()=>assembleHorizonsSnapshot({...source(),mars:'garbage'})));
 test('reject untrusted metadata or mixed units',()=>{const s=assembleHorizonsSnapshot(source());s.units='AU-D';assert.throws(()=>validateSnapshot(s),/FRAME_OR_SOURCE_MISMATCH/);});
