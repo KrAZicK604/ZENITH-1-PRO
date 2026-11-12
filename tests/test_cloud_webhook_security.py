@@ -1,5 +1,7 @@
 """Mocked Stripe event tests; no account writes, real payments, or network."""
+import hashlib
 import importlib
+import json
 import os
 import tempfile
 import unittest
@@ -28,8 +30,10 @@ class WebhookSecurityTests(unittest.TestCase):
         self.tmp.cleanup()
 
     def event(self, typ, obj, created=BASE+2, live=False):
-        return {"id": "evt_test", "created": created, "livemode": live,
-                "type": typ, "data": {"object": obj}}
+        evidence = {"created": created, "livemode": live,
+                    "type": typ, "data": {"object": obj}}
+        digest = hashlib.sha256(json.dumps(evidence, sort_keys=True).encode()).hexdigest()
+        return {"id": "evt_fixture_" + digest[:24], **evidence}
 
     def checkout(self, **changes):
         obj = {"id": "cs_test_1", "mode": "subscription",

@@ -20,14 +20,15 @@ SIGNING_SECRET = "whsec_authentic_local_test_123"
 
 
 def event(event_type, object_data, created=BASE+20, livemode=False):
-    return {
-        "id": "evt_locally_generated",
+    evidence = {
         "object": "event",
         "type": event_type,
         "created": created,
         "livemode": livemode,
         "data": {"object": object_data},
     }
+    digest = hashlib.sha256(json.dumps(evidence, sort_keys=True).encode()).hexdigest()
+    return {"id": "evt_fixture_" + digest[:24], **evidence}
 
 
 def checkout():

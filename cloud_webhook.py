@@ -3,6 +3,7 @@
 Only paid billing intervals can grant. No public identity/entitlement lookup.
 Use a persistent DATABASE_PATH and server-side Stripe signing secret.
 """
+import hashlib
 import os
 import sqlite3
 
@@ -96,7 +97,7 @@ def _paid_period(invoice, required_price):
     return start, end
 
 
-def _handle_checkout(session, created, link):
+def _handle_checkout(session, created, link, db):
     if _field(session, "payment_link") != link:
         return False
     details = _field(session, "customer_details", {}) or {}
@@ -112,10 +113,10 @@ def _handle_checkout(session, created, link):
         not _identifier(customer, "cus_") or
         not isinstance(email, str) or not email.strip()):
         return False
-    return store.record_checkout(sub, sid, customer, email.strip().casefold(), created)
+    return store.record_checkout(sub, sid, customer, email.strip().casefold(), created, db=db)
 
 
-def _handle_invoice_paid(invoice, created, price):
+def _handle_invoice_paid(invoice, created, price, db):
     sub = _subscription_from_invoice(invoice)
     iid = _field(invoice, "id")
     cus = _field(invoice, "customer")
@@ -123,7 +124,7 @@ def _handle_invoice_paid(invoice, created, price):
     if not (_identifier(sub, "sub_") and _identifier(iid, "in_") and
             _identifier(cus, "cus_") and period is not None):
         return False
-    return store.record_paid_invoice(iid, sub, cus, *period, created)
+    return store.record_paid_invoice(iid, sub, cus, *period, created, db=db)
 
 
 @app.get("/")
@@ -141,7 +142,8 @@ def stripe_webhook():
     if not signature:
         return jsonify({"error": "missing_signature"}), 400
     try:
-        event = stripe.Webhook.construct_event(request.get_data(), signature, secret)
+        raw = request.get_data()
+        event = stripe.Webhook.construct_event(raw, signature, secret)
     except (ValueError, stripe.SignatureVerificationError):
         return jsonify({"error": "invalid_signature"}), 400
 
@@ -159,30 +161,47 @@ def stripe_webhook():
     obj = _field(_field(event, "data", {}), "object", {})
     if created is None or not obj:
         return jsonify({"error": "malformed_event"}), 400
+    event_id = _field(event, "id")
+    if not _identifier(event_id, "evt_"):
+        return jsonify({"error": "invalid_event_id"}), 400
+    digest = hashlib.sha256(raw).hexdigest()
+
     try:
-        if typ == "checkout.session.completed":
-            accepted = _handle_checkout(obj, created, link)
-        elif typ == "invoice.paid":
-            accepted = _handle_invoice_paid(obj, created, price)
-        else:
-            if typ == "invoice.payment_failed":
-                sub = _subscription_from_invoice(obj)
+        # Serialize all event side-effects AND their unique receipt in one transaction.
+        # If any stage fails, no partially handled event is acknowledged.
+        with store.database(write=True) as db:
+            prior = store.get_receipt(event_id, db)
+            if prior is not None:
+                if prior != (digest, typ, created, prior[3]):
+                    return jsonify({"error": "event_id_collision"}), 409
+                return jsonify({"received": True, "duplicate": True,
+                                "handled": bool(prior[3])}), 200
+            if typ == "checkout.session.completed":
+                accepted = _handle_checkout(obj, created, link, db)
+            elif typ == "invoice.paid":
+                accepted = _handle_invoice_paid(obj, created, price, db)
             else:
-                sub = _field(obj, "id")
-            if not _identifier(sub, "sub_"):
-                return jsonify({"error": "unrecognized_subscription"}), 400
-            if typ == "customer.subscription.updated":
-                status = _field(obj, "status")
-                if status in ("past_due", "unpaid", "paused", "incomplete", "incomplete_expired", "canceled"):
-                    store.block(sub, created, terminal=status == "canceled")
-                    accepted = True
-                elif status in ("active", "trialing"):
-                    accepted = False  # never independently grants access
+                if typ == "invoice.payment_failed":
+                    sub = _subscription_from_invoice(obj)
                 else:
-                    return jsonify({"error": "unknown_subscription_status"}), 400
-            else:
-                store.block(sub, created, terminal=typ == "customer.subscription.deleted")
-                accepted = True
+                    sub = _field(obj, "id")
+                if not _identifier(sub, "sub_"):
+                    return jsonify({"error": "unrecognized_subscription"}), 400
+                if typ == "customer.subscription.updated":
+                    status = _field(obj, "status")
+                    if status in ("past_due", "unpaid", "paused", "incomplete",
+                                  "incomplete_expired", "canceled"):
+                        store.block(sub, created, terminal=status == "canceled", db=db)
+                        accepted = True
+                    elif status in ("active", "trialing"):
+                        accepted = False  # never independently grants access
+                    else:
+                        return jsonify({"error": "unknown_subscription_status"}), 400
+                else:
+                    store.block(sub, created,
+                                terminal=typ == "customer.subscription.deleted", db=db)
+                    accepted = True
+            store.put_receipt(event_id, digest, typ, created, accepted, db)
     except (OSError, sqlite3.Error):
         app.logger.exception("Subscription evidence storage unavailable")
         return jsonify({"error": "storage_unavailable"}), 503

@@ -39,54 +39,88 @@ def connect():
         blocked_event INTEGER NOT NULL,
         terminal INTEGER NOT NULL CHECK (terminal IN (0,1))
     )""")
+    db.execute("""CREATE TABLE IF NOT EXISTS race_webhook_receipts (
+        event_id TEXT PRIMARY KEY,
+        raw_sha256 TEXT NOT NULL,
+        event_type TEXT NOT NULL,
+        event_created INTEGER NOT NULL,
+        handled INTEGER NOT NULL CHECK (handled IN (0,1))
+    )""")
     return db
 
 
 @contextmanager
-def database():
+def database(write=False):
+    """Explicit write transaction; BEGIN IMMEDIATE serializes concurrent webhook events."""
     db = connect()
     try:
-        with db:
-            yield db
+        if write:
+            db.execute("BEGIN IMMEDIATE")
+        yield db
+        db.commit()
+    except BaseException:
+        db.rollback()
+        raise
     finally:
         db.close()
 
 
-def record_checkout(subscription_id, session_id, customer_id, email, event_created):
-    """Bind verified Checkout session to subscription; reject conflicting IDs."""
+def get_receipt(event_id, db):
+    """Fetch a minimal receipt; no raw Stripe data or customer PII is stored."""
+    return db.execute(
+        "SELECT raw_sha256,event_type,event_created,handled "
+        "FROM race_webhook_receipts WHERE event_id=?", (event_id,)
+    ).fetchone()
+
+
+def put_receipt(event_id, raw_sha256, event_type, event_created, handled, db):
+    db.execute("INSERT INTO race_webhook_receipts VALUES (?,?,?,?,?)",
+               (event_id, raw_sha256, event_type, event_created, int(bool(handled))))
+
+
+def record_checkout(subscription_id, session_id, customer_id, email, event_created, db=None):
+    """Bind checkout evidence; can share atomic webhook transaction."""
+    if db is None:
+        with database(write=True) as connection:
+            return record_checkout(subscription_id, session_id, customer_id, email,
+                                   event_created, db=connection)
     row = (subscription_id, session_id, customer_id, email, event_created)
-    with database() as db:
-        by_sub = db.execute("SELECT session_id,customer_id,email FROM race_subscriptions WHERE subscription_id=?",
-                            (subscription_id,)).fetchone()
-        by_session = db.execute("SELECT subscription_id FROM race_subscriptions WHERE session_id=?",
-                                (session_id,)).fetchone()
-        if by_sub or by_session:
-            return by_sub == (session_id, customer_id, email) and by_session == (subscription_id,)
-        db.execute("INSERT INTO race_subscriptions VALUES (?,?,?,?,?)", row)
+    by_sub = db.execute("SELECT session_id,customer_id,email FROM race_subscriptions WHERE subscription_id=?",
+                        (subscription_id,)).fetchone()
+    by_session = db.execute("SELECT subscription_id FROM race_subscriptions WHERE session_id=?",
+                            (session_id,)).fetchone()
+    if by_sub or by_session:
+        return by_sub == (session_id, customer_id, email) and by_session == (subscription_id,)
+    db.execute("INSERT INTO race_subscriptions VALUES (?,?,?,?,?)", row)
     return True
 
 
-def record_paid_invoice(invoice_id, subscription_id, customer_id, start, end, created):
-    """Record verified paid invoice evidence; never grant to unbound customer."""
+def record_paid_invoice(invoice_id, subscription_id, customer_id, start, end, created, db=None):
+    """Record paid evidence; can share atomic webhook transaction."""
+    if db is None:
+        with database(write=True) as connection:
+            return record_paid_invoice(invoice_id, subscription_id, customer_id,
+                                       start, end, created, db=connection)
     row = (invoice_id, subscription_id, customer_id, start, end, created)
-    with database() as db:
-        existing = db.execute(
-            "SELECT invoice_id,subscription_id,customer_id,period_start,period_end,paid_event "
-            "FROM race_paid_periods WHERE invoice_id=?", (invoice_id,)).fetchone()
-        if existing:
-            return existing == row
-        db.execute("INSERT INTO race_paid_periods VALUES (?,?,?,?,?,?)", row)
+    existing = db.execute(
+        "SELECT invoice_id,subscription_id,customer_id,period_start,period_end,paid_event "
+        "FROM race_paid_periods WHERE invoice_id=?", (invoice_id,)).fetchone()
+    if existing:
+        return existing == row
+    db.execute("INSERT INTO race_paid_periods VALUES (?,?,?,?,?,?)", row)
     return True
 
 
-def block(subscription_id, created, terminal=False):
-    """Monotonic revocation, including cancellation before checkout arrives."""
-    with database() as db:
-        db.execute("""INSERT INTO race_blocks VALUES (?,?,?)
-            ON CONFLICT(subscription_id) DO UPDATE SET
-            blocked_event=MAX(blocked_event,excluded.blocked_event),
-            terminal=MAX(terminal,excluded.terminal)""",
-            (subscription_id, created, 1 if terminal else 0))
+def block(subscription_id, created, terminal=False, db=None):
+    """Monotonic revocation in the event's transaction."""
+    if db is None:
+        with database(write=True) as connection:
+            return block(subscription_id, created, terminal=terminal, db=connection)
+    db.execute("""INSERT INTO race_blocks VALUES (?,?,?)
+        ON CONFLICT(subscription_id) DO UPDATE SET
+        blocked_event=MAX(blocked_event,excluded.blocked_event),
+        terminal=MAX(terminal,excluded.terminal)""",
+        (subscription_id, created, 1 if terminal else 0))
 
 
 def is_active(subscription_id, now=None):
