@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="ZENITH 4D Mars Flight Lab: pilot a rotating 3D spacecraft through a time-changing universe. Free standalone browser preview.">
+<title>ZENITH 4D Flight Lab — 3D ship dynamics</title>
+<style>
+:root{color-scheme:dark;--bg:#040b18;--panel:#0d1b31;--border:#35546f;--text:#effaff;--muted:#a9c0d4;--accent:#70ece7;--warm:#ffbc77;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;min-height:100vh;color:var(--text);background:radial-gradient(ellipse at 25% -15%,#215779 0,#0c213b 38%,#040b18 78%)}
+main{max-width:1200px;margin:0 auto;padding:22px 18px 50px}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.brand{font-size:.78rem;letter-spacing:.15em;font-weight:900;color:var(--accent)}
+.nav a{color:#d5fbff;text-decoration:none;border:1px solid #4b8299;background:#143149;padding:9px 13px;border-radius:10px;font-weight:700}
+h1{font-size:clamp(2.2rem,5vw,4.3rem);line-height:1.04;letter-spacing:-.045em;margin:23px 0 12px}
+.gradient{color:#8df2eb}
+.lead{font-size:clamp(.97rem,1.8vw,1.13rem);color:#b8c9dd;line-height:1.65;max-width:930px;margin:0 0 22px}
+.label{display:inline-block;font-size:.73rem;color:#92f0e5;font-weight:850;letter-spacing:.1em;text-transform:uppercase;border:1px solid #427b86;background:#1b3c51;border-radius:99px;padding:7px 12px}
+.panel{background:var(--panel);border:1px solid #3e647c;border-radius:19px;overflow:hidden;box-shadow:0 24px 66px #0007}
+.hud{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));background:#10243d;border-bottom:1px solid var(--border)}
+.hud-item{padding:12px 13px;border-right:1px solid #304e65;min-width:0}
+.hud-item:last-child{border-right:0}
+.hud-item small{display:block;color:#90b9cc;font-size:.64rem;font-weight:850;letter-spacing:.085em;text-transform:uppercase}
+.hud-item strong{display:block;color:#f2ffff;font-size:clamp(.84rem,1.4vw,1.19rem);overflow-wrap:anywhere;font-variant-numeric:tabular-nums;margin-top:5px}
+#phase[data-state="running"]{color:#76f0ca}
+#phase[data-state="won"]{color:#ffe09b}
+#phase[data-state="crashed"]{color:#ff8d91}
+.viewport{position:relative;background:#061123}
+canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;outline:none}
+canvas:focus-visible{outline:3px solid #d8ffff;outline-offset:-3px}
+.legend{position:absolute;right:15px;top:15px;border:1px solid #355d70;background:#071b30cc;border-radius:10px;padding:9px 12px;color:#cce8f6;font-size:.73rem;line-height:1.6;pointer-events:none}
+.controlbar{display:flex;align-items:center;flex-wrap:wrap;gap:11px;padding:15px;border-top:1px solid var(--border);background:#0e2137}
+button{cursor:pointer;min-height:46px;font:750 .94rem system-ui;border:1px solid #477e94;background:#1a4156;color:#e9faff;padding:11px 18px;border-radius:10px;touch-action:manipulation}
+button:hover:not(:disabled){background:#26647a}
+button:focus-visible,a:focus-visible{outline:3px solid #f3feff;outline-offset:3px}
+button:disabled{opacity:.48;cursor:not-allowed}
+.primary{background:#76f2e5;color:#082732;border-color:#76f2e5}
+.primary:hover:not(:disabled){background:#b0fff6}
+#missionStatus{color:#a4d2e3;font-size:.87rem;line-height:1.45;margin-left:auto;max-width:450px}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:17px;margin-top:18px}
+.box{background:#0c2038;border:1px solid #345a76;border-radius:15px;padding:16px 18px;color:#bdd6e6;line-height:1.7}
+.box h2{font-size:1rem;color:#ecfeff;margin:0 0 7px}
+.box p{margin:0}
+kbd{display:inline-block;font:750 .8rem system-ui;color:#e9feff;background:#1e4355;border:1px solid #54788c;border-bottom-width:3px;border-radius:5px;padding:1px 6px;margin:1px}
+.touch{display:none;justify-content:space-between;gap:12px;margin-top:16px;align-items:end}
+.touchgroup{display:grid;gap:6px;grid-template-columns:repeat(3,minmax(49px,66px));grid-template-rows:repeat(2,52px)}
+.touchgroup button{padding:5px;font-size:1.1rem;min-height:52px;touch-action:none;user-select:none}
+.touchgroup [data-action="pitchUp"]{grid-column:2;grid-row:1}
+.touchgroup [data-action="turnLeft"]{grid-column:1;grid-row:2}
+.touchgroup [data-action="pitchDown"]{grid-column:2;grid-row:2}
+.touchgroup [data-action="turnRight"]{grid-column:3;grid-row:2}
+.touchpowers{display:flex;gap:8px;flex-wrap:wrap;align-items:end;justify-content:end}
+.touchpowers button{touch-action:none;user-select:none;min-width:72px}
+.touchpowers .boost{background:var(--warm);border-color:var(--warm);color:#261705;font-size:1rem}
+.held{background:#91ede9!important;color:#082532!important}
+footer{color:#9eb9d0;font-size:.81rem;line-height:1.65;margin-top:23px}
+footer a{color:#9cf2eb}
+@media(max-width:1040px){.hud{grid-template-columns:repeat(4,minmax(0,1fr))}.hud-item:nth-child(4){border-right:0}.hud-item:nth-child(-n+4){border-bottom:1px solid #304e65}}
+@media(max-width:730px){main{padding:14px 9px 30px}.hud-item{padding:9px}.hud-item small{font-size:.6rem}.controls{grid-template-columns:1fr}.legend{font-size:.61rem;top:8px;right:8px;padding:6px}.controlbar button{padding:9px 10px;flex:1;min-width:76px}#missionStatus{margin:0;flex-basis:100%}}
+@media(hover:none),(pointer:coarse){.touch{display:flex}}
+@media(max-width:440px){.touch{display:flex;gap:8px}.touchgroup{grid-template-columns:repeat(3,51px);grid-template-rows:repeat(2,49px);gap:4px}.touchgroup button{min-height:49px}.touchpowers{max-width:156px}.touchpowers button{min-width:66px;font-size:.8rem;padding:8px}.legend{display:none}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+  <nav class="nav" aria-label="Flight lab navigation">
+    <span class="brand">ZENITH-1-PRO / FLIGHT LAB</span>
+    <div><a href="./game.html">Classic 2D race</a> <a href="./">Storefront</a></div>
+  </nav>
+  <header>
+    <span class="label">Experimental 4D spacetime · 3D ship · Free solo preview</span>
+    <h1>Fly through <span class="gradient">four dimensions.</span></h1>
+    <p class="lead">Three navigable spatial axes <strong>(x, y, z)</strong> plus a changing time coordinate <strong>(t)</strong>. Pilot a genuinely 3D-positioned and rotating spacecraft past a moving Moon, timed asteroid fields and a shifting Mars arrival zone. This is an arcade spacetime simulation, not four spatial dimensions, measured astronomy, or general relativity.</p>
+  </header>
+  <section class="panel" aria-label="4D spacetime flight simulation">
+    <div class="hud">
+      <div class="hud-item"><small>Mission</small><strong id="phase" data-state="ready">READY</strong></div>
+      <div class="hud-item"><small>Time t</small><strong id="clock">0.00 s</strong></div>
+      <div class="hud-item"><small>Speed</small><strong id="speed">21.0</strong></div>
+      <div class="hud-item"><small>Boosts</small><strong id="boosts">3</strong></div>
+      <div class="hud-item"><small>Position x</small><strong id="distance">42.0</strong></div>
+      <div class="hud-item"><small>Lateral y</small><strong id="lateral">0.0</strong></div>
+      <div class="hud-item"><small>Altitude z</small><strong id="depth">0.0</strong></div>
+      <div class="hud-item"><small>Yaw/Pitch/Roll</small><strong id="attitude">0° / 0° / 0°</strong></div>
+    </div>
+    <div class="viewport">
+      <canvas id="flightCanvas" width="960" height="540" tabindex="0" role="img"
+        aria-label="Perspective view of a rotating 3D spacecraft flying toward Mars through an animated asteroid field with an orbiting moon."
+        aria-describedby="flightHelp">Your browser needs Canvas support to display the flight field.</canvas>
+      <div class="legend" aria-hidden="true">X → forward<br>Y ↔ lateral<br>Z ↑ altitude<br>T ⏱ simulation time</div>
+    </div>
+    <div class="controlbar">
+      <button class="primary" type="button" id="start">Start 4D Flight</button>
+      <button type="button" id="pause" disabled>Pause Time</button>
+      <button type="button" id="restart">Restart</button>
+      <div id="missionStatus" role="status" aria-live="polite">Pilot in 3D through a changing spacetime course.</div>
+    </div>
+    <div class="controlbar">
+      <span style="color:#a5c9db;font-size:.8rem">Practice score: <strong id="score">0</strong></span>
+      <span style="color:#a5c9db;font-size:.8rem">Browser-only best: <strong id="best">0</strong></span>
+      <span style="margin-left:auto;color:#a5c9db;font-size:.78rem">No payment, account, prizes or online opponents</span>
+    </div>
+  </section>
+  <section class="touch" aria-label="Touchscreen 3D flight controls">
+    <div class="touchgroup">
+      <button type="button" data-action="pitchUp" aria-label="Pitch up">↑</button>
+      <button type="button" data-action="turnLeft" aria-label="Yaw left">↶</button>
+      <button type="button" data-action="pitchDown" aria-label="Pitch down">↓</button>
+      <button type="button" data-action="turnRight" aria-label="Yaw right">↷</button>
+    </div>
+    <div class="touchpowers">
+      <button type="button" data-action="brake" aria-label="Brake thrust">BRAKE</button>
+      <button type="button" data-action="thrust" aria-label="Forward thrust">THRUST</button>
+      <button type="button" data-action="boost" class="boost" aria-label="Use one boost">BOOST</button>
+    </div>
+  </section>
+  <section class="controls" id="flightHelp">
+    <div class="box">
+      <h2>3D ship flight controls</h2>
+      <p><kbd>W</kbd> / <kbd>Space</kbd> = forward thrust; <kbd>S</kbd> = reverse/brake.
+         <kbd>A</kbd><kbd>D</kbd> or <kbd>←</kbd><kbd>→</kbd> = yaw.
+         <kbd>↑</kbd><kbd>↓</kbd> = pitch (climb/dive).
+         <kbd>Q</kbd><kbd>E</kbd> = roll.
+         <kbd>Shift</kbd> = boost (three available).
+         <kbd>P</kbd> = pause; <kbd>R</kbd> = restart.
+         The camera follows your ship as the world moves through simulation time.</p>
+    </div>
+    <div class="box">
+      <h2>What the fourth coordinate means</h2>
+      <p><strong>State = (x,y,z,t,velocity,orientation).</strong> Gravity from the orbiting Moon and asteroid positions depend explicitly on t, including while you maneuver in 3D. Pausing freezes physical time. The spacecraft has independently controlled yaw, pitch and roll. No extra spatial axis, relativistic time dilation, real solar-system prediction, stereoscopic VR, or multiplayer is claimed.</p>
+    </div>
+  </section>
+  <footer>Development build — offline local game. Scores are not independently authenticated. Game purchases do not unlock this mode. The classic <a href="./game.html">2D Mars Race</a> stays available as a fallback; the older production site and legacy files remain unchanged.</footer>
+</main>
+<script type="module" src="./flight4d-app.mjs"></script>
+</body>
+</html>
