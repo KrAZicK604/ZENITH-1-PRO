@@ -38,7 +38,7 @@ $('load').addEventListener('submit',event=>{
   $('em').textContent=formatKm(d.earthMoon);
   $('er').textContent=formatKm(d.earthMars);
   $('mr').textContent=formatKm(d.moonMars);
-  $('status').textContent='ACCEPTED: same-frame, same-epoch Horizons-format vectors. Source ownership not cryptographically authenticated.';
+  $('status').textContent='FORMAT_ACCEPTED_UNVERIFIED_SOURCE: derived from supplied same-frame/same-epoch vectors; authenticity and astronomical accuracy NOT independently verified.';
   $('details').textContent='Epoch: JD(TDB) '+s.jdTdb+'\nFrame: ICRF barycentric, KM-S\n'+
    Object.entries(rel).map(([name,v])=>name.toUpperCase()+': X='+v.x.toFixed(3)+' km, Y='+v.y.toFixed(3)+' km, Z='+v.z.toFixed(3)+' km').join('\n');
   plot(rel);
