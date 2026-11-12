@@ -69,7 +69,10 @@ export function stepAce(f,input={}){
  const s=f.ship,dt=ACE.dt,old={x:s.x,y:s.y,z:s.z};
  const axis=(plus,minus)=>Number(Boolean(plus))-Number(Boolean(minus));
  // True independent rotational controls.
- const yaw=axis(input.yawRight,input.yawLeft),pitch=axis(input.pitchUp,input.pitchDown),roll=axis(input.rollRight,input.rollLeft);
+ const analog=v=>typeof v==='number'&&Number.isFinite(v)?clamp(v,-1,1):0;
+ const yaw=clamp(axis(input.yawRight,input.yawLeft)+analog(input.yawAxis),-1,1);
+ const pitch=clamp(axis(input.pitchUp,input.pitchDown)+analog(input.pitchAxis),-1,1);
+ const roll=clamp(axis(input.rollRight,input.rollLeft)+analog(input.rollAxis),-1,1);
  s.yaw=angle(s.yaw+yaw*ACE.turnYaw*dt);
  s.pitch=clamp(s.pitch+pitch*ACE.turnPitch*dt,-1.38,1.38);
  s.roll=angle(s.roll+roll*ACE.turnRoll*dt);
@@ -103,7 +106,7 @@ export function stepAce(f,input={}){
  if(d>1e-6)add(moonDelta,Math.min(64,f.moon.mu/(d*d+950))/d);
  // Damped translation with optional inertial assist, not an autopilot.
  s.vx+=accel.x*dt;s.vy+=accel.y*dt;s.vz+=accel.z*dt;
- const brake=!!input.brake,drag=Math.exp(-(brake?3.3:s.assist?.44:.07)*dt);
+ const brake=!!input.brake,drag=Math.exp(-(brake ? 3.3 : (s.assist ? 0.44 : 0.07))*dt);
  const longitudinal=dot({x:s.vx,y:s.vy,z:s.vz},b.forward);
  if(s.assist&&!brake){
   // Dampen lateral drift while preserving forward velocity.
