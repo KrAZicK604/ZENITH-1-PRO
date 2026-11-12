@@ -52,6 +52,11 @@ try {
   await page.waitForTimeout(90);
   state = await page.evaluate(() => window.__zenithSoloTest.snapshot());
   assert.equal(state.boosts, 2, "single key press should use one boost");
+  // Boosting into moving debris may legitimately cause a crash. Separate
+  // pause/restart assertions from that hazardous flight trajectory.
+  await page.getByRole("button", { name: "Restart" }).click();
+  await page.waitForTimeout(80);
+  assert.equal(await page.evaluate(() => window.__zenithSoloTest.snapshot().status), "running");
   await page.getByRole("button", { name: "Pause", exact: true }).click();
   state = await page.evaluate(() => window.__zenithSoloTest.snapshot());
   assert.equal(state.status, "paused");
