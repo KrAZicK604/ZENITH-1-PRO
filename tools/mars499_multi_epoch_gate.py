@@ -28,6 +28,12 @@ VELOCITY_TOLERANCE_KM_S = 1e-4
 MAX_JSON_BYTES = 1_000_000
 MAX_DE440_BYTES = 40_000_000
 MAX_MAR099_BYTES = 85_000_000
+# Post-first-run custody pins: captured genuine bytes on 2026-11-12.
+# They are frozen for subsequent replay, not falsely called preregistered.
+EXPECTED_KERNEL_SHA256 = {
+    "de440s": "c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2",
+    "mar099s": "997dc93ba640e476da7a494d2237dcdeb145e528db37be8ccee588c615e4e1ff",
+}
 J2000_JD = 2451545.0
 DAY_SEC = 86400.0
 VALUE = r"([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[Ee][+-]?\d+)?)"
@@ -104,9 +110,12 @@ def validated_paths():
     for label,url,limit in (
        ("de440s", DE440,MAX_DE440_BYTES),("mar099s",MAR099S,MAX_MAR099_BYTES)):
         raw=fetch(url,limit)
+        actual_sha=sha(raw)
+        if actual_sha!=EXPECTED_KERNEL_SHA256[label]:
+            raise ValueError("SOURCE_KERNEL_SHA256_CHANGED_"+label.upper())
         path=OUT/(label+".bsp")
         path.write_bytes(raw)
-        binaries[label]={"url":url,"sha256":sha(raw),"bytes":len(raw)}
+        binaries[label]={"url":url,"sha256":actual_sha,"bytes":len(raw)}
     return binaries
 
 def distance(a,b):
