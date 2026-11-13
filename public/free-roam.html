@@ -31,6 +31,12 @@ kbd{background:#2e4c68;border:1px solid #6389a4;border-radius:4px;padding:2px 5p
 .disclaimer{font-size:.81rem;border-left:3px solid #e2b67c;padding-left:12px;margin-top:16px}
 @media(max-width:960px){.deck{grid-template-columns:1fr}.hud{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;border-left:0;border-top:1px solid #355872}.cell{border:0}}
 @media(max-width:660px){main{padding:10px}.grid{grid-template-columns:1fr}.hud{grid-template-columns:repeat(3,minmax(0,1fr))}.hud .cell strong{font-size:.88rem}.touch button{min-width:78px;flex-basis:79px;font-size:.78rem;padding:10px 5px}}
+.astro-ref{margin-top:15px;background:#102139;border:1px solid #3c7188;border-radius:13px;padding:16px}
+.astro-ref .row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}
+.astro-ref .measure{background:#192e49;border:1px solid #3b5a75;border-radius:9px;padding:11px}
+.astro-ref .measure small{color:#a9c9d9;display:block;font-size:.73rem}.astro-ref .measure strong{font-size:clamp(.84rem,1.9vw,1.3rem);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+select{min-height:43px;background:#1d3950;border:1px solid #6290ab;border-radius:8px;color:#f1fbff;padding:8px;font:700 .9rem system-ui}
+@media(max-width:660px){.astro-ref .row{grid-template-columns:1fr}}
 </style></head><body><main>
 <nav><a href="./game-ace.html">ACE Vector mission</a><a href="./game-4d.html">4D prototype</a><a href="./">Game home</a></nav>
 <div class="tag">ZENITH // EXPLORATION SANDBOX // FREE PLAY</div>
@@ -76,6 +82,22 @@ kbd{background:#2e4c68;border:1px solid #6389a4;border-radius:4px;padding:2px 5p
 <kbd>H</kbd> show/hide navigation beacon; <kbd>P</kbd> pause. Gamepad sticks and triggers also supported.</p>
 <p>Engine cutoff does not automatically stop your spacecraft. When flight dampers are OFF, momentum is preserved. You may park the ship by braking or choose to do nothing indefinitely.</p></section>
 </div>
-<p class="disclaimer"><strong>Scale and scientific integrity:</strong> This is a freely explorable, fictional 3D sandbox measured in <strong>game units (gu)</strong>, not astronomical kilometers. The planetary markers are deliberately compressed to make exploration playable; they are not JPL-certified positions or physically realistic trajectories. Real Horizons/SPICE navigation is kept in a separate research gate until multiepoch Mars-center position/velocity verification is complete. No payments, multiplayer, weapon systems, prizes, autonomous physical controls or production authority.</p>
+<section class="astro-ref" aria-label="Real astronomical reference values">
+<h2>Real JPL astronomy reference — not the arcade map</h2>
+<p>Compare measured-model center separations at one of four fixed TDB epochs. These values came from the Horizons plus DE440s/MAR099s Mars-center numerical check. Selecting a date <strong>does not change the craft position or move planets in the fictional game</strong>.</p>
+<label for="astroEpoch">Reference date — Julian Day, TDB</label>
+<select id="astroEpoch" aria-label="Verified ephemeris reference epoch">
+<option value="0">JD(TDB) 2461355.5</option><option value="1" selected>JD(TDB) 2461356.5</option>
+<option value="2">JD(TDB) 2461357.5</option><option value="3">JD(TDB) 2461360.5</option>
+</select>
+<div class="row">
+<div class="measure"><small>Earth ↔ Moon</small><strong id="realEarthMoon">—</strong></div>
+<div class="measure"><small>Earth ↔ Mars center</small><strong id="realEarthMars">—</strong></div>
+<div class="measure"><small>Moon ↔ Mars center</small><strong id="realMoonMars">—</strong></div>
+</div>
+<p id="astroProvenance" role="note">Research comparison only. Static epochs, no interpolated trajectory, no flight-time calculation.</p>
+<p><a href="https://github.com/KrAZicK604/ZENITH-1-PRO/actions/runs/43333118978" target="_blank" rel="noopener noreferrer">View the real NASA/JPL source and Mars-center verification receipt</a></p>
+</section>
+<p class="disclaimer"><strong>Scale and scientific integrity:</strong> This is a freely explorable, fictional 3D sandbox measured in <strong>game units (gu)</strong>, not astronomical kilometers. The planetary markers are deliberately compressed to make exploration playable; they are not JPL-certified positions or physically realistic trajectories. A real Horizons/SPICE Mars-center numerical cross-check has passed at four discrete epochs, but that does not validate continuous orbital propagation, spacecraft transfer paths, fuel needs or independent physical measurements. The static reference values above never control this arcade flight. No payments, multiplayer, weapon systems, prizes, autonomous physical controls or production authority.</p>
 <script type="module" src="./free-roam-app.mjs"></script>
 </main></body></html>
