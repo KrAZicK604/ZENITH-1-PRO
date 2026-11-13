@@ -1,0 +1,68 @@
+name: ACE Vector free-roam deterministic and browser gate
+on:
+  pull_request:
+    paths:
+      - 'public/free-roam*'
+      - 'tests/free-roam*'
+      - '.github/workflows/free-roam-game-ci.yml'
+  push:
+    branches:
+      - game/ace-vector-freeroam-v5-20261112
+    paths:
+      - 'public/free-roam*'
+      - 'tests/free-roam*'
+      - '.github/workflows/free-roam-game-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deterministic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source syntax check
+        run: |
+          node --check public/free-roam-core.mjs
+          node --check public/free-roam-render.mjs
+          node --check public/free-roam-app.mjs
+          node --check tests/free-roam-core.test.mjs
+          node --check tests/free-roam-browser-smoke.mjs
+      - name: Long-duration drift, 6DOF, time and collision-freedom tests
+        run: node --test tests/free-roam-core.test.mjs
+  chromium:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    needs: deterministic
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright Chromium
+        run: |
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright@1.58.2
+          npx playwright install --with-deps chromium
+      - name: Check real browser desktop/mobile free-roam controls
+        run: |
+          python3 -m http.server 8765 --directory public >/tmp/freeroam-http.log 2>&1 &
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if curl --fail --silent http://127.0.0.1:8765/free-roam.html >/dev/null; then break; fi
+            sleep 1
+          done
+          node tests/free-roam-browser-smoke.mjs
+      - name: Retain browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ace-free-roam-browser-screenshots
+          path: artifacts/free-roam-*.png
+          if-no-files-found: ignore
+          retention-days: 14
