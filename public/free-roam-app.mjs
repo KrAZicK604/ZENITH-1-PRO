@@ -3,6 +3,7 @@ import {
  elapsed,velocity
 } from './free-roam-core.mjs';
 import {renderRoam} from './free-roam-render.mjs';
+import {ASTRO_REFERENCE} from './astro-readonly-reference.mjs';
 
 const $=id=>document.getElementById(id),canvas=$('roamScene');
 const ctx=canvas.getContext('2d',{alpha:false});
@@ -72,6 +73,18 @@ function gamepad(){
   throttleDown:(p.axes[3]||0)>.35,afterburner:pressed(7),
   brake:pressed(6),strafeLeft:pressed(4),strafeRight:pressed(5)};
 }
+function showResearchEpoch(){
+ const i=Number($('astroEpoch').value),row=ASTRO_REFERENCE.epochs[i];
+ if(!row||!Number.isSafeInteger(i))throw Error('INVALID_REFERENCE_EPOCH');
+ const fmt=x=>new Intl.NumberFormat('en-CA',{maximumFractionDigits:0}).format(x)+' km';
+ $('realEarthMoon').textContent=fmt(row.earthMoonKm);
+ $('realEarthMars').textContent=fmt(row.earthMarsKm);
+ $('realMoonMars').textContent=fmt(row.moonMarsKm);
+ $('astroProvenance').textContent='REFERENCE ONLY: JD(TDB) '+row.jdTdb+
+  ', center-to-center. Numerical kernel comparison passed, physical custody not attested. Never mapped to the arcade ship position.';
+}
+$('astroEpoch').addEventListener('change',showResearchEpoch);
+showResearchEpoch();
 function hud(){
  const s=flight.ship,n=navState(flight);
  $('phase').textContent=flight.phase.toUpperCase();
