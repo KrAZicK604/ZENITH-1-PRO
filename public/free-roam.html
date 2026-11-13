@@ -1,0 +1,103 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ZENITH ACE Vector — Free Roam Space</title>
+<meta name="description" content="Free-roam 3D spacecraft sandbox: drift, coast, steer, explore or navigate toward the Moon or Mars.">
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#eafaff;background:#070d1d;--line:#294d6a}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -10%,#1a375e,#060b18 65%);min-height:100vh}
+main{max-width:1340px;margin:auto;padding:18px}
+a{color:#83e6eb}nav{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;margin-bottom:12px}
+h1{font-size:clamp(2rem,5vw,3.6rem);margin:0 0 8px;letter-spacing:-.04em}
+h2{font-size:1rem;margin:0 0 12px}p{color:#b2cbdc;line-height:1.6}
+.tag{font-size:.77rem;font-weight:800;letter-spacing:.1em;color:#8de8e1}
+.deck{display:grid;grid-template-columns:minmax(0,1fr) 232px;border:1px solid #47738c;border-radius:16px;overflow:hidden;background:#0c1b32}
+canvas{width:100%;height:auto;aspect-ratio:16/9;background:#040919;display:block}
+.hud{background:#10233b;padding:13px;border-left:1px solid #355872}
+.cell{padding:9px 0;border-bottom:1px solid #274461;min-width:0}
+.cell small{color:#9ebdd2;text-transform:uppercase;letter-spacing:.1em;display:block;font-size:.63rem}
+.cell strong{font-size:1.04rem;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.commands{display:flex;gap:9px;flex-wrap:wrap;align-items:center;background:#12243b;border:1px solid var(--line);border-radius:12px;margin:12px 0;padding:12px}
+button{padding:12px 14px;min-height:45px;background:#244c68;border:1px solid #659cba;border-radius:9px;color:#f1fbff;font:700 .9rem system-ui;touch-action:none;cursor:pointer}
+button.primary{background:#8af2dd;border-color:#8af2dd;color:#073037}
+button:focus-visible,a:focus-visible{outline:3px solid white;outline-offset:2px}
+button:disabled{opacity:.4}
+#message{font-size:.81rem;color:#bfdce9;flex:1 1 250px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.block{background:#101f37;border:1px solid #325370;padding:15px;border-radius:12px}
+.touch{display:flex;gap:8px;flex-wrap:wrap}
+.touch button{flex:1 1 104px}
+.touch button.pressed{background:#92fff3;color:#062a2e}
+.docs{font-size:.81rem;line-height:1.7}
+kbd{background:#2e4c68;border:1px solid #6389a4;border-radius:4px;padding:2px 5px;display:inline-block}
+.disclaimer{font-size:.81rem;border-left:3px solid #e2b67c;padding-left:12px;margin-top:16px}
+@media(max-width:960px){.deck{grid-template-columns:1fr}.hud{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;border-left:0;border-top:1px solid #355872}.cell{border:0}}
+@media(max-width:660px){main{padding:10px}.grid{grid-template-columns:1fr}.hud{grid-template-columns:repeat(3,minmax(0,1fr))}.hud .cell strong{font-size:.88rem}.touch button{min-width:78px;flex-basis:79px;font-size:.78rem;padding:10px 5px}}
+.astro-ref{margin-top:15px;background:#102139;border:1px solid #3c7188;border-radius:13px;padding:16px}
+.astro-ref .row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}
+.astro-ref .measure{background:#192e49;border:1px solid #3b5a75;border-radius:9px;padding:11px}
+.astro-ref .measure small{color:#a9c9d9;display:block;font-size:.73rem}.astro-ref .measure strong{font-size:clamp(.84rem,1.9vw,1.3rem);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+select{min-height:43px;background:#1d3950;border:1px solid #6290ab;border-radius:8px;color:#f1fbff;padding:8px;font:700 .9rem system-ui}
+@media(max-width:660px){.astro-ref .row{grid-template-columns:1fr}}
+</style></head><body><main>
+<nav><a href="./game-ace.html">ACE Vector mission</a><a href="./game-4d.html">4D prototype</a><a href="./">Game home</a></nav>
+<div class="tag">ZENITH // EXPLORATION SANDBOX // FREE PLAY</div>
+<h1>OPEN SPACE. YOUR DECISION.</h1>
+<p>Take the ACE Vector starfighter anywhere. Coast with engines off, practice six-degree-of-freedom maneuvering, fly past the Moon or aim for Mars. You do not need to race, fight or finish anything.</p>
+<div class="deck">
+<canvas id="roamScene" width="960" height="540" tabindex="0" role="img" aria-label="Three-dimensional free-roam space view showing original starfighter, stars and optional planetary navigation beacons.">Canvas-enabled browser required.</canvas>
+<aside class="hud" aria-label="Flight instruments">
+<div class="cell"><small>Mode / status</small><strong id="phase">READY</strong></div>
+<div class="cell"><small>Elapsed t</small><strong id="time">0.0 s</strong></div>
+<div class="cell"><small>Velocity</small><strong id="speed">0.0 gu/s</strong></div>
+<div class="cell"><small>Throttle</small><strong id="throttle">0%</strong></div>
+<div class="cell"><small>Temperature</small><strong id="heat">0%</strong></div>
+<div class="cell"><small>Flight model</small><strong id="damper">INERTIAL</strong></div>
+<div class="cell"><small>Optional waypoint</small><strong id="dest">MOON</strong></div>
+<div class="cell"><small>Waypoint range</small><strong id="distance">— gu</strong></div>
+<div class="cell"><small>Attitude pitch / yaw / roll</small><strong id="attitude">0° / 0° / 0°</strong></div>
+<div class="cell"><small>Game-space position</small><strong id="position">X 340 Y 0 Z 0</strong></div>
+</aside>
+</div>
+<div class="commands">
+<button id="launch" class="primary">Enter Free Roam</button><button id="pause" disabled>Pause</button><button id="reset">Restart at Earth</button>
+<button id="cut">Cut engines</button><button id="assist">Dampers: OFF</button>
+<button id="target">Target: Moon</button><button id="beacon">Beacon: ON</button>
+<span id="message" role="status" aria-live="polite">Ship idle. Launch whenever you wish.</span>
+</div>
+<div class="grid">
+<section class="block"><h2>Touch cockpit</h2>
+<div class="touch" aria-label="Hold to maneuver">
+<button data-hold="pitchUp">Pitch +</button><button data-hold="pitchDown">Pitch −</button>
+<button data-hold="yawLeft">Yaw −</button><button data-hold="yawRight">Yaw +</button>
+<button data-hold="rollLeft">Roll −</button><button data-hold="rollRight">Roll +</button>
+<button data-hold="throttleUp">Throttle +</button><button data-hold="throttleDown">Throttle −</button>
+<button data-hold="strafeLeft">Strafe left</button><button data-hold="strafeRight">Strafe right</button>
+<button data-hold="liftUp">Ascend</button><button data-hold="liftDown">Descend</button>
+<button data-hold="afterburner">Afterburner</button><button data-hold="brake">Brake</button>
+</div></section>
+<section class="block docs"><h2>Desktop and controller flight</h2>
+<p><kbd>W</kbd>/<kbd>S</kbd> pitch · <kbd>A</kbd>/<kbd>D</kbd> yaw · <kbd>Q</kbd>/<kbd>E</kbd> bank
+· <kbd>↑</kbd>/<kbd>↓</kbd> throttle · <kbd>Shift</kbd> afterburner · <kbd>B</kbd> brake.
+<kbd>J</kbd>/<kbd>L</kbd> lateral strafe · <kbd>U</kbd>/<kbd>O</kbd> vertical thrust.
+<kbd>C</kbd> cut engines; <kbd>F</kbd> toggle drift dampers; <kbd>T</kbd> cycle Earth/Moon/Mars;
+<kbd>H</kbd> show/hide navigation beacon; <kbd>P</kbd> pause. Gamepad sticks and triggers also supported.</p>
+<p>Engine cutoff does not automatically stop your spacecraft. When flight dampers are OFF, momentum is preserved. You may park the ship by braking or choose to do nothing indefinitely.</p></section>
+</div>
+<section class="astro-ref" aria-label="Real astronomical reference values">
+<h2>Real JPL astronomy reference — not the arcade map</h2>
+<p>Compare measured-model center separations at one of four fixed TDB epochs. These values came from the Horizons plus DE440s/MAR099s Mars-center numerical check. Selecting a date <strong>does not change the craft position or move planets in the fictional game</strong>.</p>
+<label for="astroEpoch">Reference date — Julian Day, TDB</label>
+<select id="astroEpoch" aria-label="Verified ephemeris reference epoch">
+<option value="0">JD(TDB) 2461355.5</option><option value="1" selected>JD(TDB) 2461356.5</option>
+<option value="2">JD(TDB) 2461357.5</option><option value="3">JD(TDB) 2461360.5</option>
+</select>
+<div class="row">
+<div class="measure"><small>Earth ↔ Moon</small><strong id="realEarthMoon">—</strong></div>
+<div class="measure"><small>Earth ↔ Mars center</small><strong id="realEarthMars">—</strong></div>
+<div class="measure"><small>Moon ↔ Mars center</small><strong id="realMoonMars">—</strong></div>
+</div>
+<p id="astroProvenance" role="note">Research comparison only. Static epochs, no interpolated trajectory, no flight-time calculation.</p>
+<p><a href="https://github.com/KrAZicK604/ZENITH-1-PRO/actions/runs/43333118978" target="_blank" rel="noopener noreferrer">View the real NASA/JPL source and Mars-center verification receipt</a></p>
+</section>
+<p class="disclaimer"><strong>Scale and scientific integrity:</strong> This is a freely explorable, fictional 3D sandbox measured in <strong>game units (gu)</strong>, not astronomical kilometers. The planetary markers are deliberately compressed to make exploration playable; they are not JPL-certified positions or physically realistic trajectories. A real Horizons/SPICE Mars-center numerical cross-check has passed at four discrete epochs, but that does not validate continuous orbital propagation, spacecraft transfer paths, fuel needs or independent physical measurements. The static reference values above never control this arcade flight. No payments, multiplayer, weapon systems, prizes, autonomous physical controls or production authority.</p>
+<script type="module" src="./free-roam-app.mjs"></script>
+</main></body></html>
