@@ -3,6 +3,11 @@ on:
   pull_request:
     paths:
       - 'public/free-roam*'
+      - 'public/astro-readonly-reference.mjs'
+      - 'public/game.html'
+      - 'public/game-ace.html'
+      - 'public/index.html'
+      - 'docs/FREE_ROAM_GAME_V5.md'
       - 'tests/free-roam*'
       - '.github/workflows/free-roam-game-ci.yml'
   push:
@@ -10,6 +15,11 @@ on:
       - game/ace-vector-freeroam-v5-20261112
     paths:
       - 'public/free-roam*'
+      - 'public/astro-readonly-reference.mjs'
+      - 'public/game.html'
+      - 'public/game-ace.html'
+      - 'public/index.html'
+      - 'docs/FREE_ROAM_GAME_V5.md'
       - 'tests/free-roam*'
       - '.github/workflows/free-roam-game-ci.yml'
   workflow_dispatch:
