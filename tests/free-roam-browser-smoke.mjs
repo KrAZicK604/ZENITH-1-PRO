@@ -17,6 +17,13 @@ try{
   await page.waitForFunction(()=>!!window.__roamTest);
   const initial=await page.evaluate(()=>window.__roamTest.snapshot());
   assert.equal(initial.phase,'ready');assert.equal(initial.speed,0);assert.equal(initial.throttle,0);
+  assert.equal(await page.locator('#realEarthMars').textContent(),'200,668,210 km');
+  await page.locator('#astroEpoch').selectOption('0');
+  assert.equal(await page.locator('#realEarthMoon').textContent(),'402,248 km');
+  assert.equal(await page.evaluate(()=>window.__roamTest.snapshot().x),340,
+    'read-only ephemeris selector must never displace game ship');
+  await page.locator('#astroEpoch').selectOption('1');
+
   await page.getByRole('button',{name:'Enter Free Roam'}).click();
   await page.waitForTimeout(160);
   const idle=await page.evaluate(()=>window.__roamTest.snapshot());
