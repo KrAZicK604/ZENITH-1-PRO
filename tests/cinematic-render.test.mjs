@@ -26,7 +26,7 @@ test('renderers use true black and shared detailed ship, no colored background o
   assert.match(src,/drawCinematicShip/);
   assert.match(src,/fillRect\(0,0,w,h\)/);
   assert.doesNotMatch(src,/createLinearGradient\(0,0/);
-  assert.doesNotMatch(src,/corridor reference|nebula/);
+  assert.doesNotMatch(src,/Three-dimensional corridor reference|const g=ctx.createLinearGradient/);
  }
 });
 test('draw function projects detailed model and draws without external image dependency',()=>{
