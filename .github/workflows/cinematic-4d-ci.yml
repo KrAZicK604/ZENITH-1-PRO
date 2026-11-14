@@ -1,0 +1,65 @@
+name: Cinematic 4D spacecraft visual gate
+on:
+  pull_request:
+    paths:
+      - 'public/game-4d*'
+      - 'public/ship-cinematic-asset.mjs'
+      - 'tests/game-cinematic*'
+      - '.github/workflows/cinematic-4d-ci.yml'
+  push:
+    branches: [game/cinematic-four-d-ship-visual-v7-20261113]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  asset-and-physics:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check cinematic rendering and modules
+        run: |
+          node --check public/game-4d-core.mjs
+          node --check public/game-4d-cinematic-render.mjs
+          node --check public/game-4d-app.mjs
+          node --check public/ship-cinematic-asset.mjs
+          node --check tests/game-cinematic-assets.test.mjs
+      - name: Verify concept image hash and existing 4D flight physics
+        run: node --test tests/game-cinematic-assets.test.mjs tests/game-4d-core.test.mjs
+  desktop-mobile:
+    needs: asset-and-physics
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: |
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright@1.58.2
+          npx playwright install --with-deps chromium
+      - name: Test cinematic 4D ship on desktop and mobile
+        run: |
+          mkdir -p artifacts
+          python3 -m http.server 8765 --directory public >/tmp/zenith-cinematic-http.log 2>&1 &
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if curl --fail --silent http://127.0.0.1:8765/game-4d.html >/dev/null; then break; fi
+            sleep 1
+          done
+          node tests/game-cinematic-browser-smoke.mjs
+      - name: Preserve evidence screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cinematic-4d-flight-screenshots
+          path: artifacts/cinematic-4d-*.png
+          retention-days: 14
+          if-no-files-found: ignore
