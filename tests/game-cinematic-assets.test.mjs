@@ -48,3 +48,11 @@ test('no third-party networks, payments, dynamic eval or script injection',()=>{
  for(const str of ['fetch(', 'XMLHttpRequest','WebSocket','eval(', 'innerHTML','Stripe','buy.stripe.com'])
   assert.ok(!all.includes(str),str);
 });
+
+
+test('game home links to both solo and cinematic 4D modes without changing checkout',()=>{
+ const home=get('index.html'),solo=get('game.html');
+ assert.match(home,/href="\.\/game\.html"/);
+ assert.match(home,/href="\.\/game-4d\.html"/);
+ assert.match(solo,/href="\.\/game-4d\.html"/);
+});
