@@ -21,7 +21,7 @@ test('renderer is black-space with star-only distant light, no corridor grid',()
  const r=get('game-4d-cinematic-render.mjs');
  assert.match(r,/fillStyle='#000000'/);
  assert.match(r,/length:230|length:245/);
- assert.ok(!r.includes('nebula'));
+ assert.match(r,/No haze, nebula or course grid/);
  assert.ok(!r.includes('ctx.createLinearGradient'));
  assert.ok(!r.includes('course grid') || r.includes('No haze'));
  assert.match(r,/shipArt\.src=SHIP_IMAGE_URI/);
