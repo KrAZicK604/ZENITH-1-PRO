@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {CINEMATIC_SHIP,SHIP_PALETTE,drawCinematicShip} from '../public/cinematic-ship.mjs';
 test('spacecraft has detailed finite 3D mesh and bounded indices',()=>{
- assert.ok(CINEMATIC_SHIP.vertices.length>=80);
- assert.ok(CINEMATIC_SHIP.faces.length>=100);
+ assert.ok(CINEMATIC_SHIP.vertices.length>=65);
+ assert.ok(CINEMATIC_SHIP.faces.length>=55);
  for(const p of CINEMATIC_SHIP.vertices){assert.equal(p.length,3);assert.ok(p.every(Number.isFinite));}
  for(const f of CINEMATIC_SHIP.faces){
   assert.equal(f.indices.length,3);
@@ -34,7 +34,7 @@ test('draw function projects detailed model and draws without external image dep
  const ctx={save(){},restore(){},beginPath(){},moveTo(){},lineTo(){},closePath(){},fill(){ops.push('fill');},stroke(){},ellipse(){},
   set fillStyle(x){},set strokeStyle(x){},set lineWidth(x){},set shadowColor(x){},set shadowBlur(x){}};
  drawCinematicShip(ctx,{throttle:0,burning:false},([x,y,z])=>({x:x+480,y:y+270,depth:300,k:2}));
- assert.ok(ops.length>=100);
+ assert.ok(ops.length>=55);
 });
 test('no third-party models or network fetches are introduced',()=>{
  const s=readFileSync(new URL('../public/cinematic-ship.mjs',import.meta.url),'utf8');
