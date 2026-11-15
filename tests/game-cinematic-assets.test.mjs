@@ -29,7 +29,7 @@ test('renderer is black-space with star-only distant light, no corridor grid',()
  assert.match(r,/ctx\.rotate\(bank/);
  assert.match(r,/screen/);
 });
-test('game app keeps fixed-step physics and uses cinematic image renderer',()=>{
+test('game app keeps fixed-step physics and cinematic fallback renderer',()=>{
  const app=get('game-4d-app.mjs');
  assert.match(app,/renderCinematic\(ctx,flight\)/);
  assert.match(app,/step\(flight/);
@@ -41,7 +41,11 @@ test('scene does not falsely claim astronomical km or relativistic speed',()=>{
  assert.match(render,/gu\/s/);
  assert.match(render,/GAME UNITS/);
  assert.doesNotMatch(render,/0\.184 c/);
- assert.match(get('game-4d.html'),/not a freely rotatable 3D model/);
+ const html=get('game-4d.html');
+ assert.match(html,/genuine locally built 3D hull/);
+ assert.match(html,/original 2D illustration remains a fallback/);
+ assert.match(html,/game units, not kilometers or light speed/);
+ assert.match(html,/fourth coordinate is elapsed simulation time/);
 });
 test('no third-party networks, payments, dynamic eval or script injection',()=>{
  const all=['game-4d-cinematic-render.mjs','game-4d-app.mjs','ship-cinematic-asset.mjs'].map(get).join('\n');
