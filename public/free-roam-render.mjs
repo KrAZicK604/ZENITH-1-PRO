@@ -2,6 +2,7 @@
  * Positions and radii are game units, NOT real planet size or distance.
  */
 import {basis} from './ace-flight-core.mjs';
+import {drawCinematicShip} from './cinematic-ship.mjs';
 import {DESTINATIONS,navState,velocity,elapsed} from './free-roam-core.mjs';
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const dot=(a,b)=>a.x*b.x+a.y*b.y+a.z*b.z;
@@ -10,19 +11,6 @@ const rng=rand(420131),stars=Array.from({length:640},()=>{
  const az=rng()*Math.PI*2,u=rng()*2-1,rad=Math.sqrt(1-u*u);
  return{x:Math.cos(az)*rad,y:Math.sin(az)*rad,z:u,r:.3+1.4*rng(),a:.2+.6*rng()};
 });
-const MESH=[
- [40,0,0], [8,0,13],[-23,0,13],[-43,0,5],
- [-4,-15,0],[-4,15,0],[-20,-60,-6],[-20,60,-6],
- [-47,-36,-7],[-47,36,-7],[-15,0,-11],
- [-34,-12,3],[-34,12,3],[-45,-16,18],[-45,16,18]
-];
-const FACES=[
- [[0,4,1],'#c6f4ff'],[[0,1,5],'#6fb2e0'],[[0,10,4],'#3189bc'],
- [[0,5,10],'#0a659a'],[[4,6,8],'#e6f5ff'],[[5,9,7],'#50b5d8'],
- [[8,11,4],'#527793'],[[9,5,12],'#2c7299'],
- [[1,4,2],'#377ca5'],[[1,2,5],'#8ec8db'],[[2,4,3],'#98d9ea'],
- [[2,3,5],'#296d9f'],[[3,11,13],'#ef854d'],[[3,14,12],'#ffc185']
-];
 function camera(ship){
  const b=basis(ship),follow=260;
  return {pos:{x:ship.x-b.forward.x*follow+b.up.x*75,
@@ -43,21 +31,13 @@ function transform(ship,vertex){
          y:ship.y+b.forward.y*x+b.right.y*y+b.up.y*z,
          z:ship.z+b.forward.z*x+b.right.z*y+b.up.z*z};
 }
-function polygon(ctx,mesh,indices,color){
- const p=indices.map(i=>mesh[i]);
- if(p.some(q=>!q))return;
- ctx.beginPath();ctx.moveTo(p[0].x,p[0].y);
- for(let j=1;j<p.length;j++)ctx.lineTo(p[j].x,p[j].y);
- ctx.closePath();ctx.fillStyle=color;ctx.fill();ctx.strokeStyle='#c5f2fa';
- ctx.lineWidth=1.2;ctx.stroke();
-}
 function starLayer(ctx,cam){
  for(const s of stars){
   const x=dot(s,cam.forward);
   if(x<.005)continue;
   const xp=480+dot(s,cam.right)/x*610,yp=270-dot(s,cam.up)/x*610;
   if(xp<-3||xp>963||yp<-3||yp>543)continue;
-  ctx.globalAlpha=s.a;ctx.fillStyle='#def7ff';ctx.fillRect(xp,yp,s.r,s.r);
+  ctx.globalAlpha=s.a;ctx.fillStyle='#f3f7ff';ctx.fillRect(xp,yp,s.r,s.r);
  }
  ctx.globalAlpha=1;
 }
@@ -89,9 +69,8 @@ function navArrow(ctx,body,ship,cam){
 }
 export function renderRoam(ctx,f){
  const ship=f.ship,w=960,h=540,cam=camera(ship);
- const g=ctx.createLinearGradient(0,0,w,h);
- g.addColorStop(0,'#04091b');g.addColorStop(.55,'#061a31');g.addColorStop(1,'#140e2d');
- ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+ // Deep-space vacuum: near-absolute black, no artificial colored nebula.
+ ctx.fillStyle='#000000';ctx.fillRect(0,0,w,h);
  starLayer(ctx,cam);
  const target=DESTINATIONS[f.targetIndex];
  const sorted=[...DESTINATIONS].sort((a,b)=>{
@@ -101,10 +80,8 @@ export function renderRoam(ctx,f){
  });
  for(const body of sorted)drawBody(ctx,body,cam,f.beaconEnabled&&body.id===target.id);
  if(f.beaconEnabled)navArrow(ctx,target,ship,cam);
- // Retro low-polygon original fighter, rendered from true yaw/pitch/roll.
- const points=MESH.map(v=>project(transform(ship,v),cam));
- const ordered=FACES.map(([face,color])=>({face,color,d:face.reduce((a,i)=>a+(points[i]?.depth||0),0)})).sort((a,b)=>b.d-a.d);
- for(const a of ordered)polygon(ctx,points,a.face,a.color);
+ // Detailed polygonal craft follows all three orientation axes.
+ drawCinematicShip(ctx,ship,vertex=>project(transform(ship,vertex),cam));
  ctx.textAlign='left';ctx.fillStyle='#89deee';ctx.font='bold 15px ui-monospace,monospace';
  ctx.fillText('ACE VECTOR // OPEN SPACE // 3D + t',20,28);
  ctx.font='12px ui-monospace,monospace';ctx.fillStyle='#b9d8ed';

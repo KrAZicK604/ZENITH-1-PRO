@@ -1,3 +1,4 @@
+import {drawCinematicShip} from './cinematic-ship.mjs';
 import {RULES,createFlight,start,pause,reset,step,simulationTime} from './game-4d-core.mjs';
 const $=id=>document.getElementById(id),canvas=$('scene'),ctx=canvas.getContext('2d');
 let flight=createFlight(),last=null,acc=0,boost=false,frameCount=0;
@@ -45,38 +46,19 @@ function line(a,b,c,color){
  const p=project(a,c),q=project(b,c);if(!p||!q)return;
  ctx.strokeStyle=color;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke();
 }
-const vertices=[
- [19,0,0],[-15,-12,-5],[-15,12,-5],[-13,0,9],[-17,-4,-6],[-17,4,-6]
-];
-const faces=[[0,1,3],[0,3,2],[0,2,1],[1,2,3],[1,4,5],[1,5,2]];
 function shipMesh(c){
  const s=flight.ship,cy=Math.cos(s.yaw),sy=Math.sin(s.yaw),cp=Math.cos(s.pitch),sp=Math.sin(s.pitch),cr=Math.cos(s.roll),sr=Math.sin(s.roll);
- const world=vertices.map(([x,y,z])=>{
-  // Roll around forward X, then pitch, then yaw.
+ drawCinematicShip(ctx,s,([x,y,z])=>{
   const yr=y*cr-z*sr,zr=y*sr+z*cr;
   const xp=x*cp-zr*sp,zp=x*sp+zr*cp;
-  return{x:s.x+xp*cy-yr*sy,y:s.y+xp*sy+yr*cy,z:s.z+zp};
+  return project({x:s.x+xp*cy-yr*sy,y:s.y+xp*sy+yr*cy,z:s.z+zp},c);
  });
- const projected=world.map(v=>project(v,c));
- const triangles=faces.map((f,i)=>({f,i,depth:f.reduce((sum,j)=>sum+projected[j].depth,0)/3})).sort((a,b)=>b.depth-a.depth);
- for(const {f,i} of triangles){
-  if(f.some(j=>!projected[j]))continue;
-  ctx.beginPath();ctx.moveTo(projected[f[0]].x,projected[f[0]].y);
-  for(let j=1;j<f.length;j++)ctx.lineTo(projected[f[j]].x,projected[f[j]].y);
-  ctx.closePath();ctx.fillStyle=['#91edff','#4a9fbf','#286d9b','#315478','#d2edfc','#6cbfd7'][i];
-  ctx.fill();ctx.strokeStyle='#d2f7ff';ctx.lineWidth=1.2;ctx.stroke();
- }
 }
 function render(){
  const w=canvas.width,h=canvas.height,c=camera();
- const bg=ctx.createLinearGradient(0,0,0,h);bg.addColorStop(0,'#050d21');bg.addColorStop(1,'#132343');ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+ // Physically dark space: black field, distant pinpoint stars only.
+ ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);
  ctx.fillStyle='#d4edff';for(const p of stars){ctx.globalAlpha=.35+(p.r/2)*.45;ctx.fillRect(p.x,p.y,p.r,p.r);}ctx.globalAlpha=1;
- // Three-dimensional corridor reference, not a physical orbital trajectory.
- for(let x=200;x<=1000;x+=100){
-  const corners=[{x,y:-240,z:-200},{x,y:240,z:-200},{x,y:240,z:200},{x,y:-240,z:200}];
-  for(let j=0;j<4;j++)line(corners[j],corners[(j+1)%4],c,'rgba(67,173,218,.16)');
- }
- for(let y=-240;y<=240;y+=120)for(let z=-200;z<=200;z+=100)line({x:0,y,z},{x:1050,y,z},c,'rgba(64,153,198,.10)');
  const objects=[
   {p:flight.moon,r:flight.moon.r,color:'#a2a9b9',label:'MOON'},
   {p:flight.goal,r:flight.goal.r,color:'#f0784c',label:'MARS'},
