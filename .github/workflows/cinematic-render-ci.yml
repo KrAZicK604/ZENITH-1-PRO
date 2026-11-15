@@ -1,0 +1,32 @@
+name: Cinematic spacecraft render gate
+on:
+  push:
+    branches: [game/ace-cinematic-blackspace-v6-20261113]
+  pull_request:
+    paths:
+      - 'public/cinematic-ship.mjs'
+      - 'public/free-roam-render.mjs'
+      - 'public/game-4d-app.mjs'
+      - 'public/game-4d.html'
+      - 'public/free-roam.html'
+      - 'tests/cinematic-render.test.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cinematic-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate renderers and deterministic physics
+        run: |
+          node --check public/cinematic-ship.mjs
+          node --check public/free-roam-render.mjs
+          node --check public/game-4d-app.mjs
+          node --test tests/cinematic-render.test.mjs tests/free-roam-core.test.mjs
