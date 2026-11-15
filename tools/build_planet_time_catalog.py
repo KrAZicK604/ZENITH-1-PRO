@@ -5,6 +5,8 @@ All state vectors share barycentric J2000/ICRF axes, km and km/s.
 The four earlier external Horizons-vs-CSPICE anchor comparisons are separate
 and must not be misrepresented as independent observatory calibration.
 """
+import base64
+import gzip
 import datetime as dt
 import hashlib
 import json
@@ -24,7 +26,7 @@ JPL_LSK="https://naif.jpl.nasa.gov/pub/naif/generic_kernels/lsk/naif0012.tls"
 KNOWN={
  "de440s.bsp":("c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2",40_000_000,JPL_DE440),
  "mar099s.bsp":("997dc93ba640e476da7a494d2237dcdeb145e528db37be8ccee588c615e4e1ff",80_000_000,JPL_MAR099),
- "naif0012.tls":(None,80_000,JPL_LSK),
+ "naif0012.tls":("678e32bdb5a744117a467cd9601cd6b373f0e9bc9bbde1371d5eee39600a039b",80_000,JPL_LSK),
 }
 TARGETS=[
  {"id":"sun","name":"Sun","naif":10,"kind":"body_center","radiusKm":696340,"color":"#ffdc85"},
@@ -146,6 +148,15 @@ def main():
    catalog["productionAuthority"]="NONE"
    data=(json.dumps(catalog,separators=(",",":"),sort_keys=True)+"\n").encode("utf8")
    (ROOT/"planet-ephemeris.json").write_bytes(data)
+   # This output contains ONLY public JPL model data. Emit bounded, numbered
+   # compressed chunks so the repo author can review/commit an exact static
+   # module through a separate GitHub connector action. No CI write token.
+   packed=base64.b64encode(gzip.compress(data,compresslevel=9,mtime=0)).decode("ascii")
+   print(f"ZENITH_CATALOG_START sha256={sha(data)} raw_bytes={len(data)} packed_chars={len(packed)}")
+   for n,k in enumerate(range(0,len(packed),1000)):
+    print(f"ZENITH_CATALOG_CHUNK {n:04d} {packed[k:k+1000]}")
+   print("ZENITH_CATALOG_END")
+
    receipt={"status":"PASS_BOUNDED_NUMERICAL_EPHEMERIS","productionAuthority":"NONE",
     "sha256":sha(data),"sizeBytes":len(data),"samples":len(catalog["samples"]),
     "targets":[{"id":b["id"],"naif":b["naif"],"kind":b["kind"]} for b in TARGETS],
