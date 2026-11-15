@@ -149,6 +149,16 @@ export function createStarfighterMesh() {
     cylinderX(-68,-73,y,z,9.8,8.4,26,METAL.silver,.06,'engine_lip');
     torusX(-73,y,z,8.15,1.4,METAL.ice,.95);
     cylinderX(-74,-74.12,y,z,7.1,7.1,26,METAL.core,1.0,'thruster_core');
+    // Unlike a cylinder side, these discs close the aft aperture and
+    // actually illuminate the engine core in rear and oblique views.
+    for(let i=0;i<26;i++){
+      const a=i*2*Math.PI/26,b=(i+1)*2*Math.PI/26;
+      const edge=(x,r,t)=>[x,y+r*Math.cos(t),z+r*Math.sin(t)];
+      face([-74.3,y,z],edge(-74.3,7.0,a),edge(-74.3,7.0,b),
+        METAL.engine,1.2,'opaque','thruster_core');
+      face([-74.39,y,z],edge(-74.39,4.6,a),edge(-74.39,4.6,b),
+        METAL.core,1.6,'opaque','thruster_core');
+    }
     cylinderX(-75,-79,y,z,6.0,4.2,26,METAL.engine,1.1,'thruster_core');
     for(let i=0;i<24;i++){
       const a=i*Math.PI*2/24,b=(i+1)*Math.PI*2/24;
