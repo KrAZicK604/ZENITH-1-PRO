@@ -15,7 +15,7 @@ export function setupPlanetMode(ctx,clearFlightInput){
   $('planetClockState').textContent=mode==='live'?'DEVICE UTC · LIVE (UNATTESTED)':mode==='running'?'TIME ADVANCE '+warp+'×':'TIME PAUSED';
   $('planetLoaded').textContent=catalog?'241 JPL STATE SAMPLES · SHA-256 VERIFIED':'WAITING FOR VERIFIED CATALOG';
   $('planetTimeReadout').textContent=new Date(epochMs).toISOString().replace('.000Z','Z');
-  $('planetDate').value=fmt(epochMs);
+  if(document.activeElement!==$('planetDate'))$('planetDate').value=fmt(epochMs);
   $('planetPlay').textContent=mode==='running'?'Pause astronomical time':'Advance astronomical time';
   if(state?.status==='VERIFIED_SOURCE_INTERPOLATED'){
    const d=state.distancesKm;
@@ -25,7 +25,7 @@ export function setupPlanetMode(ctx,clearFlightInput){
    $('planetFocusState').textContent='Selected '+b.body.name+
      (b.body.kind==='system_barycenter'?' (system barycenter)':' (body center)')+
      ' · Sun-relative '+formatKm(Math.hypot(...b.p.map((x,i)=>x-sun.p[i])))+
-     ' · barycentric speed '+b.v.reduce((n,x)=>n+x*x,0)**.5.toFixed(0);
+     ' · barycentric speed '+Math.hypot(...b.v).toFixed(3)+' km/s';
   }else{
    $('planetRanges').textContent='No verified range: '+(state?.status||'DATA_UNAVAILABLE');
    $('planetFocusState').textContent='ABSTAIN — no extrapolation outside 2026-11-01 to 2027-03-01 UTC';
