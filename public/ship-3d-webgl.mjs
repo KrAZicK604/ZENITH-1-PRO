@@ -101,8 +101,8 @@ const FRAGMENT=[
  ' col+=vColor*vEmission*(1.03+0.16*sin(uPulse*8.5));',
  ' if(uWire>0.5)col=vec3(0.25,0.78,0.95)*(.66+.16*diffuse);',
  ' float alpha=uOpacity;',
- ' if(uJet>0.5){ col=vColor*(.75+1.35*vEmission);',
- '   alpha*=clamp(vEmission*.75,.05,.65); }',
+ ' if(uJet>0.5){ col=mix(vec3(.025,.16,.38),vec3(.65,1.20,1.85),clamp(vEmission*2.0,0.0,1.0));',
+ '   alpha*=clamp(vEmission*.67,.03,.65); }',
  ' outColor=vec4(clamp(col,0.0,2.4),alpha);','}'
 ].join('\n');
 const STAR_VERTEX=[
@@ -236,7 +236,7 @@ export function createShip3DRenderer(canvas,{forcedFallback=false}={}){
         orbitDistance*Math.cos(orbitElev)*Math.sin(orbitAz),
         orbitDistance*Math.sin(orbitElev)
       ],up:[0,0,1]};
-      default:return {eye:[-225,0,64],up:[0,0,1]};
+      default:return {eye:[-197,0,59],up:[0,0,1]};
     }
   }
   function noteHistory(f){
@@ -265,9 +265,17 @@ export function createShip3DRenderer(canvas,{forcedFallback=false}={}){
         gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.disable(gl.CULL_FACE);
         gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
         gl.depthMask(false);skyDraw(vp);gl.depthMask(true);
+        // Show local obstacles accurately but do not fill deep space with
+        // a crowded wall of tiny simulated rocks. Culling is VISUAL ONLY.
+        const nearbyAsteroids=f.asteroids
+          .map(a=>({obj:a,d:Math.hypot(a.x-s.x,a.y-s.y,a.z-s.z)}))
+          .filter(item=>item.d<285)
+          .sort((a,b)=>a.d-b.d)
+          .slice(0,3)
+          .map(item=>({obj:item.obj,key:'asteroid'}));
         for(const body of [
           {obj:f.moon,key:'moon'},{obj:f.goal,key:'mars'},
-          ...f.asteroids.map(a=>({obj:a,key:'asteroid'}))
+          ...nearbyAsteroids
         ]){
           if(!body.obj)continue;
           const p=body.obj;
@@ -294,7 +302,7 @@ export function createShip3DRenderer(canvas,{forcedFallback=false}={}){
           gl.depthMask(true);
         }
         const speed=Math.hypot(s.vx,s.vy,s.vz);
-        const thrust=clamp(speed/100,.08,.78);
+        const thrust=clamp(.24+speed/165,.24,.85);
         if(!wireframe){
           gl.depthMask(false);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);
           draw(plume,vp,angle,eye,{jet:true,opacity:thrust,pulse:f.ticks/60});
