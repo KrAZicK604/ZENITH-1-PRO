@@ -34,10 +34,27 @@ kbd{background:#17323a;border:1px solid #4b7380;padding:2px 5px;border-radius:4p
 #planetError{font-size:.78rem;color:#8edfd3;overflow-wrap:anywhere}
 .planet-note{font-size:.78rem;color:#b2cbd2;line-height:1.6}
 @media(max-width:700px){.planet-row button,.planet-row input,.planet-row select{flex:1 1 138px;min-width:0}}
+
+.ship3d-stage{position:relative;background:#000;overflow:hidden}
+.ship3d-stage canvas{width:100%;height:auto;aspect-ratio:16/9;display:block;background:#000}
+#ship3dScene{cursor:grab;touch-action:none;outline-offset:-3px}
+#ship3dScene.dragging{cursor:grabbing}
+.ship3d-label{pointer-events:none;position:absolute;bottom:12px;left:15px;
+  font:600 11px ui-monospace,monospace;color:#90cbd7;letter-spacing:.035em;
+  background:rgba(0,0,0,.52);border-left:2px solid #4d9db5;
+  padding:6px 9px;max-width:calc(100% - 30px)}
+.ship3d-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+  padding:13px 14px;background:#050d13;border-top:1px solid #255063}
+.ship3d-toolbar button{font-size:.8rem;min-height:40px;padding:8px 10px}
+.ship3d-toolbar button[aria-pressed="true"]{background:#86eddf;color:#061f27}
+.ship3d-help{font-size:.76rem;color:#99bed0;flex:1 1 190px;line-height:1.5}
+#ship3dStatus{font-size:.72rem;color:#84d7e6;display:block;width:100%;
+  font-variant-numeric:tabular-nums}
+@media(max-width:680px){.ship3d-toolbar button{flex:1 1 94px;font-size:.75rem}}
 </style></head><body><main>
 <a href="./game.html">← Solo preview</a>
-<h1>ZENITH Mars Race — Cinematic 4D Flight</h1>
-<p><strong>Deep-space flight.</strong> Your spacecraft, an almost-black universe, and distant stars. Navigate in (x, y, z) through simulation time (t); arcade physics, not real orbital flight.</p>
+<h1>ZENITH — Fully Modeled 3D Spacecraft / 4D Flight</h1>
+<p><strong>Deep-space flight.</strong> An actual three-dimensional spacecraft with a black universe and sparse, distant stars. Navigate in (x, y, z) through simulation time (t); arcade physics, not real orbital flight.</p>
 <div class="mode-switch" aria-label="View mode">
 <button id="openPlanets" class="primary">Explore real planetary system</button>
 <button id="returnFlight" hidden>Return to 4D spaceship flight</button>
@@ -52,7 +69,24 @@ kbd{background:#17323a;border:1px solid #4b7380;padding:2px 5px;border-radius:4p
 <div><small>Z / altitude</small><strong id="z">0</strong></div>
 <div><small>Boost / score</small><strong id="score">3 / 0</strong></div>
 </div>
+<div class="ship3d-stage">
+<canvas id="ship3dScene" width="960" height="540" tabindex="0" hidden
+ aria-label="Interactive genuine 3D procedural spacecraft, triple thrusters, metallic hull, rotatable camera and black starfield. Drag to orbit."></canvas>
 <canvas id="scene" width="960" height="540" tabindex="0" aria-label="Perspective 3D flight simulation. Ship moves in three spatial dimensions."></canvas>
+<div id="ship3dLabel" class="ship3d-label" hidden>3D MESH · XYZ = GAME SPACE · T = SIMULATION TIME</div>
+</div>
+<div id="ship3dControls" class="ship3d-toolbar" aria-label="Spacecraft model and camera controls">
+<button type="button" data-ship-view="chase" aria-pressed="true">Chase</button>
+<button type="button" data-ship-view="orbit" aria-pressed="false">Orbit</button>
+<button type="button" data-ship-view="top" aria-pressed="false">Top</button>
+<button type="button" data-ship-view="side" aria-pressed="false">Side</button>
+<button type="button" data-ship-view="front" aria-pressed="false">Front</button>
+<button type="button" id="ship3dWire" aria-pressed="false">Wireframe: off</button>
+<button type="button" id="ship3dSlices" aria-pressed="true">Time slices: on</button>
+<button type="button" id="ship3dArt">Show original 2D art</button>
+<span class="ship3d-help">Drag the 3D view to orbit; scroll to zoom. Geometry rotates while flight controls continue to steer the underlying ship.</span>
+<span id="ship3dStatus" role="status">Preparing local 3D mesh (WebGL2 fallback available).</span>
+</div>
 <section id="planetControls" hidden aria-label="JPL real-time solar-system planetarium">
 <div class="planet-row"><strong id="planetLoaded">LOADING VERIFIED JPL DATA</strong>
 <span id="planetClockState">TIME PAUSED</span><span id="planetTimeReadout"></span></div>
@@ -95,7 +129,7 @@ kbd{background:#17323a;border:1px solid #4b7380;padding:2px 5px;border-radius:4p
 </div>
 <div class="info">
 <div><strong>Desktop controls</strong><p><kbd>W</kbd>/<kbd>S</kbd> forward/back · <kbd>A</kbd>/<kbd>D</kbd> lateral · <kbd>↑</kbd>/<kbd>↓</kbd> altitude · <kbd>Space</kbd> boost · <kbd>P</kbd> pause. Use the buttons on mobile.</p></div>
-<div><strong>Dynamics and integrity</strong><p>The concept ship is animated rear-view 2.5D artwork, not a freely rotatable 3D model. The separate JPL planetarium shows independently dated planetary positions and does not alter the arcade physics. Fixed 60 Hz simulation, gravity in x/y/z, 3D asteroid fields, swept collision checks, bounded velocity and terminal crash/win states. All displayed coordinates and speed are <strong>game units, not kilometers or light speed</strong>. Local practice score only; no multiplayer, purchases or verified prizes.</p></div>
+<div><strong>Dynamics and integrity</strong><p>The spacecraft is now a genuine locally built 3D hull: layered metal fuselage, sweep wings, fins, raised canopy and three volumetric nozzles, shaded by WebGL2. Chase, orbit, top, side and front cameras plus wireframe and previous-time state ghosts are optional. The original 2D illustration remains a fallback on unsupported devices. The separate JPL planetarium uses real dated planetary positions but does not alter arcade physics. The fourth coordinate is elapsed simulation time, not a fourth spatial dimension. Fixed 60 Hz simulation, gravity in x/y/z, 3D asteroid fields, swept collision checks, bounded velocity and terminal crash/win states. All displayed coordinates and speed are <strong>game units, not kilometers or light speed</strong>. Local practice score only; no multiplayer, purchases or verified prizes.</p></div>
 </div></main>
 <script type="module" src="./game-4d-app.mjs"></script>
 </body></html>
