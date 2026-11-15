@@ -1,0 +1,37 @@
+name: JPL 10-body time-series catalog scientific generator
+on:
+  push:
+    branches:
+      - game/jpl-planet-time-scale-v8-20261114
+    paths:
+      - tools/build_planet_time_catalog.py
+      - .github/workflows/planet-time-catalog-ci.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  numerical-catalog:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fail early on invalid source
+        run: python -B -m py_compile tools/build_planet_time_catalog.py
+      - name: Install numerical SPICE reader
+        run: python -m pip install --disable-pip-version-check spiceypy==6.0.3
+      - name: Generate real JPL states, check precision and prior Horizons anchors
+        run: python -B tools/build_planet_time_catalog.py
+      - name: Retain raw data, accuracy report and source hashes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zenith-planet-time-series
+          path: |
+            artifacts/planet-time/*.json
+          if-no-files-found: error
+          retention-days: 30

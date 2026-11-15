@@ -1,0 +1,75 @@
+name: Real JPL planets and UTC time-scale gameplay gate
+on:
+  push:
+    branches:
+      - game/jpl-planet-time-scale-v8-20261114
+    paths:
+      - 'public/planet-*.mjs'
+      - 'public/game-4d*.mjs'
+      - 'public/game-4d.html'
+      - 'tests/planet-time*.mjs'
+      - '.github/workflows/planet-game-ci.yml'
+  pull_request:
+    paths:
+      - 'public/planet-*.mjs'
+      - 'public/game-4d*.mjs'
+      - 'public/game-4d.html'
+      - 'tests/planet-time*.mjs'
+      - '.github/workflows/planet-game-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  math-time-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and data-source checks
+        run: |
+          node --check public/planet-ephemeris-data.mjs
+          node --check public/planet-time-core.mjs
+          node --check public/planet-time-render.mjs
+          node --check public/planet-time-app.mjs
+          node --check public/game-4d-app.mjs
+          node --check tests/planet-time-core.test.mjs
+          node --test tests/planet-time-core.test.mjs
+  browser-planetarium:
+    runs-on: ubuntu-24.04
+    needs: math-time-source
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: |
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright@1.58.2
+          npx playwright install --with-deps chromium
+      - name: Real browser test of planetarium and 4D arcade isolation
+        run: |
+          python3 -m http.server 8765 --directory public >/tmp/jpl-planet-http.log 2>&1 &
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if curl --fail --silent http://127.0.0.1:8765/game-4d.html >/dev/null; then break; fi
+            sleep 1
+          done
+          node tests/planet-time-browser-smoke.mjs
+          node tests/game-4d-browser-smoke.mjs
+      - name: Retain desktop and mobile screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zenith-real-planetarium-browser-evidence
+          path: |
+            artifacts/planet-time-*.png
+            artifacts/4d-*.png
+          if-no-files-found: ignore
+          retention-days: 14
