@@ -1,4 +1,4 @@
-"""Regression tests for race/course/school checkout product mapping.
+"""Regression tests for fail-closed Mars Race and remaining checkout mapping.
 
 Amounts and links pinned against the live Stripe catalogue verified 2026-11-11.
 Revalidate these assertions when authorized prices or links change.
@@ -16,11 +16,21 @@ PRODUCTS = {
 
 
 class CheckoutMappingTests(unittest.TestCase):
-    def test_live_stripe_urls_present_in_both_frontends(self):
+    def test_mars_race_checkout_link_absent_in_both_frontends(self):
+        race_url = "https://buy.stripe.com/" + PRODUCTS["race"][0]
+        for relative_path in ("app.py", "public/index.html"):
+            content = (ROOT / relative_path).read_text(encoding="utf-8")
+            with self.subTest(file=relative_path):
+                self.assertNotIn(race_url, content)
+                self.assertIn("unavailable", content.lower())
+
+    def test_other_checkout_urls_present_in_both_frontends(self):
         for relative_path in ("app.py", "public/index.html"):
             content = (ROOT / relative_path).read_text(encoding="utf-8")
             with self.subTest(file=relative_path):
                 for name, (suffix, amount) in PRODUCTS.items():
+                    if name == "race":
+                        continue
                     self.assertEqual(
                         content.count("https://buy.stripe.com/" + suffix), 1,
                         msg=f"{name} checkout missing or duplicated in {relative_path}",
@@ -38,12 +48,14 @@ class CheckoutMappingTests(unittest.TestCase):
     def test_no_mismatched_anchor_prices(self):
         page = (ROOT / "public/index.html").read_text(encoding="utf-8")
         anchors = re.findall(r'<a class="cta" href="(https://buy[.]stripe[.]com/[^"]+)"[^>]*>([^<]+)</a>', page)
-        self.assertEqual(len(anchors), 3)
+        self.assertEqual(len(anchors), 2)
         mapping = {url.split("/")[-1]: label for url, label in anchors}
         for name, (suffix, amount) in PRODUCTS.items():
+            if name == "race":
+                continue
             with self.subTest(product=name):
                 self.assertIn(amount, mapping[suffix])
-        self.assertIn("month", mapping[PRODUCTS["race"][0]].lower())
+        self.assertNotIn(PRODUCTS["race"][0], mapping)
 
 
 if __name__ == "__main__":
