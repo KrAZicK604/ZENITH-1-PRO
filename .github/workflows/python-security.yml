@@ -5,6 +5,8 @@ on:
     paths:
       - '**/*.py'
       - 'requirements.txt'
+      - 'public/**'
+      - 'vercel.json'
       - '.github/workflows/python-security.yml'
   push:
     branches: [main]
