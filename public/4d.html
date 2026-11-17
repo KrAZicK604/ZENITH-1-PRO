@@ -53,9 +53,29 @@ mesh(new THREE.CylinderGeometry(.32,.32,.06,24),glow,0,-.25,8.47,Math.PI/2);
 const thrusterFlames=[];
 for(const x of [-2.2,0,2.2]){const f=mesh(new THREE.ConeGeometry(x===0?.33:.42,2.4,16),flame,x,-.3,9.7,Math.PI/2);thrusterFlames.push(f)}
 // Dimension markers are specifications for this fictional model, not a real spacecraft certification.
-const starsN=12000;const stars=new Float32Array(starsN*3);let seed=31289;const rand=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296};
-for(let i=0;i<starsN;i++){const r=800+rand()*35000,t=rand()*Math.PI*2,u=rand()*2-1;stars[i*3]=r*Math.sqrt(1-u*u)*Math.cos(t);stars[i*3+1]=r*u;stars[i*3+2]=r*Math.sqrt(1-u*u)*Math.sin(t)}
-const starGeo=new THREE.BufferGeometry();starGeo.setAttribute('position',new THREE.BufferAttribute(stars,3));const starField=new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xe3efff,size:3,sizeAttenuation:false,transparent:true,opacity:.85,depthWrite:false}));scene.add(starField);
+// Sparse finite star volume in world coordinates. Passing a star leaves it behind the camera;
+// it is recycled only once far outside the flight bubble. No star follows the ship.
+const starsN=2100,starRadius=4800,starRecycle=6500;
+const stars=new Float32Array(starsN*3);let seed=31289;
+const rand=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296};
+function randomStar(center,frontOnly=false){
+  const theta=rand()*Math.PI*2,u=rand()*2-1,r=450+Math.cbrt(rand())*(starRadius-450);
+  const direction=new THREE.Vector3(Math.sqrt(1-u*u)*Math.cos(theta),u,Math.sqrt(1-u*u)*Math.sin(theta));
+  if(frontOnly&&direction.dot(new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion))<-.15)direction.negate();
+  return center.clone().addScaledVector(direction,r);
+}
+for(let i=0;i<starsN;i++){const p=randomStar(ship.position);stars.set([p.x,p.y,p.z],i*3)}
+const starGeo=new THREE.BufferGeometry();starGeo.setAttribute('position',new THREE.BufferAttribute(stars,3));starGeo.attributes.position.setUsage(THREE.DynamicDrawUsage);
+const starField=new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xe3efff,size:1.65,sizeAttenuation:false,transparent:true,opacity:.8,depthWrite:false}));starField.frustumCulled=false;scene.add(starField);
+let starScan=0;
+function updateStars(){
+  // Bounded work: check 90 points/frame, even at 4K.
+  let dirty=false;
+  for(let n=0;n<90;n++){const i=(starScan++)%starsN,j=i*3;const dx=stars[j]-ship.position.x,dy=stars[j+1]-ship.position.y,dz=stars[j+2]-ship.position.z;
+    if(dx*dx+dy*dy+dz*dz>starRecycle*starRecycle){const p=randomStar(ship.position,true);stars[j]=p.x;stars[j+1]=p.y;stars[j+2]=p.z;dirty=true}
+  }
+  if(dirty)starGeo.attributes.position.needsUpdate=true;
+}
 const planets=[{name:'MARS',r:95,pos:[-600,80,-1400],color:0xc15a32},{name:'EARTH',r:130,pos:[900,-110,-2400],color:0x226cc6},{name:'MOON',r:42,pos:[1170,20,-2200],color:0x9b9b9b}];
 for(const p of planets){const planet=new THREE.Mesh(new THREE.SphereGeometry(p.r,48,32),new THREE.MeshStandardMaterial({color:p.color,roughness:.9,metalness:0}));planet.position.set(...p.pos);scene.add(planet);p.mesh=planet}
 ship.position.set(0,0,0);
@@ -69,7 +89,7 @@ function resize(){renderer.setPixelRatio(ratio());renderer.setSize(innerWidth,in
 const fwd=new THREE.Vector3(0,0,-1),right=new THREE.Vector3(1,0,0),up=new THREE.Vector3(0,1,0),target=new THREE.Vector3(),accel=new THREE.Vector3();
 function tick(now){const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;frames++;if(now-frameWindow>1000){avg=frames*1000/(now-frameWindow);frames=0;frameWindow=now;document.getElementById('fps').textContent=avg.toFixed(0);if(quality==='auto')resize()}
 if(!paused){const t=dt*timeScale;simTime+=t;for(const f of thrusterFlames){f.visible=keys.has('KeyW')||keys.has('ShiftLeft')||keys.has('ShiftRight');f.scale.z=1+Math.sin(now*.04)*.12;}const turn=1.1*dt;ship.rotateX((Number(keys.has('ArrowDown'))-Number(keys.has('ArrowUp')))*turn);ship.rotateY((Number(keys.has('ArrowLeft'))-Number(keys.has('ArrowRight')))*turn);ship.rotateZ((Number(keys.has('KeyZ'))-Number(keys.has('KeyC')))*turn);
-accel.set(0,0,0);const thrust=keys.has('ShiftLeft')||keys.has('ShiftRight')?120:38;const local=new THREE.Vector3(Number(keys.has('KeyD'))-Number(keys.has('KeyA')),Number(keys.has('KeyE'))-Number(keys.has('KeyQ')),Number(keys.has('KeyS'))-Number(keys.has('KeyW')));if(local.lengthSq())accel.copy(local.normalize().applyQuaternion(ship.quaternion)).multiplyScalar(thrust);velocity.addScaledVector(accel,t);velocity.multiplyScalar(Math.exp(-(keys.has('KeyX')?3:.055)*t));if(velocity.length()>800)velocity.setLength(800);ship.position.addScaledVector(velocity,t)}
+accel.set(0,0,0);const thrust=keys.has('ShiftLeft')||keys.has('ShiftRight')?120:38;const local=new THREE.Vector3(Number(keys.has('KeyD'))-Number(keys.has('KeyA')),Number(keys.has('KeyE'))-Number(keys.has('KeyQ')),Number(keys.has('KeyS'))-Number(keys.has('KeyW')));if(local.lengthSq())accel.copy(local.normalize().applyQuaternion(ship.quaternion)).multiplyScalar(thrust);velocity.addScaledVector(accel,t);velocity.multiplyScalar(Math.exp(-(keys.has('KeyX')?3:.055)*t));if(velocity.length()>800)velocity.setLength(800);ship.position.addScaledVector(velocity,t);updateStars()}
 const offset=new THREE.Vector3(0,cockpit?.65:4,cockpit?-1.8:16).applyQuaternion(ship.quaternion);target.copy(ship.position).add(offset);camera.position.lerp(target,Math.min(1,dt*7));const look=ship.position.clone().add(fwd.clone().applyQuaternion(ship.quaternion).multiplyScalar(90));camera.up.copy(up).applyQuaternion(ship.quaternion);camera.lookAt(look);ship.visible=!cockpit;
 document.getElementById('speed').textContent=velocity.length().toFixed(1);document.getElementById('position').textContent=ship.position.toArray().map(x=>x.toFixed(0)).join(', ');document.getElementById('clock').textContent=simTime.toFixed(1);renderer.render(scene,camera)}
 renderer.setAnimationLoop(tick);
