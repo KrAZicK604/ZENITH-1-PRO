@@ -21,6 +21,27 @@ canvas{position:absolute;top:0;left:0;width:100%;height:100vh}
 .ticon{width:44px;height:44px;background:rgba(0,255,255,0.15);border:1px solid #0ff;border-radius:10px;margin-right:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;position:relative}
 .ticon:hover{background:#0ff;color:#000;transform:translateY(-4px) scale(1.1)}
 .ticon.active{background:#0ff;color:#000;box-shadow:0 0 20px #0ff}
+
+/* ZENITH cinematic visual pass: visual-only, existing controls preserved */
+:root{color-scheme:dark;--space:#03060d;--panel:rgba(8,17,33,.92);--line:rgba(106,183,224,.36);--ice:#b9e9ff;--accent:#69c8ff;--gold:#e9bb72}
+body{background:var(--space);color:#d8eaff;font-family:Inter,Segoe UI,Arial,sans-serif;letter-spacing:.015em}
+canvas#c{background:radial-gradient(ellipse at 55% 43%,#0c1729 0%,#050914 42%,#010207 100%)}
+.window{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 22px 80px rgba(0,0,0,.62),inset 0 1px rgba(255,255,255,.055);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.titlebar{background:linear-gradient(90deg,rgba(40,90,129,.38),rgba(18,33,54,.55));color:var(--ice);font-size:12px;letter-spacing:.08em;padding:13px 16px;border-bottom:1px solid rgba(150,204,235,.18)}
+.titlebar:hover{background:linear-gradient(90deg,rgba(46,104,147,.48),rgba(22,39,62,.64))}
+.content{color:#d5e6f4;font-size:12px;line-height:1.65;padding:17px}
+.btn,.btn-green{background:rgba(50,105,143,.24);border:1px solid rgba(126,202,239,.5);color:#d7efff;border-radius:9px;padding:9px 13px;font-size:11px;transition:background .15s ease,border-color .15s ease}
+.btn:hover,.btn-green:hover{background:#b8e6ff;color:#08111d;box-shadow:0 0 18px rgba(105,200,255,.28)}
+.input{background:rgba(3,10,20,.85);border-color:var(--line);color:#e7f4ff;font-size:12px}
+#gameCanvas{border:1px solid rgba(124,189,225,.44);border-radius:12px;box-shadow:inset 0 0 30px rgba(26,70,112,.18)}
+#onlineStatus{background:rgba(5,12,24,.9);border:1px solid rgba(121,204,238,.42);border-radius:13px;box-shadow:0 12px 45px rgba(0,0,0,.5)}
+#taskbar{background:rgba(4,9,19,.94);border-top:1px solid rgba(112,189,230,.36);height:62px;gap:4px}
+.ticon{background:rgba(35,73,108,.28);border:1px solid rgba(115,188,228,.35);border-radius:11px;box-shadow:none}
+.ticon:hover,.ticon.active{background:rgba(113,193,238,.85);color:#07101c;box-shadow:0 0 18px rgba(101,180,226,.24)}
+:focus-visible{outline:2px solid #ffcf80;outline-offset:3px}
+@media(min-width:2560px){.window{font-size:1.08rem}.content{font-size:14px}.titlebar{font-size:14px}.btn{font-size:13px}#taskbar{height:72px}.ticon{width:52px;height:52px}}
+@media(max-width:900px){.window{min-width:0!important;max-width:calc(100vw - 24px);left:12px!important}.content{max-height:45vh}#onlineStatus{min-width:0;width:min(96vw,520px);font-size:11px}#taskbar{overflow-x:auto}}
+@media(prefers-reduced-motion:reduce){.btn,.ticon{transition:none}}
 </style></head><body>
 <canvas id=c></canvas>
 
@@ -280,7 +301,7 @@ function clearLeaderboard(){if(confirm('Clear leaderboard?')){leaderboard=[];loc
 // BG
 let cv=document.getElementById('c'),ctx=cv.getContext('2d'),t=0,W,H;function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight}resize();onresize=resize;
 let parts=[];for(let i=0;i<500;i++)parts.push({x:Math.random()*W,y:Math.random()*H,z:Math.random()*2000-1000,vx:(Math.random()-0.5)*2,vy:(Math.random()-0.5)*2,vz:(Math.random()-0.5)*3,q:Math.random()*7+1});
-function drawBG(){ctx.fillStyle='rgba(0,0,0,0.08)';ctx.fillRect(0,0,W,H);parts.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;p.z+=p.vz;if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;if(p.z<-1000||p.z>1000)p.vz*=-1;let s=800/(800+p.z),x=(p.x-W/2)*s+W/2,y=(p.y-H/2)*s+H/2,sz=p.q*s;ctx.fillStyle=`hsla(${(t+i)%360},100%,60%,0.4)`;ctx.beginPath();ctx.arc(x,y,sz,0,6.28);ctx.fill();});t+=0.02;requestAnimationFrame(drawBG);}drawBG();
+function drawBG(){ctx.fillStyle='rgba(0,0,0,0.08)';ctx.fillRect(0,0,W,H);parts.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;p.z+=p.vz;if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;if(p.z<-1000||p.z>1000)p.vz*=-1;let s=800/(800+p.z),x=(p.x-W/2)*s+W/2,y=(p.y-H/2)*s+H/2,sz=p.q*s;ctx.fillStyle=(i%23===0?'rgba(192,221,255,0.92)':i%7===0?'rgba(133,178,229,0.72)':'rgba(210,223,243,0.46)');ctx.beginPath();ctx.arc(x,y,sz,0,6.28);ctx.fill();});t+=0.02;requestAnimationFrame(drawBG);}drawBG();
 setInterval(()=>{let el=document.getElementById('taskTime');if(el)el.innerText=new Date().toLocaleTimeString();},1000);
 updateTaskbar();
 </script></body></html>
