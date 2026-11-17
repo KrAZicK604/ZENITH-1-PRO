@@ -80,22 +80,29 @@ function updateStars(){
 // Gameplay mapping deliberately compresses radial distances logarithmically for a bounded browser scene.
 // 1 AU = 149,597,870.7 km. 1 scene unit = 1 metre ONLY for the 18m XR-18 craft;
 // planetary distances/radii are separately stylized and must not be interpreted as metres.
-const AU_KM=149597870.7,orbitCompression=4300;
+// Planet radii are proportional to approximate real mean radii, in km.
+// Display scale: Earth radius 6371 km -> 64 render units. This is a PLANET VISUAL SCALE,
+// distinct from the spacecraft's 1-unit-per-metre geometry and compressed orbit distances.
+// Never claim physical distances, collisions, or travel times are at one consistent scale.
+const AU_KM=149597870.7,orbitCompression=4300,planetRadiusScale=64/6371;
 function orbitRadius(au){return orbitCompression*Math.log1p(au*3)}
 const orbitalData=[
-{name:'MERCURY',au:.3871,r:32,color:0x918b83,angle:-.4},
-{name:'VENUS',au:.7233,r:55,color:0xd4a76b,angle:1.5},
-{name:'EARTH',au:1,r:64,color:0x226cc6,angle:-1.1},
-{name:'MARS',au:1.5237,r:48,color:0xc15a32,angle:2.4},
-{name:'JUPITER',au:5.2044,r:180,color:0xc9a17c,angle:-2.2},
-{name:'SATURN',au:9.5826,r:150,color:0xd7c49a,angle:.9},
-{name:'URANUS',au:19.1913,r:105,color:0x80d5df,angle:-.85},
-{name:'NEPTUNE',au:30.07,r:102,color:0x3569c4,angle:2.85}
+{name:'MERCURY',au:.3871,radiusKm:2439.7,color:0x918b83,angle:-.4},
+{name:'VENUS',au:.7233,radiusKm:6051.8,color:0xd4a76b,angle:1.5},
+{name:'EARTH',au:1,radiusKm:6371,color:0x226cc6,angle:-1.1},
+{name:'MARS',au:1.5237,radiusKm:3389.5,color:0xc15a32,angle:2.4},
+{name:'JUPITER',au:5.2044,radiusKm:69911,color:0xc9a17c,angle:-2.2},
+{name:'SATURN',au:9.5826,radiusKm:58232,color:0xd7c49a,angle:.9},
+{name:'URANUS',au:19.1913,radiusKm:25362,color:0x80d5df,angle:-.85},
+{name:'NEPTUNE',au:30.07,radiusKm:24622,color:0x3569c4,angle:2.85}
 ];
-const planets=orbitalData.map(p=>({...p,pos:[Math.sin(p.angle)*orbitRadius(p.au),0,-Math.cos(p.angle)*orbitRadius(p.au)]}));
+const planets=orbitalData.map(p=>({...p,r:p.radiusKm*planetRadiusScale,pos:[Math.sin(p.angle)*orbitRadius(p.au),0,-Math.cos(p.angle)*orbitRadius(p.au)]}));
 const earth=planets.find(p=>p.name==='EARTH');
-planets.push({name:'MOON',au:null,r:19,color:0x9b9b9b,pos:[earth.pos[0]+125,0,earth.pos[2]-75]});
-for(const p of planets){const planet=new THREE.Mesh(new THREE.SphereGeometry(p.r,32,24),new THREE.MeshStandardMaterial({color:p.color,roughness:.9,metalness:0}));planet.position.set(...p.pos);scene.add(planet);p.mesh=planet}
+planets.push({name:'MOON',au:null,radiusKm:1737.4,r:1737.4*planetRadiusScale,color:0x9b9b9b,pos:[earth.pos[0]+180,0,earth.pos[2]-130]});
+const sphereLOD=[new THREE.SphereGeometry(1,12,8),new THREE.SphereGeometry(1,24,16),new THREE.SphereGeometry(1,48,32)];
+for(const p of planets){const planet=new THREE.Mesh(sphereLOD[0],new THREE.MeshStandardMaterial({color:p.color,roughness:.9,metalness:0}));planet.scale.setScalar(p.r);planet.position.set(...p.pos);scene.add(planet);p.mesh=planet;p.lodIndex=0}
+let planetLodFrame=0;
+function updatePlanetLOD(){if((planetLodFrame++%30)!==0)return;for(const p of planets){const distance=Math.max(1,camera.position.distanceTo(p.mesh.position));const angular=p.r/distance;const desired=angular>.1?2:angular>.012?1:0;if(desired!==p.lodIndex){p.mesh.geometry=sphereLOD[desired];p.lodIndex=desired}}}
 ship.position.set(0,0,0);
 const enemyShips=[],shots=[],enemyShots=[];let kills=0,health=100,shield=100,spawned=false,fireCooldown=0,enemyFireCooldown=0;
 const enemyMat=new THREE.MeshStandardMaterial({color:0xb72c40,metalness:.6,roughness:.4}),bulletMat=new THREE.MeshBasicMaterial({color:0x55edff}),hostileBullet=new THREE.MeshBasicMaterial({color:0xff5a48});
@@ -130,7 +137,7 @@ function tick(now){const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;f
 if(!paused){const t=dt*timeScale;simTime+=t;for(const f of thrusterFlames){f.visible=keys.has('KeyW')||keys.has('ShiftLeft')||keys.has('ShiftRight');f.scale.z=1+Math.sin(now*.04)*.12;}const turn=1.1*dt;ship.rotateX((Number(keys.has('ArrowDown'))-Number(keys.has('ArrowUp')))*turn);ship.rotateY((Number(keys.has('ArrowLeft'))-Number(keys.has('ArrowRight')))*turn);ship.rotateZ((Number(keys.has('KeyZ'))-Number(keys.has('KeyC')))*turn);
 accel.set(0,0,0);const thrust=keys.has('ShiftLeft')||keys.has('ShiftRight')?120:38;const local=new THREE.Vector3(Number(keys.has('KeyD'))-Number(keys.has('KeyA')),Number(keys.has('KeyE'))-Number(keys.has('KeyQ')),Number(keys.has('KeyS'))-Number(keys.has('KeyW')));if(local.lengthSq())accel.copy(local.normalize().applyQuaternion(ship.quaternion)).multiplyScalar(thrust);velocity.addScaledVector(accel,t);velocity.multiplyScalar(Math.exp(-(keys.has('KeyX')?3:.055)*t));if(velocity.length()>800)velocity.setLength(800);ship.position.addScaledVector(velocity,t);updateStars();combatStep(dt)}
 const offset=new THREE.Vector3(0,cockpit?.65:4,cockpit?-1.8:16).applyQuaternion(ship.quaternion);target.copy(ship.position).add(offset);camera.position.lerp(target,Math.min(1,dt*7));const look=ship.position.clone().add(fwd.clone().applyQuaternion(ship.quaternion).multiplyScalar(90));camera.up.copy(up).applyQuaternion(ship.quaternion);camera.lookAt(look);ship.visible=!cockpit;
-document.getElementById('speed').textContent=velocity.length().toFixed(1);document.getElementById('position').textContent=ship.position.toArray().map(x=>x.toFixed(0)).join(', ');document.getElementById('clock').textContent=simTime.toFixed(1);document.getElementById('health').textContent=health;document.getElementById('shield').textContent=shield;document.getElementById('kills').textContent=kills;document.getElementById('enemies').textContent=enemyShips.length;radarDraw();renderer.render(scene,camera)}
+document.getElementById('speed').textContent=velocity.length().toFixed(1);document.getElementById('position').textContent=ship.position.toArray().map(x=>x.toFixed(0)).join(', ');document.getElementById('clock').textContent=simTime.toFixed(1);document.getElementById('health').textContent=health;document.getElementById('shield').textContent=shield;document.getElementById('kills').textContent=kills;document.getElementById('enemies').textContent=enemyShips.length;radarDraw();updatePlanetLOD();renderer.render(scene,camera)}
 renderer.setAnimationLoop(tick);
 }catch(e){showError(e);console.error(e)}
 </script></body></html>
