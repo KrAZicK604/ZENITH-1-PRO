@@ -5,7 +5,7 @@
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;color:#eaf7ff;font:14px system-ui}canvas{display:block}#hud{position:fixed;inset:0;pointer-events:none}#top{position:absolute;top:16px;left:18px;right:18px;display:flex;justify-content:space-between;gap:10px;align-items:start}#top strong{font-size:19px;letter-spacing:.13em}#top small{display:block;color:#8faabf;font-size:11px}#metrics{position:absolute;left:18px;bottom:18px;background:#06121ac9;border:1px solid #34677d;border-radius:12px;padding:12px 15px;line-height:1.8}#cross{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:28px;color:#8feaff99}#help{position:absolute;right:18px;bottom:18px;max-width:310px;background:#06121ac9;border:1px solid #34677d;border-radius:12px;padding:12px;line-height:1.6}button,select{pointer-events:auto;background:#092837;color:#eaf7ff;border:1px solid #50a6bc;border-radius:7px;padding:9px;cursor:pointer}#error{position:absolute;top:38%;left:10%;right:10%;text-align:center;color:#ffb7a8;background:#1b0a0ae8;padding:16px;display:none}#centerNotice{position:absolute;top:70px;left:50%;transform:translateX(-50%);color:#c4e8ff;background:#06121ac0;padding:9px 14px;border-radius:9px;text-align:center}@media(max-width:700px){#help{font-size:11px;right:8px;bottom:8px;max-width:180px}#metrics{font-size:11px;left:8px;bottom:8px}#top{left:8px;right:8px}#top strong{font-size:14px}#centerNotice{font-size:11px;width:90%}}
 </style></head><body>
 <div id="hud"><div id="top"><div><strong>ZENITH // 4D</strong><small>FREE FLIGHT · 3D SPACE + SIMULATION TIME · NO PAYMENT</small></div><div><select id="quality" aria-label="Graphics quality"><option value="auto">AUTO GRAPHICS</option><option value="low">PERFORMANCE</option><option value="high">HIGH</option><option value="ultra">4K / ULTRA</option></select> <button id="camera">CHASE CAMERA</button> <button id="pause">PAUSE</button></div></div>
-<div id="centerNotice">FREE ROAM — Fly anywhere. This is an arcade simulation, not calibrated orbital physics.</div><div id="cross">+</div><div id="metrics">SPEED <b id="speed">0</b> units/s<br>POSITION <b id="position">0, 0, 0</b><br>SIM TIME <b id="clock">0.0</b> s · <b id="fps">--</b> FPS<br>RENDER <b id="res">--</b></div><div id="help">W/S thrust · A/D strafe · Q/E vertical<br>Arrow keys pitch/yaw · Z/C roll<br>SHIFT boost · X brake · V camera<br>1/2/3 time ×1 / ×10 / ×100 · P pause<br>H hide HUD · Mouse drag to look</div><div id="error" role="alert"></div></div>
+<div id="centerNotice">FREE ROAM — Fly anywhere. This is an arcade simulation, not calibrated orbital physics.</div><div id="cross">+</div><div id="metrics">XR-18 · 18m × 14m × 4m<br>SPEED <b id="speed">0</b> units/s<br>POSITION <b id="position">0, 0, 0</b><br>SIM TIME <b id="clock">0.0</b> s · <b id="fps">--</b> FPS<br>RENDER <b id="res">--</b></div><div id="help">W/S thrust · A/D strafe · Q/E vertical<br>Arrow keys pitch/yaw · Z/C roll<br>SHIFT boost · X brake · V camera<br>1/2/3 time ×1 / ×10 / ×100 · P pause<br>H hide HUD · Mouse drag to look</div><div id="error" role="alert"></div></div>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.2/build/three.module.js';
 const err=document.getElementById('error');const showError=e=>{err.style.display='block';err.textContent='3D engine unavailable: '+String(e.message||e)};
@@ -16,15 +16,43 @@ const camera=new THREE.PerspectiveCamera(70,1,.05,100000);
 scene.add(new THREE.HemisphereLight(0x6daeff,0x080c18,1.4));
 const sun=new THREE.DirectionalLight(0xffeed5,3);sun.position.set(-500,200,-700);scene.add(sun);
 const ship=new THREE.Group();scene.add(ship);
-const hull=new THREE.MeshStandardMaterial({color:0xb6cadc,metalness:.82,roughness:.28,flatShading:true});
-const dark=new THREE.MeshStandardMaterial({color:0x1b3043,metalness:.7,roughness:.33});
-const glow=new THREE.MeshBasicMaterial({color:0x49bfff});
-function mesh(geometry,material,x,y,z,rx=0,ry=0,rz=0){const m=new THREE.Mesh(geometry,material);m.position.set(x,y,z);m.rotation.set(rx,ry,rz);ship.add(m);return m}
-mesh(new THREE.ConeGeometry(.9,5,5),hull,0,0,-.5,-Math.PI/2);
-mesh(new THREE.BoxGeometry(8,.18,2.5),hull,0,-.15,1.2);
-mesh(new THREE.BoxGeometry(2,.25,3.5),dark,0,.65,1.6);
-mesh(new THREE.ConeGeometry(.8,2.1,6),dark,0,.4,-1.4,-Math.PI/2);
-for(const x of [-2.8,2.8]){mesh(new THREE.BoxGeometry(.8,.6,2.7),dark,x,-.3,1.7);mesh(new THREE.CylinderGeometry(.38,.48,.2,16),glow,x,-.2,3.12,Math.PI/2)}
+// ZENITH XR-18 fictional craft. Geometry units are metres; bounding envelope 18m L × 14m W × 4m H.
+const hull=new THREE.MeshStandardMaterial({color:0xb8c9d6,metalness:.8,roughness:.29});
+const ceramic=new THREE.MeshStandardMaterial({color:0x243d51,metalness:.62,roughness:.38});
+const trim=new THREE.MeshStandardMaterial({color:0x68c9f0,metalness:.8,roughness:.2,emissive:0x0b3447,emissiveIntensity:.65});
+const glass=new THREE.MeshPhysicalMaterial({color:0x0b3048,metalness:.24,roughness:.09,transparent:true,opacity:.91,clearcoat:1,clearcoatRoughness:.06});
+const glow=new THREE.MeshBasicMaterial({color:0x4ddaff});
+const flame=new THREE.MeshBasicMaterial({color:0x61cfff,transparent:true,opacity:.55,depthWrite:false});
+function mesh(geometry,material,x=0,y=0,z=0,rx=0,ry=0,rz=0){const m=new THREE.Mesh(geometry,material);m.position.set(x,y,z);m.rotation.set(rx,ry,rz);ship.add(m);return m}
+function panel(points,material,thickness=.15){const shape=new THREE.Shape();shape.moveTo(points[0][0],points[0][1]);for(let i=1;i<points.length;i++)shape.lineTo(points[i][0],points[i][1]);shape.closePath();const g=new THREE.ExtrudeGeometry(shape,{depth:thickness,bevelEnabled:true,bevelThickness:.045,bevelSize:.055,bevelSegments:1});g.rotateX(Math.PI/2);return mesh(g,material)}
+// Main fuselage extends from nose z=-9 to engine stern z=+9.
+mesh(new THREE.CylinderGeometry(.85,1.4,11,8),hull,0,0,-.8,Math.PI/2);
+mesh(new THREE.ConeGeometry(.85,3.8,8),hull,0,0,-7.1,-Math.PI/2);
+mesh(new THREE.BoxGeometry(2.6,1.45,7),ceramic,0,-.25,3.3);
+mesh(new THREE.BoxGeometry(2.15,.18,7),hull,0,.78,2.4);
+// Wing planform is explicitly in metres: tip-to-tip 14m.
+for(const sign of [-1,1]){
+  const pts=[[sign*.95,-3.3],[sign*3.2,-1.1],[sign*7,3.9],[sign*7,5.4],[sign*2.8,4.25],[sign*.95,5.7]];
+  panel(pts,hull,.20);
+  const inner=[[sign*1.6,-1.2],[sign*3.1,.25],[sign*5.8,4.1],[sign*3.4,3.25]];
+  panel(inner,ceramic,.05).position.y+=.13;
+  mesh(new THREE.BoxGeometry(.17,.18,5.8),trim,sign*4.65,.08,2.9,0,sign*.32,0);
+  mesh(new THREE.BoxGeometry(.95,1.1,4.5),ceramic,sign*2.2,-.32,5.4);
+  mesh(new THREE.CylinderGeometry(.55,.55,.65,24),ceramic,sign*2.2,-.3,8.1,Math.PI/2);
+  mesh(new THREE.CylinderGeometry(.42,.42,.06,24),glow,sign*2.2,-.3,8.47,Math.PI/2);
+  mesh(new THREE.BoxGeometry(.16,2.2,2.7),hull,sign*5.9,1.15,4.3,0,0,sign*.17);
+  mesh(new THREE.BoxGeometry(.14,.14,2.3),trim,sign*5.9,2.18,4.3);
+  mesh(new THREE.BoxGeometry(.18,.14,2),trim,sign*3.9,.24,3.0);
+}
+mesh(new THREE.SphereGeometry(.86,24,16),glass,0,.84,-3.25);
+mesh(new THREE.BoxGeometry(1.7,.55,3.2),glass,0,.72,-2.3);
+mesh(new THREE.BoxGeometry(.1,.07,3.1),trim,0,1.05,-2.3);
+mesh(new THREE.BoxGeometry(1.4,.2,1.5),ceramic,0,-.9,5.7);
+mesh(new THREE.CylinderGeometry(.42,.42,.65,24),ceramic,0,-.25,8.1,Math.PI/2);
+mesh(new THREE.CylinderGeometry(.32,.32,.06,24),glow,0,-.25,8.47,Math.PI/2);
+const thrusterFlames=[];
+for(const x of [-2.2,0,2.2]){const f=mesh(new THREE.ConeGeometry(x===0?.33:.42,2.4,16),flame,x,-.3,9.7,Math.PI/2);thrusterFlames.push(f)}
+// Dimension markers are specifications for this fictional model, not a real spacecraft certification.
 const starsN=12000;const stars=new Float32Array(starsN*3);let seed=31289;const rand=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296};
 for(let i=0;i<starsN;i++){const r=800+rand()*35000,t=rand()*Math.PI*2,u=rand()*2-1;stars[i*3]=r*Math.sqrt(1-u*u)*Math.cos(t);stars[i*3+1]=r*u;stars[i*3+2]=r*Math.sqrt(1-u*u)*Math.sin(t)}
 const starGeo=new THREE.BufferGeometry();starGeo.setAttribute('position',new THREE.BufferAttribute(stars,3));const starField=new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xe3efff,size:3,sizeAttenuation:false,transparent:true,opacity:.85,depthWrite:false}));scene.add(starField);
@@ -40,7 +68,7 @@ function ratio(){const d=devicePixelRatio||1;if(quality==='low')return Math.min(
 function resize(){renderer.setPixelRatio(ratio());renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();document.getElementById('res').textContent=renderer.domElement.width+' × '+renderer.domElement.height}addEventListener('resize',resize);resize();
 const fwd=new THREE.Vector3(0,0,-1),right=new THREE.Vector3(1,0,0),up=new THREE.Vector3(0,1,0),target=new THREE.Vector3(),accel=new THREE.Vector3();
 function tick(now){const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;frames++;if(now-frameWindow>1000){avg=frames*1000/(now-frameWindow);frames=0;frameWindow=now;document.getElementById('fps').textContent=avg.toFixed(0);if(quality==='auto')resize()}
-if(!paused){const t=dt*timeScale;simTime+=t;const turn=1.1*dt;ship.rotateX((Number(keys.has('ArrowDown'))-Number(keys.has('ArrowUp')))*turn);ship.rotateY((Number(keys.has('ArrowLeft'))-Number(keys.has('ArrowRight')))*turn);ship.rotateZ((Number(keys.has('KeyZ'))-Number(keys.has('KeyC')))*turn);
+if(!paused){const t=dt*timeScale;simTime+=t;for(const f of thrusterFlames){f.visible=keys.has('KeyW')||keys.has('ShiftLeft')||keys.has('ShiftRight');f.scale.z=1+Math.sin(now*.04)*.12;}const turn=1.1*dt;ship.rotateX((Number(keys.has('ArrowDown'))-Number(keys.has('ArrowUp')))*turn);ship.rotateY((Number(keys.has('ArrowLeft'))-Number(keys.has('ArrowRight')))*turn);ship.rotateZ((Number(keys.has('KeyZ'))-Number(keys.has('KeyC')))*turn);
 accel.set(0,0,0);const thrust=keys.has('ShiftLeft')||keys.has('ShiftRight')?120:38;const local=new THREE.Vector3(Number(keys.has('KeyD'))-Number(keys.has('KeyA')),Number(keys.has('KeyE'))-Number(keys.has('KeyQ')),Number(keys.has('KeyS'))-Number(keys.has('KeyW')));if(local.lengthSq())accel.copy(local.normalize().applyQuaternion(ship.quaternion)).multiplyScalar(thrust);velocity.addScaledVector(accel,t);velocity.multiplyScalar(Math.exp(-(keys.has('KeyX')?3:.055)*t));if(velocity.length()>800)velocity.setLength(800);ship.position.addScaledVector(velocity,t)}
 const offset=new THREE.Vector3(0,cockpit?.65:4,cockpit?-1.8:16).applyQuaternion(ship.quaternion);target.copy(ship.position).add(offset);camera.position.lerp(target,Math.min(1,dt*7));const look=ship.position.clone().add(fwd.clone().applyQuaternion(ship.quaternion).multiplyScalar(90));camera.up.copy(up).applyQuaternion(ship.quaternion);camera.lookAt(look);ship.visible=!cockpit;
 document.getElementById('speed').textContent=velocity.length().toFixed(1);document.getElementById('position').textContent=ship.position.toArray().map(x=>x.toFixed(0)).join(', ');document.getElementById('clock').textContent=simTime.toFixed(1);renderer.render(scene,camera)}
