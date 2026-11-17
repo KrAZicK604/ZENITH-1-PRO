@@ -79,8 +79,8 @@ body.race-focus #onlineStatus{display:none}
 4. All windows draggable and working now!
 </div>
 <div style=margin-top:8px>
-<span class=btn-green onclick="openWindow('winGame')">🎮 OPEN GAME</span>
-<span class=btn onclick="openWindow('winLeader')">🏆 LEADERBOARD</span>
+<span class=btn-green onclick="launchSoloRace()">🎮 PLAY SOLO</span>
+<span class=btn onclick="openWindow('winLeader')">🏆 LOCAL SCORES</span>
 <span class=btn onclick="openWindow('winOnline')">🌐 ONLINE STATUS</span>
 <span class=btn onclick="overclock()">⚡ OVERCLOCK</span>
 </div>
@@ -99,7 +99,7 @@ Controls: Arrows steer, SPACE boost, Moon gravity (cyan circle) pulls you - Use 
 <canvas id=planetAtlas width=720 height=360 aria-label="Animated stylized solar system planet atlas"></canvas>
 <div class=planet-caption>PLANET ATLAS · Mercury → Neptune · Accelerated spin · Illustrative colours, not NASA textures or scale</div>
 <div style=margin-top:6px>
-<span class=btn-green onclick="startMultiplayer()">👥 ONLINE RACE</span>
+<span class=btn-green onclick="startMultiplayer()">👥 PEER RACE</span>
 <span class=btn onclick="startGame()">SOLO</span>
 <span class=btn onclick="resetGame()">RESET</span>
 <span class=btn onclick="doBoost()">BOOST</span>
@@ -163,7 +163,7 @@ function initPeer(){
     document.getElementById('myRoomId').innerText=id;
     document.getElementById('debugRoom').innerText=id;
     document.getElementById('debugPeer').innerText=id;
-    document.getElementById('shareLink').innerText='http://localhost:8501?room='+id;
+    document.getElementById('shareLink').innerText=roomShareUrl(id);
     document.getElementById('peerStatus').innerText='ONLINE Ready';
     document.getElementById('peerStatus').style.color='#0f0';
     document.getElementById('debugStatus').innerText='ONLINE Ready';
@@ -193,13 +193,14 @@ function joinRoom(){
   setupConnection(conn);
   setTimeout(()=>{if(!connections[target]){alert('Failed to connect - Make sure friend Room ID correct and friend online');}},3000);
 }
-function copyRoomId(){let link='http://localhost:8501?room='+myPeerId;navigator.clipboard.writeText(link).then(()=>alert('Link copied: '+link+'\nOpen in incognito window to test 2 players!')).catch(()=>prompt('Copy this link:',link));}
+function roomShareUrl(id){const u=new URL(window.location.href);u.searchParams.set('room',id);u.hash='';return u.toString();}
+function copyRoomId(){if(!myPeerId){alert('Room is not ready yet');return;}const link=roomShareUrl(myPeerId);navigator.clipboard.writeText(link).then(()=>alert('Room link copied')).catch(()=>prompt('Copy room link:',link));}
 function updateRemotePlayer(id,x,y){
   let el=document.getElementById('player_'+id);
   if(!el){el=document.createElement('div');el.id='player_'+id;el.style.position='absolute';el.style.width='12px';el.style.height='16px';el.style.background='#f0f';el.style.borderRadius='3px';el.style.boxShadow='0 0 10px #f0f';el.style.zIndex='150';el.style.pointerEvents='none';document.body.appendChild(el);}
   el.style.left=x+'px';el.style.top=y+'px';
 }
-function testConnection(){alert('Room ID: '+myPeerId+'\nConnections: '+Object.keys(connections).length+'\nShare link: http://localhost:8501?room='+myPeerId+'\nOpen in incognito to test');}
+function testConnection(){alert('Room ID: '+(myPeerId||'not connected')+'\nConnections: '+Object.keys(connections).length+'\nShare link: '+(myPeerId?roomShareUrl(myPeerId):'not available'));}
 initPeer();
 
 // WINDOW MANAGEMENT - FIXED - DRAGGABLE TABS WORK NOW
@@ -421,7 +422,8 @@ document.addEventListener('keydown',e=>{
 });
 document.addEventListener('keyup',e=>{delete raceKeys[e.key.toLowerCase()];});
 window.addEventListener('blur',()=>{for(const key of Object.keys(raceKeys))delete raceKeys[key];});
-function startMultiplayer(){openWindow('winGame'); startGame();}
+function launchSoloRace(){openWindow('winGame');startGame();}
+function startMultiplayer(){if(!myPeerId){alert('Peer connection is not ready. Try SOLO instead.');return;}openWindow('winGame');startGame();}
 function startGame(){
   gameRunning=false;
   const thisRace=++raceGeneration;
@@ -478,7 +480,7 @@ function overclock(){document.body.style.filter='brightness(1.6)';setTimeout(()=
 function refreshLeaderboard(){
   let saved=localStorage.getItem('simpleLeaderboard');
   if(saved){try{leaderboard=JSON.parse(saved);}catch(e){leaderboard=[];}}
-  if(leaderboard.length==0){leaderboard=[{name:'Elon',score:2847,time:Date.now()-1000000},{name:'Peter',score:2543,time:Date.now()-500000}];}
+  // Empty local scores are intentional: never present fabricated race results.
   renderLeaderboard();
 }
 function renderLeaderboard(){
