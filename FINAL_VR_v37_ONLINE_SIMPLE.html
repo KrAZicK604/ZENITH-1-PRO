@@ -45,6 +45,19 @@ canvas#c{background:radial-gradient(ellipse at 55% 43%,#0c1729 0%,#050914 42%,#0
 
 #planetAtlas{display:block;width:100%;height:180px;background:#02050b;border:1px solid rgba(119,185,224,.36);border-radius:12px;margin-top:10px}
 .planet-caption{font-size:10px;color:#b3d2e8;margin-top:6px;line-height:1.5}
+
+/* Race focus mode: keep the game visible while other windows are tucked away. */
+body.race-focus #winGame{position:fixed!important;inset:12px 12px 78px!important;width:auto!important;height:auto!important;max-width:none!important;z-index:950!important;display:flex;flex-direction:column}
+body.race-focus #winGame .content{display:flex;flex-direction:column;flex:1;min-height:0;max-height:none;overflow:auto}
+body.race-focus #gameCanvas{position:relative;inset:auto;width:100%;height:auto;max-height:min(62vh,760px);aspect-ratio:360/280;object-fit:contain;flex:1;min-height:180px}
+body.race-focus #planetAtlas,body.race-focus .planet-caption{display:none}
+body.race-focus .window:not(#winGame){display:none!important}
+body.race-focus #onlineStatus{display:none}
+#gameCanvas{position:relative;top:auto;left:auto;touch-action:none}
+#planetAtlas{position:relative;top:auto;left:auto;height:180px}
+#raceHelp{color:#c7e6fa;font-size:11px;margin:5px 0}
+#raceFocusBtn{font-weight:700}
+@media(max-width:700px){body.race-focus #winGame{inset:6px 6px 70px!important}body.race-focus #gameCanvas{min-height:150px;max-height:48vh}}
 </style></head><body>
 <canvas id=c></canvas>
 
@@ -90,6 +103,9 @@ Controls: Arrows steer, SPACE boost, Moon gravity (cyan circle) pulls you - Use 
 <span class=btn onclick="startGame()">SOLO</span>
 <span class=btn onclick="resetGame()">RESET</span>
 <span class=btn onclick="doBoost()">BOOST</span>
+<span class=btn id=raceFocusBtn onclick="toggleRaceFocus()">⛶ FOCUS RACE</span>
+<span class=btn onclick="closeRace()">✕ CLOSE RACE</span>
+<div id=raceHelp>Arrows / WASD: steer · Space: boost · Esc: exit focus · Close race to stop</div>
 </div>
 <div id=playerList style=font-size:9px;margin-top:6px;background:rgba(0,0,0,0.4);padding:6px;border-radius:6px;max-height:70px;overflow-y:auto>● You - Online - Score 0</div>
 </div>
@@ -187,7 +203,19 @@ function testConnection(){alert('Room ID: '+myPeerId+'\nConnections: '+Object.ke
 initPeer();
 
 // WINDOW MANAGEMENT - FIXED - DRAGGABLE TABS WORK NOW
-function closeWindow(id){document.getElementById(id).classList.add('hidden'); updateTaskbar();}
+function closeWindow(id){
+ if(id==='winGame')stopRace();
+ document.getElementById(id).classList.add('hidden');updateTaskbar();
+}
+function stopRace(){gameRunning=false;document.body.classList.remove('race-focus');}
+function closeRace(){closeWindow('winGame');}
+function toggleRaceFocus(){
+ const win=document.getElementById('winGame');
+ if(win.classList.contains('hidden'))openWindow('winGame');
+ const active=document.body.classList.toggle('race-focus');
+ document.getElementById('raceFocusBtn').textContent=active?'↙ WINDOW MODE':'⛶ FOCUS RACE';
+ if(active)win.style.zIndex=950;
+}
 function openWindow(id){document.getElementById(id).classList.remove('hidden'); document.getElementById(id).style.zIndex=100; updateTaskbar();}
 function toggleWindow(id){let el=document.getElementById(id); if(el.classList.contains('hidden')){openWindow(id);} else {closeWindow(id);}}
 function updateTaskbar(){
@@ -207,6 +235,7 @@ document.querySelectorAll('.window').forEach(win=>{
   if(!bar) return;
   let isDown=false, offsetX, offsetY;
   bar.addEventListener('mousedown', e=>{
+    if(e.target.closest('.close')||document.body.classList.contains('race-focus'))return;
     isDown=true;
     offsetX=e.clientX-win.offsetLeft;
     offsetY=e.clientY-win.offsetTop;
@@ -223,6 +252,7 @@ document.querySelectorAll('.window').forEach(win=>{
   document.addEventListener('mouseup', ()=>{isDown=false;});
   // Touch for mobile
   bar.addEventListener('touchstart', e=>{
+    if(e.target.closest('.close')||document.body.classList.contains('race-focus'))return;
     isDown=true;
     offsetX=e.touches[0].clientX-win.offsetLeft;
     offsetY=e.touches[0].clientY-win.offsetTop;
@@ -378,23 +408,37 @@ function prepareGameCanvas(cvs,g){
  g.setTransform(ratio,0,0,ratio,0,0);
 }
 // GAME
+let raceGeneration=0;
+const raceKeys=Object.create(null);
+document.addEventListener('keydown',e=>{
+ const tag=e.target?.tagName;
+ if(e.key==='Escape'&&document.body.classList.contains('race-focus')){toggleRaceFocus();return;}
+ if(!gameRunning||tag==='INPUT'||tag==='TEXTAREA')return;
+ if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','w','a','s','d','W','A','S','D'].includes(e.key)){
+   e.preventDefault();raceKeys[e.key.toLowerCase()]=true;
+   if(e.code==='Space'&&!e.repeat)doBoost();
+ }
+});
+document.addEventListener('keyup',e=>{delete raceKeys[e.key.toLowerCase()];});
+window.addEventListener('blur',()=>{for(const key of Object.keys(raceKeys))delete raceKeys[key];});
 function startMultiplayer(){openWindow('winGame'); startGame();}
 function startGame(){
+  gameRunning=false;
+  const thisRace=++raceGeneration;
+  openWindow('winGame');
   let cvs=document.getElementById('gameCanvas'),ctx2=cvs.getContext('2d');
   prepareGameCanvas(cvs,ctx2);
   gameRunning=true;gameScore=0;gameState={x:40,y:140,vx:2.5,vy:0,boosts:3,asteroids:[],targetX:320,targetY:140,moonX:150,moonY:140};
   for(let i=0;i<10;i++)gameState.asteroids.push({x:80+Math.random()*200,y:Math.random()*280,r:Math.random()*7+3,vx:Math.random()*2-1,vy:Math.random()*2-1});
-  let keys={};
-  document.addEventListener('keydown', e=>{keys[e.key]=true;if(e.code=='Space'){e.preventDefault();doBoost();}});
-  document.addEventListener('keyup', e=>{keys[e.key]=false;});
+  for(const key of Object.keys(raceKeys))delete raceKeys[key];
   const spinEpoch=performance.now();
   let lastNetworkSend=0;
   function loop(){
-    if(!gameRunning)return;
+    if(!gameRunning||thisRace!==raceGeneration)return;
     const spinTime=(performance.now()-spinEpoch)/1000;
     ctx2.fillStyle='rgba(0,0,0,0.25)';ctx2.fillRect(0,0,360,280);
     for(let i=0;i<60;i++){ctx2.fillStyle='rgba(255,255,255,0.5)';ctx2.fillRect((i*137)%360,(i*211)%280,1,1);}
-    if(keys['ArrowUp'])gameState.vy-=0.3;if(keys['ArrowDown'])gameState.vy+=0.3;if(keys['ArrowLeft'])gameState.vx-=0.18;if(keys['ArrowRight'])gameState.vx+=0.18;
+    if(raceKeys['arrowup']||raceKeys['w'])gameState.vy-=0.3;if(raceKeys['arrowdown']||raceKeys['s'])gameState.vy+=0.3;if(raceKeys['arrowleft']||raceKeys['a'])gameState.vx-=0.18;if(raceKeys['arrowright']||raceKeys['d'])gameState.vx+=0.18;
     gameState.x+=gameState.vx;gameState.y+=gameState.vy;gameState.vx*=0.992;gameState.vy*=0.992;
     let dx=gameState.moonX-gameState.x,dy=gameState.moonY-gameState.y,d=Math.sqrt(dx*dx+dy*dy);
     if(d<50){gameState.vx+=dx*0.03;gameState.vy+=dy*0.03;ctx2.strokeStyle='rgba(0,255,255,0.5)';ctx2.beginPath();ctx2.moveTo(gameState.x,gameState.y);ctx2.lineTo(gameState.moonX,gameState.moonY);ctx2.stroke();ctx2.fillStyle='rgba(0,255,255,0.12)';ctx2.beginPath();ctx2.arc(gameState.moonX,gameState.moonY,50,0,6.28);ctx2.fill();}
