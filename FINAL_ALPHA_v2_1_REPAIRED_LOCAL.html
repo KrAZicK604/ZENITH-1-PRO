@@ -170,6 +170,7 @@ input:focus { border-color:#00ff88; box-shadow:0 0 0 2px rgba(0,255,136,0.2); }
 </div>
 <script>
 let canvas = document.getElementById('canvas'), ctx = canvas.getContext('2d');
+let steerOffset = 0; // Must initialize before draw() first runs.
 let stars = [], nebulas=[], game = { racing:false, speed:0, distance:0, progress:0, unlocked:false, room:'local-demo', points:0, earnings:0, fuel:100, colonists:12, oxygen:98, power:87, food:76, colonyLog:['Habitat x1','Solar x1'] };
 function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
 resize(); addEventListener('resize', resize);
@@ -246,7 +247,6 @@ game.earnings = 0;
 game.unlocked = false;
 let raceToken = 0;
 let boostSpeed = 0;
-let steerOffset = 0;
 let thrustHeld = false;
 let messageToken = 0;
 function byId(id) { return document.getElementById(id); }
