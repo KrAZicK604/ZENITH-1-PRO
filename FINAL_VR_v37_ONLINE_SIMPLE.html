@@ -21,6 +21,43 @@ canvas{position:absolute;top:0;left:0;width:100%;height:100vh}
 .ticon{width:44px;height:44px;background:rgba(0,255,255,0.15);border:1px solid #0ff;border-radius:10px;margin-right:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;position:relative}
 .ticon:hover{background:#0ff;color:#000;transform:translateY(-4px) scale(1.1)}
 .ticon.active{background:#0ff;color:#000;box-shadow:0 0 20px #0ff}
+
+/* ZENITH cinematic visual pass: visual-only, existing controls preserved */
+:root{color-scheme:dark;--space:#03060d;--panel:rgba(8,17,33,.92);--line:rgba(106,183,224,.36);--ice:#b9e9ff;--accent:#69c8ff;--gold:#e9bb72}
+body{background:var(--space);color:#d8eaff;font-family:Inter,Segoe UI,Arial,sans-serif;letter-spacing:.015em}
+canvas#c{background:radial-gradient(ellipse at 55% 43%,#0c1729 0%,#050914 42%,#010207 100%)}
+.window{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 22px 80px rgba(0,0,0,.62),inset 0 1px rgba(255,255,255,.055);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.titlebar{background:linear-gradient(90deg,rgba(40,90,129,.38),rgba(18,33,54,.55));color:var(--ice);font-size:12px;letter-spacing:.08em;padding:13px 16px;border-bottom:1px solid rgba(150,204,235,.18)}
+.titlebar:hover{background:linear-gradient(90deg,rgba(46,104,147,.48),rgba(22,39,62,.64))}
+.content{color:#d5e6f4;font-size:12px;line-height:1.65;padding:17px}
+.btn,.btn-green{background:rgba(50,105,143,.24);border:1px solid rgba(126,202,239,.5);color:#d7efff;border-radius:9px;padding:9px 13px;font-size:11px;transition:background .15s ease,border-color .15s ease}
+.btn:hover,.btn-green:hover{background:#b8e6ff;color:#08111d;box-shadow:0 0 18px rgba(105,200,255,.28)}
+.input{background:rgba(3,10,20,.85);border-color:var(--line);color:#e7f4ff;font-size:12px}
+#gameCanvas{border:1px solid rgba(124,189,225,.44);border-radius:12px;box-shadow:inset 0 0 30px rgba(26,70,112,.18)}
+#onlineStatus{background:rgba(5,12,24,.9);border:1px solid rgba(121,204,238,.42);border-radius:13px;box-shadow:0 12px 45px rgba(0,0,0,.5)}
+#taskbar{background:rgba(4,9,19,.94);border-top:1px solid rgba(112,189,230,.36);height:62px;gap:4px}
+.ticon{background:rgba(35,73,108,.28);border:1px solid rgba(115,188,228,.35);border-radius:11px;box-shadow:none}
+.ticon:hover,.ticon.active{background:rgba(113,193,238,.85);color:#07101c;box-shadow:0 0 18px rgba(101,180,226,.24)}
+:focus-visible{outline:2px solid #ffcf80;outline-offset:3px}
+@media(min-width:2560px){.window{font-size:1.08rem}.content{font-size:14px}.titlebar{font-size:14px}.btn{font-size:13px}#taskbar{height:72px}.ticon{width:52px;height:52px}}
+@media(max-width:900px){.window{min-width:0!important;max-width:calc(100vw - 24px);left:12px!important}.content{max-height:45vh}#onlineStatus{min-width:0;width:min(96vw,520px);font-size:11px}#taskbar{overflow-x:auto}}
+@media(prefers-reduced-motion:reduce){.btn,.ticon{transition:none}}
+
+#planetAtlas{display:block;width:100%;height:180px;background:#02050b;border:1px solid rgba(119,185,224,.36);border-radius:12px;margin-top:10px}
+.planet-caption{font-size:10px;color:#b3d2e8;margin-top:6px;line-height:1.5}
+
+/* Race focus mode: keep the game visible while other windows are tucked away. */
+body.race-focus #winGame{position:fixed!important;inset:12px 12px 78px!important;width:auto!important;height:auto!important;max-width:none!important;z-index:950!important;display:flex;flex-direction:column}
+body.race-focus #winGame .content{display:flex;flex-direction:column;flex:1;min-height:0;max-height:none;overflow:auto}
+body.race-focus #gameCanvas{position:relative;inset:auto;width:100%;height:auto;max-height:min(62vh,760px);aspect-ratio:360/280;object-fit:contain;flex:1;min-height:180px}
+body.race-focus #planetAtlas,body.race-focus .planet-caption{display:none}
+body.race-focus .window:not(#winGame){display:none!important}
+body.race-focus #onlineStatus{display:none}
+#gameCanvas{position:relative;top:auto;left:auto;touch-action:none}
+#planetAtlas{position:relative;top:auto;left:auto;height:180px}
+#raceHelp{color:#c7e6fa;font-size:11px;margin:5px 0}
+#raceFocusBtn{font-weight:700}
+@media(max-width:700px){body.race-focus #winGame{inset:6px 6px 70px!important}body.race-focus #gameCanvas{min-height:150px;max-height:48vh}}
 </style></head><body>
 <canvas id=c></canvas>
 
@@ -42,8 +79,8 @@ canvas{position:absolute;top:0;left:0;width:100%;height:100vh}
 4. All windows draggable and working now!
 </div>
 <div style=margin-top:8px>
-<span class=btn-green onclick="openWindow('winGame')">🎮 OPEN GAME</span>
-<span class=btn onclick="openWindow('winLeader')">🏆 LEADERBOARD</span>
+<span class=btn-green onclick="launchSoloRace()">🎮 PLAY SOLO</span>
+<span class=btn onclick="openWindow('winLeader')">🏆 LOCAL SCORES</span>
 <span class=btn onclick="openWindow('winOnline')">🌐 ONLINE STATUS</span>
 <span class=btn onclick="overclock()">⚡ OVERCLOCK</span>
 </div>
@@ -59,11 +96,16 @@ Controls: Arrows steer, SPACE boost, Moon gravity (cyan circle) pulls you - Use 
 <div class=content>
 <div style=font-size:10px>Score: <span id=gameScore>0</span> | Boosts: <span id=boostCount>3</span> | <span id=gameStatus>Ready</span></div>
 <canvas id=gameCanvas width=360 height=280></canvas>
+<canvas id=planetAtlas width=720 height=360 aria-label="Animated stylized solar system planet atlas"></canvas>
+<div class=planet-caption>PLANET ATLAS · Mercury → Neptune · Accelerated spin · Illustrative colours, not NASA textures or scale</div>
 <div style=margin-top:6px>
-<span class=btn-green onclick="startMultiplayer()">👥 ONLINE RACE</span>
+<span class=btn-green onclick="startMultiplayer()">👥 PEER RACE</span>
 <span class=btn onclick="startGame()">SOLO</span>
 <span class=btn onclick="resetGame()">RESET</span>
 <span class=btn onclick="doBoost()">BOOST</span>
+<span class=btn id=raceFocusBtn onclick="toggleRaceFocus()">⛶ FOCUS RACE</span>
+<span class=btn onclick="closeRace()">✕ CLOSE RACE</span>
+<div id=raceHelp>Arrows / WASD: steer · Space: boost · Esc: exit focus · Close race to stop</div>
 </div>
 <div id=playerList style=font-size:9px;margin-top:6px;background:rgba(0,0,0,0.4);padding:6px;border-radius:6px;max-height:70px;overflow-y:auto>● You - Online - Score 0</div>
 </div>
@@ -121,7 +163,7 @@ function initPeer(){
     document.getElementById('myRoomId').innerText=id;
     document.getElementById('debugRoom').innerText=id;
     document.getElementById('debugPeer').innerText=id;
-    document.getElementById('shareLink').innerText='http://localhost:8501?room='+id;
+    document.getElementById('shareLink').innerText=roomShareUrl(id);
     document.getElementById('peerStatus').innerText='ONLINE Ready';
     document.getElementById('peerStatus').style.color='#0f0';
     document.getElementById('debugStatus').innerText='ONLINE Ready';
@@ -151,17 +193,30 @@ function joinRoom(){
   setupConnection(conn);
   setTimeout(()=>{if(!connections[target]){alert('Failed to connect - Make sure friend Room ID correct and friend online');}},3000);
 }
-function copyRoomId(){let link='http://localhost:8501?room='+myPeerId;navigator.clipboard.writeText(link).then(()=>alert('Link copied: '+link+'\nOpen in incognito window to test 2 players!')).catch(()=>prompt('Copy this link:',link));}
+function roomShareUrl(id){const u=new URL(window.location.href);u.searchParams.set('room',id);u.hash='';return u.toString();}
+function copyRoomId(){if(!myPeerId){alert('Room is not ready yet');return;}const link=roomShareUrl(myPeerId);navigator.clipboard.writeText(link).then(()=>alert('Room link copied')).catch(()=>prompt('Copy room link:',link));}
 function updateRemotePlayer(id,x,y){
   let el=document.getElementById('player_'+id);
   if(!el){el=document.createElement('div');el.id='player_'+id;el.style.position='absolute';el.style.width='12px';el.style.height='16px';el.style.background='#f0f';el.style.borderRadius='3px';el.style.boxShadow='0 0 10px #f0f';el.style.zIndex='150';el.style.pointerEvents='none';document.body.appendChild(el);}
   el.style.left=x+'px';el.style.top=y+'px';
 }
-function testConnection(){alert('Room ID: '+myPeerId+'\nConnections: '+Object.keys(connections).length+'\nShare link: http://localhost:8501?room='+myPeerId+'\nOpen in incognito to test');}
+function testConnection(){alert('Room ID: '+(myPeerId||'not connected')+'\nConnections: '+Object.keys(connections).length+'\nShare link: '+(myPeerId?roomShareUrl(myPeerId):'not available'));}
 initPeer();
 
 // WINDOW MANAGEMENT - FIXED - DRAGGABLE TABS WORK NOW
-function closeWindow(id){document.getElementById(id).classList.add('hidden'); updateTaskbar();}
+function closeWindow(id){
+ if(id==='winGame')stopRace();
+ document.getElementById(id).classList.add('hidden');updateTaskbar();
+}
+function stopRace(){gameRunning=false;document.body.classList.remove('race-focus');}
+function closeRace(){closeWindow('winGame');}
+function toggleRaceFocus(){
+ const win=document.getElementById('winGame');
+ if(win.classList.contains('hidden'))openWindow('winGame');
+ const active=document.body.classList.toggle('race-focus');
+ document.getElementById('raceFocusBtn').textContent=active?'↙ WINDOW MODE':'⛶ FOCUS RACE';
+ if(active)win.style.zIndex=950;
+}
 function openWindow(id){document.getElementById(id).classList.remove('hidden'); document.getElementById(id).style.zIndex=100; updateTaskbar();}
 function toggleWindow(id){let el=document.getElementById(id); if(el.classList.contains('hidden')){openWindow(id);} else {closeWindow(id);}}
 function updateTaskbar(){
@@ -181,6 +236,7 @@ document.querySelectorAll('.window').forEach(win=>{
   if(!bar) return;
   let isDown=false, offsetX, offsetY;
   bar.addEventListener('mousedown', e=>{
+    if(e.target.closest('.close')||document.body.classList.contains('race-focus'))return;
     isDown=true;
     offsetX=e.clientX-win.offsetLeft;
     offsetY=e.clientY-win.offsetTop;
@@ -197,6 +253,7 @@ document.querySelectorAll('.window').forEach(win=>{
   document.addEventListener('mouseup', ()=>{isDown=false;});
   // Touch for mobile
   bar.addEventListener('touchstart', e=>{
+    if(e.target.closest('.close')||document.body.classList.contains('race-focus'))return;
     isDown=true;
     offsetX=e.touches[0].clientX-win.offsetLeft;
     offsetY=e.touches[0].clientY-win.offsetTop;
@@ -211,27 +268,186 @@ document.querySelectorAll('.window').forEach(win=>{
   document.addEventListener('touchend', ()=>{isDown=false;});
 });
 
+// Stylized fast-spin planet renderer: plausible lunar/Martian palette, NOT calibrated surface imagery.
+function drawRotatingWorld(g,x,y,r,kind,time){
+ const mars=kind==='mars', spin=time*(mars?1.8:1.1);
+ g.save();g.translate(x,y);
+ const halo=g.createRadialGradient(0,0,r*.75,0,0,r*1.65);
+ halo.addColorStop(0,mars?'rgba(237,108,54,.18)':'rgba(155,185,211,.13)');
+ halo.addColorStop(1,'rgba(0,0,0,0)');
+ g.fillStyle=halo;g.beginPath();g.arc(0,0,r*1.65,0,Math.PI*2);g.fill();
+ g.beginPath();g.arc(0,0,r,0,Math.PI*2);g.clip();
+ const surface=g.createLinearGradient(-r,-r,r,r);
+ if(mars){surface.addColorStop(0,'#e6a16b');surface.addColorStop(.48,'#b95736');surface.addColorStop(1,'#592e2c');}
+ else{surface.addColorStop(0,'#c4c9ca');surface.addColorStop(.55,'#818a91');surface.addColorStop(1,'#414c58');}
+ g.fillStyle=surface;g.fillRect(-r,-r,2*r,2*r);
+ // Longitude features travel across the visible disk and compress near its limb.
+ for(let i=0;i<12;i++){
+   const phase=spin+i*2.39996,longitude=Math.sin(phase),depth=Math.cos(phase);
+   if(depth<-.12)continue;
+   const px=longitude*r*.91,py=Math.sin(i*3.73)*r*.7;
+   const width=(mars?.31:.22)*r*(.22+.78*Math.max(0,depth));
+   const height=(mars?.17:.14)*r*(.7+.3*Math.abs(Math.sin(i)));
+   g.save();g.translate(px,py);g.rotate(Math.sin(i*4.1)*.8);
+   g.fillStyle=mars?(i%3===0?'rgba(97,49,41,.56)':'rgba(233,156,105,.4)'):(i%3===0?'rgba(51,62,75,.46)':'rgba(206,213,212,.22)');
+   g.beginPath();g.ellipse(0,0,width,height,0,0,Math.PI*2);g.fill();g.restore();
+ }
+ if(mars){
+   g.fillStyle='rgba(242,222,192,.85)';g.beginPath();g.ellipse(0,-r*.9,r*.44,r*.17,0,0,Math.PI*2);g.fill();
+ }
+ // Day/night terminator and rim lighting make the sphere read as a globe.
+ const shade=g.createLinearGradient(-r,0,r,0);
+ shade.addColorStop(0,'rgba(5,9,17,.72)');shade.addColorStop(.42,'rgba(8,13,22,.15)');
+ shade.addColorStop(.82,'rgba(0,0,0,0)');shade.addColorStop(1,'rgba(0,0,0,.32)');
+ g.fillStyle=shade;g.fillRect(-r,-r,r*2,r*2);
+ g.restore();
+ g.strokeStyle=mars?'rgba(251,172,121,.66)':'rgba(204,225,238,.46)';
+ g.lineWidth=.75;g.beginPath();g.arc(x,y,r-.4,0,Math.PI*2);g.stroke();
+}
+
+// Independent animated planet atlas; does not modify the Mars race physics or target.
+const ZENITH_PLANETS=[
+ {name:'Mercury',size:13,base:['#aeb0a8','#777a7b','#3d444b'],kind:'rock',speed:1.2},
+ {name:'Venus',size:17,base:['#f7d8a3','#d7a96b','#946c49'],kind:'cloud',speed:-.5},
+ {name:'Earth',size:19,base:['#4ca7db','#1763aa','#0b284e'],kind:'earth',speed:1.5},
+ {name:'Mars',size:15,base:['#e7a06d','#ba593a','#602e2c'],kind:'rock',speed:1.3},
+ {name:'Jupiter',size:30,base:['#e7d3b3','#ba916e','#735a4e'],kind:'gas',speed:2.6},
+ {name:'Saturn',size:25,base:['#f3ddb2','#bba579','#75664e'],kind:'saturn',speed:2.2},
+ {name:'Uranus',size:20,base:['#c2f1ee','#83c9d4','#4e8d9d'],kind:'ice',speed:-1.7},
+ {name:'Neptune',size:20,base:['#5c8fe4','#2854af','#142c67'],kind:'ice',speed:2.1}
+];
+function drawAtlasPlanet(g,p,x,y,t){
+ const r=p.size,spin=t*p.speed;
+ g.save();g.translate(x,y);
+ if(p.kind==='saturn'){
+   g.save();g.rotate(-.32);g.strokeStyle='rgba(218,196,150,.58)';g.lineWidth=7;
+   g.beginPath();g.ellipse(0,0,r*1.73,r*.49,0,Math.PI,2*Math.PI);g.stroke();g.restore();
+ }
+ g.beginPath();g.arc(0,0,r,0,Math.PI*2);g.clip();
+ const surface=g.createLinearGradient(-r,-r,r,r);
+ surface.addColorStop(0,p.base[0]);surface.addColorStop(.55,p.base[1]);surface.addColorStop(1,p.base[2]);
+ g.fillStyle=surface;g.fillRect(-r,-r,r*2,r*2);
+ if(['gas','saturn','cloud','ice'].includes(p.kind)){
+   for(let j=0;j<11;j++){
+     const bandY=(j-5)*r*.19+Math.sin(spin+j*.9)*r*.045;
+     g.fillStyle=j%3===0?'rgba(255,244,218,.31)':'rgba(67,76,94,.17)';
+     g.fillRect(-r,bandY,r*2,r*(p.kind==='ice'?.07:.13));
+   }
+   if(p.kind==='gas'){
+     const spotX=Math.sin(spin+.6)*r*.65;
+     g.fillStyle='rgba(164,85,63,.67)';g.beginPath();g.ellipse(spotX,r*.34,r*.27,r*.12,-.15,0,Math.PI*2);g.fill();
+   }
+ }else{
+   for(let j=0;j<18;j++){
+     const longitude=spin+j*2.39996,depth=Math.cos(longitude);
+     if(depth<0)continue;
+     const px=Math.sin(longitude)*r*.87,py=Math.sin(j*3.47)*r*.76;
+     const w=r*(.12+.18*depth),h=r*(.09+.1*(j%3)/2);
+     g.fillStyle=p.kind==='earth'?(j%4===0?'rgba(248,249,249,.66)':'rgba(91,158,94,.87)'):(j%3===0?'rgba(40,45,50,.33)':'rgba(240,214,188,.23)');
+     g.beginPath();g.ellipse(px,py,w,h,j*.25,0,Math.PI*2);g.fill();
+   }
+   if(p.kind==='earth'){
+     g.fillStyle='rgba(238,247,250,.76)';
+     g.beginPath();g.ellipse(0,-r*.91,r*.6,r*.16,0,0,Math.PI*2);g.fill();
+   }
+ }
+ const shade=g.createLinearGradient(-r,0,r,0);
+ shade.addColorStop(0,'rgba(0,4,13,.77)');shade.addColorStop(.45,'rgba(0,3,12,.13)');shade.addColorStop(1,'rgba(0,0,0,.17)');
+ g.fillStyle=shade;g.fillRect(-r,-r,r*2,r*2);
+ g.restore();
+ if(p.kind==='saturn'){
+   g.save();g.translate(x,y);g.rotate(-.32);
+   g.strokeStyle='rgba(239,214,164,.74)';g.lineWidth=6;
+   g.beginPath();g.ellipse(0,0,r*1.73,r*.49,0,0,Math.PI);g.stroke();g.restore();
+ }
+ g.font='11px Segoe UI,Arial,sans-serif';g.fillStyle='#d5e7f4';g.textAlign='center';
+ g.fillText(p.name,x,y+r+(p.kind==='saturn'?20:16));
+}
+function startPlanetAtlas(){
+ const canvas=document.getElementById('planetAtlas');if(!canvas)return;
+ const g=canvas.getContext('2d');if(!g)return;
+ const ratio=Math.min(Math.max(window.devicePixelRatio||1,1),4);
+ const width=720,height=360;
+ canvas.width=Math.round(width*ratio);canvas.height=Math.round(height*ratio);
+ g.setTransform(ratio,0,0,ratio,0,0);
+ const start=performance.now();
+ function frame(now){
+   const t=(now-start)/1000;
+   g.fillStyle='#02050b';g.fillRect(0,0,width,height);
+   for(let i=0;i<ZENITH_PLANETS.length;i++){
+     const col=i%4,row=Math.floor(i/4);
+     drawAtlasPlanet(g,ZENITH_PLANETS[i],90+col*180,75+row*177,t);
+   }
+   // Hidden tab/window: avoid needless full-resolution redraw work.
+   if(!document.hidden && canvas.getClientRects().length)requestAnimationFrame(frame);
+   else setTimeout(()=>requestAnimationFrame(frame),250);
+ }
+ requestAnimationFrame(frame);
+}
+startPlanetAtlas();
+// Resolution-independent vector spacecraft; no change to game collision physics.
+function drawZenithShip(g,x,y,vx,vy){
+ g.save();g.translate(x,y);g.rotate(Math.atan2(vy,vx));
+ const exhaust=g.createLinearGradient(-22,0,-7,0);
+ exhaust.addColorStop(0,'rgba(45,115,255,0)');exhaust.addColorStop(.7,'rgba(82,172,255,.7)');exhaust.addColorStop(1,'#e1f7ff');
+ g.fillStyle=exhaust;g.beginPath();g.moveTo(-8,-3);g.lineTo(-22,0);g.lineTo(-8,3);g.fill();
+ g.shadowColor='rgba(93,183,255,.4)';g.shadowBlur=7;
+ g.fillStyle='#63819a';g.strokeStyle='#dcebf7';g.lineWidth=.7;
+ for(const sign of [-1,1]){g.beginPath();g.moveTo(-3,sign*2);g.lineTo(-12,sign*11);g.lineTo(-4,sign*10);g.lineTo(6,sign*3);g.closePath();g.fill();g.stroke();}
+ const hull=g.createLinearGradient(0,-8,0,8);
+ hull.addColorStop(0,'#f4f9fc');hull.addColorStop(.45,'#9fb8cd');hull.addColorStop(.65,'#506b83');hull.addColorStop(1,'#d6e6ef');
+ g.fillStyle=hull;g.beginPath();g.moveTo(13,0);g.lineTo(3,-4);g.lineTo(-9,-3);g.lineTo(-9,3);g.lineTo(3,4);g.closePath();g.fill();g.stroke();
+ g.shadowBlur=0;g.fillStyle='#102e49';g.strokeStyle='#8bd9ff';g.lineWidth=.7;
+ g.beginPath();g.ellipse(4,0,3.3,1.7,0,0,Math.PI*2);g.fill();g.stroke();
+ g.strokeStyle='#e6f3fa';g.beginPath();g.moveTo(-7,0);g.lineTo(0,0);g.stroke();
+ g.fillStyle='#ffbb76';g.fillRect(-9,-1,1.4,2);g.restore();
+}
+function prepareGameCanvas(cvs,g){
+ const ratio=Math.min(Math.max(window.devicePixelRatio||1,1),4);
+ const w=Math.round(360*ratio),h=Math.round(280*ratio);
+ if(cvs.width!==w||cvs.height!==h){cvs.width=w;cvs.height=h;}
+ g.setTransform(ratio,0,0,ratio,0,0);
+}
 // GAME
-function startMultiplayer(){openWindow('winGame'); startGame();}
+let raceGeneration=0;
+const raceKeys=Object.create(null);
+document.addEventListener('keydown',e=>{
+ const tag=e.target?.tagName;
+ if(e.key==='Escape'&&document.body.classList.contains('race-focus')){toggleRaceFocus();return;}
+ if(!gameRunning||tag==='INPUT'||tag==='TEXTAREA')return;
+ if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','w','a','s','d','W','A','S','D'].includes(e.key)){
+   e.preventDefault();raceKeys[e.key.toLowerCase()]=true;
+   if(e.code==='Space'&&!e.repeat)doBoost();
+ }
+});
+document.addEventListener('keyup',e=>{delete raceKeys[e.key.toLowerCase()];});
+window.addEventListener('blur',()=>{for(const key of Object.keys(raceKeys))delete raceKeys[key];});
+function launchSoloRace(){openWindow('winGame');startGame();}
+function startMultiplayer(){if(!myPeerId){alert('Peer connection is not ready. Try SOLO instead.');return;}openWindow('winGame');startGame();}
 function startGame(){
+  gameRunning=false;
+  const thisRace=++raceGeneration;
+  openWindow('winGame');
   let cvs=document.getElementById('gameCanvas'),ctx2=cvs.getContext('2d');
+  prepareGameCanvas(cvs,ctx2);
   gameRunning=true;gameScore=0;gameState={x:40,y:140,vx:2.5,vy:0,boosts:3,asteroids:[],targetX:320,targetY:140,moonX:150,moonY:140};
   for(let i=0;i<10;i++)gameState.asteroids.push({x:80+Math.random()*200,y:Math.random()*280,r:Math.random()*7+3,vx:Math.random()*2-1,vy:Math.random()*2-1});
-  let keys={};
-  document.addEventListener('keydown', e=>{keys[e.key]=true;if(e.code=='Space'){e.preventDefault();doBoost();}});
-  document.addEventListener('keyup', e=>{keys[e.key]=false;});
+  for(const key of Object.keys(raceKeys))delete raceKeys[key];
+  const spinEpoch=performance.now();
+  let lastNetworkSend=0;
   function loop(){
-    if(!gameRunning)return;
+    if(!gameRunning||thisRace!==raceGeneration)return;
+    const spinTime=(performance.now()-spinEpoch)/1000;
     ctx2.fillStyle='rgba(0,0,0,0.25)';ctx2.fillRect(0,0,360,280);
     for(let i=0;i<60;i++){ctx2.fillStyle='rgba(255,255,255,0.5)';ctx2.fillRect((i*137)%360,(i*211)%280,1,1);}
-    if(keys['ArrowUp'])gameState.vy-=0.3;if(keys['ArrowDown'])gameState.vy+=0.3;if(keys['ArrowLeft'])gameState.vx-=0.18;if(keys['ArrowRight'])gameState.vx+=0.18;
+    if(raceKeys['arrowup']||raceKeys['w'])gameState.vy-=0.3;if(raceKeys['arrowdown']||raceKeys['s'])gameState.vy+=0.3;if(raceKeys['arrowleft']||raceKeys['a'])gameState.vx-=0.18;if(raceKeys['arrowright']||raceKeys['d'])gameState.vx+=0.18;
     gameState.x+=gameState.vx;gameState.y+=gameState.vy;gameState.vx*=0.992;gameState.vy*=0.992;
     let dx=gameState.moonX-gameState.x,dy=gameState.moonY-gameState.y,d=Math.sqrt(dx*dx+dy*dy);
     if(d<50){gameState.vx+=dx*0.03;gameState.vy+=dy*0.03;ctx2.strokeStyle='rgba(0,255,255,0.5)';ctx2.beginPath();ctx2.moveTo(gameState.x,gameState.y);ctx2.lineTo(gameState.moonX,gameState.moonY);ctx2.stroke();ctx2.fillStyle='rgba(0,255,255,0.12)';ctx2.beginPath();ctx2.arc(gameState.moonX,gameState.moonY,50,0,6.28);ctx2.fill();}
     if(gameState.x>360)gameState.x=0;if(gameState.x<0)gameState.x=360;if(gameState.y>280)gameState.y=0;if(gameState.y<0)gameState.y=280;
-    ctx2.fillStyle='#aaa';ctx2.beginPath();ctx2.arc(gameState.moonX,gameState.moonY,10,0,6.28);ctx2.fill();
-    ctx2.fillStyle='#f30';ctx2.shadowColor='#f30';ctx2.shadowBlur=12;ctx2.beginPath();ctx2.arc(gameState.targetX,gameState.targetY,12,0,6.28);ctx2.fill();ctx2.shadowBlur=0;
-    ctx2.fillStyle='#0ff';ctx2.shadowColor='#0ff';ctx2.shadowBlur=18;ctx2.beginPath();ctx2.arc(gameState.x,gameState.y,6,0,6.28);ctx2.fill();ctx2.shadowBlur=0;
+    drawRotatingWorld(ctx2,gameState.moonX,gameState.moonY,10,'moon',spinTime);
+    drawRotatingWorld(ctx2,gameState.targetX,gameState.targetY,12,'mars',spinTime);
+    drawZenithShip(ctx2,gameState.x,gameState.y,gameState.vx,gameState.vy);
     gameState.asteroids.forEach(a=>{
       a.x+=a.vx;a.y+=a.vy;if(a.x<0||a.x>360)a.vx*=-1;if(a.y<0||a.y>280)a.vy*=-1;
       ctx2.fillStyle='#666';ctx2.beginPath();ctx2.arc(a.x,a.y,a.r,0,6.28);ctx2.fill();
@@ -241,7 +457,17 @@ function startGame(){
     let dt=Math.sqrt((gameState.targetX-gameState.x)**2+(gameState.targetY-gameState.y)**2);
     if(dt<14){gameRunning=false;gameScore+=700+gameState.boosts*100;ctx2.fillStyle='rgba(0,255,0,0.85)';ctx2.fillRect(0,0,360,280);ctx2.fillStyle='#fff';ctx2.font='16px monospace';ctx2.fillText('MARS REACHED! '+gameScore+' WIN!',30,140);addScore('Peter',gameScore);}
     document.getElementById('gameScore').innerText=gameScore;document.getElementById('boostCount').innerText=gameState.boosts;
-    Object.values(connections).forEach(conn=>{if(conn.open)conn.send({type:'playerMove',id:myPeerId,x:gameState.x,y:gameState.y});});
+    // Local animation stays at display refresh; send compact state at <=20 Hz.
+    // This reduces peer traffic but is NOT a measured network-latency guarantee.
+    const sendNow=performance.now();
+    if(sendNow-lastNetworkSend>=50){
+      lastNetworkSend=sendNow;
+      Object.values(connections).forEach(conn=>{
+        if(conn.open && conn.dataChannel?.bufferedAmount<65536){
+          conn.send({type:'playerMove',id:myPeerId,x:gameState.x,y:gameState.y});
+        }
+      });
+    }
     requestAnimationFrame(loop);
   }
   loop();
@@ -254,7 +480,7 @@ function overclock(){document.body.style.filter='brightness(1.6)';setTimeout(()=
 function refreshLeaderboard(){
   let saved=localStorage.getItem('simpleLeaderboard');
   if(saved){try{leaderboard=JSON.parse(saved);}catch(e){leaderboard=[];}}
-  if(leaderboard.length==0){leaderboard=[{name:'Elon',score:2847,time:Date.now()-1000000},{name:'Peter',score:2543,time:Date.now()-500000}];}
+  // Empty local scores are intentional: never present fabricated race results.
   renderLeaderboard();
 }
 function renderLeaderboard(){
@@ -280,7 +506,7 @@ function clearLeaderboard(){if(confirm('Clear leaderboard?')){leaderboard=[];loc
 // BG
 let cv=document.getElementById('c'),ctx=cv.getContext('2d'),t=0,W,H;function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight}resize();onresize=resize;
 let parts=[];for(let i=0;i<500;i++)parts.push({x:Math.random()*W,y:Math.random()*H,z:Math.random()*2000-1000,vx:(Math.random()-0.5)*2,vy:(Math.random()-0.5)*2,vz:(Math.random()-0.5)*3,q:Math.random()*7+1});
-function drawBG(){ctx.fillStyle='rgba(0,0,0,0.08)';ctx.fillRect(0,0,W,H);parts.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;p.z+=p.vz;if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;if(p.z<-1000||p.z>1000)p.vz*=-1;let s=800/(800+p.z),x=(p.x-W/2)*s+W/2,y=(p.y-H/2)*s+H/2,sz=p.q*s;ctx.fillStyle=`hsla(${(t+i)%360},100%,60%,0.4)`;ctx.beginPath();ctx.arc(x,y,sz,0,6.28);ctx.fill();});t+=0.02;requestAnimationFrame(drawBG);}drawBG();
+function drawBG(){ctx.fillStyle='rgba(0,0,0,0.08)';ctx.fillRect(0,0,W,H);parts.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;p.z+=p.vz;if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;if(p.z<-1000||p.z>1000)p.vz*=-1;let s=800/(800+p.z),x=(p.x-W/2)*s+W/2,y=(p.y-H/2)*s+H/2,sz=p.q*s;ctx.fillStyle=(i%23===0?'rgba(192,221,255,0.92)':i%7===0?'rgba(133,178,229,0.72)':'rgba(210,223,243,0.46)');ctx.beginPath();ctx.arc(x,y,sz,0,6.28);ctx.fill();});t+=0.02;requestAnimationFrame(drawBG);}drawBG();
 setInterval(()=>{let el=document.getElementById('taskTime');if(el)el.innerText=new Date().toLocaleTimeString();},1000);
 updateTaskbar();
 </script></body></html>
