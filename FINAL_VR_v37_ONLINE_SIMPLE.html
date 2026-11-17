@@ -347,7 +347,9 @@ function startPlanetAtlas(){
      const col=i%4,row=Math.floor(i/4);
      drawAtlasPlanet(g,ZENITH_PLANETS[i],90+col*180,75+row*177,t);
    }
-   requestAnimationFrame(frame);
+   // Hidden tab/window: avoid needless full-resolution redraw work.
+   if(!document.hidden && canvas.getClientRects().length)requestAnimationFrame(frame);
+   else setTimeout(()=>requestAnimationFrame(frame),250);
  }
  requestAnimationFrame(frame);
 }
@@ -386,6 +388,7 @@ function startGame(){
   document.addEventListener('keydown', e=>{keys[e.key]=true;if(e.code=='Space'){e.preventDefault();doBoost();}});
   document.addEventListener('keyup', e=>{keys[e.key]=false;});
   const spinEpoch=performance.now();
+  let lastNetworkSend=0;
   function loop(){
     if(!gameRunning)return;
     const spinTime=(performance.now()-spinEpoch)/1000;
@@ -408,7 +411,17 @@ function startGame(){
     let dt=Math.sqrt((gameState.targetX-gameState.x)**2+(gameState.targetY-gameState.y)**2);
     if(dt<14){gameRunning=false;gameScore+=700+gameState.boosts*100;ctx2.fillStyle='rgba(0,255,0,0.85)';ctx2.fillRect(0,0,360,280);ctx2.fillStyle='#fff';ctx2.font='16px monospace';ctx2.fillText('MARS REACHED! '+gameScore+' WIN!',30,140);addScore('Peter',gameScore);}
     document.getElementById('gameScore').innerText=gameScore;document.getElementById('boostCount').innerText=gameState.boosts;
-    Object.values(connections).forEach(conn=>{if(conn.open)conn.send({type:'playerMove',id:myPeerId,x:gameState.x,y:gameState.y});});
+    // Local animation stays at display refresh; send compact state at <=20 Hz.
+    // This reduces peer traffic but is NOT a measured network-latency guarantee.
+    const sendNow=performance.now();
+    if(sendNow-lastNetworkSend>=50){
+      lastNetworkSend=sendNow;
+      Object.values(connections).forEach(conn=>{
+        if(conn.open && conn.dataChannel?.bufferedAmount<65536){
+          conn.send({type:'playerMove',id:myPeerId,x:gameState.x,y:gameState.y});
+        }
+      });
+    }
     requestAnimationFrame(loop);
   }
   loop();
