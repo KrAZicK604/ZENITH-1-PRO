@@ -42,6 +42,9 @@ canvas#c{background:radial-gradient(ellipse at 55% 43%,#0c1729 0%,#050914 42%,#0
 @media(min-width:2560px){.window{font-size:1.08rem}.content{font-size:14px}.titlebar{font-size:14px}.btn{font-size:13px}#taskbar{height:72px}.ticon{width:52px;height:52px}}
 @media(max-width:900px){.window{min-width:0!important;max-width:calc(100vw - 24px);left:12px!important}.content{max-height:45vh}#onlineStatus{min-width:0;width:min(96vw,520px);font-size:11px}#taskbar{overflow-x:auto}}
 @media(prefers-reduced-motion:reduce){.btn,.ticon{transition:none}}
+
+#planetAtlas{display:block;width:100%;height:180px;background:#02050b;border:1px solid rgba(119,185,224,.36);border-radius:12px;margin-top:10px}
+.planet-caption{font-size:10px;color:#b3d2e8;margin-top:6px;line-height:1.5}
 </style></head><body>
 <canvas id=c></canvas>
 
@@ -80,6 +83,8 @@ Controls: Arrows steer, SPACE boost, Moon gravity (cyan circle) pulls you - Use 
 <div class=content>
 <div style=font-size:10px>Score: <span id=gameScore>0</span> | Boosts: <span id=boostCount>3</span> | <span id=gameStatus>Ready</span></div>
 <canvas id=gameCanvas width=360 height=280></canvas>
+<canvas id=planetAtlas width=720 height=360 aria-label="Animated stylized solar system planet atlas"></canvas>
+<div class=planet-caption>PLANET ATLAS · Mercury → Neptune · Accelerated spin · Illustrative colours, not NASA textures or scale</div>
 <div style=margin-top:6px>
 <span class=btn-green onclick="startMultiplayer()">👥 ONLINE RACE</span>
 <span class=btn onclick="startGame()">SOLO</span>
@@ -268,6 +273,85 @@ function drawRotatingWorld(g,x,y,r,kind,time){
  g.strokeStyle=mars?'rgba(251,172,121,.66)':'rgba(204,225,238,.46)';
  g.lineWidth=.75;g.beginPath();g.arc(x,y,r-.4,0,Math.PI*2);g.stroke();
 }
+
+// Independent animated planet atlas; does not modify the Mars race physics or target.
+const ZENITH_PLANETS=[
+ {name:'Mercury',size:13,base:['#aeb0a8','#777a7b','#3d444b'],kind:'rock',speed:1.2},
+ {name:'Venus',size:17,base:['#f7d8a3','#d7a96b','#946c49'],kind:'cloud',speed:-.5},
+ {name:'Earth',size:19,base:['#4ca7db','#1763aa','#0b284e'],kind:'earth',speed:1.5},
+ {name:'Mars',size:15,base:['#e7a06d','#ba593a','#602e2c'],kind:'rock',speed:1.3},
+ {name:'Jupiter',size:30,base:['#e7d3b3','#ba916e','#735a4e'],kind:'gas',speed:2.6},
+ {name:'Saturn',size:25,base:['#f3ddb2','#bba579','#75664e'],kind:'saturn',speed:2.2},
+ {name:'Uranus',size:20,base:['#c2f1ee','#83c9d4','#4e8d9d'],kind:'ice',speed:-1.7},
+ {name:'Neptune',size:20,base:['#5c8fe4','#2854af','#142c67'],kind:'ice',speed:2.1}
+];
+function drawAtlasPlanet(g,p,x,y,t){
+ const r=p.size,spin=t*p.speed;
+ g.save();g.translate(x,y);
+ if(p.kind==='saturn'){
+   g.save();g.rotate(-.32);g.strokeStyle='rgba(218,196,150,.58)';g.lineWidth=7;
+   g.beginPath();g.ellipse(0,0,r*1.73,r*.49,0,Math.PI,2*Math.PI);g.stroke();g.restore();
+ }
+ g.beginPath();g.arc(0,0,r,0,Math.PI*2);g.clip();
+ const surface=g.createLinearGradient(-r,-r,r,r);
+ surface.addColorStop(0,p.base[0]);surface.addColorStop(.55,p.base[1]);surface.addColorStop(1,p.base[2]);
+ g.fillStyle=surface;g.fillRect(-r,-r,r*2,r*2);
+ if(['gas','saturn','cloud','ice'].includes(p.kind)){
+   for(let j=0;j<11;j++){
+     const bandY=(j-5)*r*.19+Math.sin(spin+j*.9)*r*.045;
+     g.fillStyle=j%3===0?'rgba(255,244,218,.31)':'rgba(67,76,94,.17)';
+     g.fillRect(-r,bandY,r*2,r*(p.kind==='ice'?.07:.13));
+   }
+   if(p.kind==='gas'){
+     const spotX=Math.sin(spin+.6)*r*.65;
+     g.fillStyle='rgba(164,85,63,.67)';g.beginPath();g.ellipse(spotX,r*.34,r*.27,r*.12,-.15,0,Math.PI*2);g.fill();
+   }
+ }else{
+   for(let j=0;j<18;j++){
+     const longitude=spin+j*2.39996,depth=Math.cos(longitude);
+     if(depth<0)continue;
+     const px=Math.sin(longitude)*r*.87,py=Math.sin(j*3.47)*r*.76;
+     const w=r*(.12+.18*depth),h=r*(.09+.1*(j%3)/2);
+     g.fillStyle=p.kind==='earth'?(j%4===0?'rgba(248,249,249,.66)':'rgba(91,158,94,.87)'):(j%3===0?'rgba(40,45,50,.33)':'rgba(240,214,188,.23)');
+     g.beginPath();g.ellipse(px,py,w,h,j*.25,0,Math.PI*2);g.fill();
+   }
+   if(p.kind==='earth'){
+     g.fillStyle='rgba(238,247,250,.76)';
+     g.beginPath();g.ellipse(0,-r*.91,r*.6,r*.16,0,0,Math.PI*2);g.fill();
+   }
+ }
+ const shade=g.createLinearGradient(-r,0,r,0);
+ shade.addColorStop(0,'rgba(0,4,13,.77)');shade.addColorStop(.45,'rgba(0,3,12,.13)');shade.addColorStop(1,'rgba(0,0,0,.17)');
+ g.fillStyle=shade;g.fillRect(-r,-r,r*2,r*2);
+ g.restore();
+ if(p.kind==='saturn'){
+   g.save();g.translate(x,y);g.rotate(-.32);
+   g.strokeStyle='rgba(239,214,164,.74)';g.lineWidth=6;
+   g.beginPath();g.ellipse(0,0,r*1.73,r*.49,0,0,Math.PI);g.stroke();g.restore();
+ }
+ g.font='11px Segoe UI,Arial,sans-serif';g.fillStyle='#d5e7f4';g.textAlign='center';
+ g.fillText(p.name,x,y+r+(p.kind==='saturn'?20:16));
+}
+function startPlanetAtlas(){
+ const canvas=document.getElementById('planetAtlas');if(!canvas)return;
+ const g=canvas.getContext('2d');if(!g)return;
+ const ratio=Math.min(Math.max(window.devicePixelRatio||1,1),4);
+ const width=720,height=360;
+ canvas.width=Math.round(width*ratio);canvas.height=Math.round(height*ratio);
+ g.setTransform(ratio,0,0,ratio,0,0);
+ const start=performance.now();
+ function frame(now){
+   const t=(now-start)/1000;
+   g.fillStyle='#02050b';g.fillRect(0,0,width,height);
+   for(let i=0;i<ZENITH_PLANETS.length;i++){
+     const col=i%4,row=Math.floor(i/4);
+     drawAtlasPlanet(g,ZENITH_PLANETS[i],90+col*180,75+row*177,t);
+   }
+   requestAnimationFrame(frame);
+ }
+ requestAnimationFrame(frame);
+}
+startPlanetAtlas();
 // Resolution-independent vector spacecraft; no change to game collision physics.
 function drawZenithShip(g,x,y,vx,vy){
  g.save();g.translate(x,y);g.rotate(Math.atan2(vy,vx));
