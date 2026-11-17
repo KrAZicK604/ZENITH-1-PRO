@@ -55,6 +55,18 @@ input:focus { border-color:#00ff88; box-shadow:0 0 0 2px rgba(0,255,136,0.2); }
 ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.15); border-radius:3px; }
 
 @media(max-width:850px){body{overflow:auto;min-height:100vh}#canvas,#bg-glow{position:fixed}#hud{position:relative;min-height:100vh;display:flex;flex-direction:column;gap:10px;padding:8px}#top,#left,#right,#bottom,#alpha-badge{position:relative;inset:auto;left:auto;right:auto;top:auto;bottom:auto;transform:none;width:100%;max-height:none;max-width:none}#top{height:auto;min-height:56px;flex-wrap:wrap;gap:8px;padding:10px}#alpha-badge{order:1}#left{order:2}#right{order:3}#bottom{order:4}#center{position:fixed}#update-notice{top:10px!important}}
+@media (max-width: 820px) {
+  body { overflow:auto; min-height:100vh; }
+  #canvas, #bg-glow { position:fixed; }
+  #hud { position:relative; inset:auto; display:flex; flex-direction:column; gap:12px; padding:8px 10px 20px; min-height:100vh; }
+  #top, #left, #right, #bottom, #alpha-badge { position:relative; top:auto; right:auto; bottom:auto; left:auto; transform:none; width:100%; max-width:none; max-height:none; }
+  #top { height:auto; min-height:56px; flex-wrap:wrap; gap:8px; padding:10px; border-radius:12px; }
+  #left, #right { overflow:visible; }
+  #bottom { order:4; justify-content:center; }
+  #alpha-badge { order:0; text-align:center; }
+  #center { position:fixed; font-size:17px; width:min(90vw,480px); }
+  .btn { padding:10px 12px; }
+}
 </style>
 </head>
 <body><section aria-label="Important Alpha update" id="update-notice" role="status" style="position:fixed;z-index:200;top:68px;left:50%;transform:translateX(-50%);width:min(580px,94vw);max-height:65vh;overflow:auto;background:#111a27;color:white;border:2px solid #ffbd59;border-radius:14px;padding:16px;box-shadow:0 15px 40px #000b;font:13px/1.6 Inter,sans-serif"><strong style="color:#ffbd59">ZENITH ALPHA v2.1 — IMPORTANT UPDATE</strong><p><b>We're sorry for the confusion.</b> Earlier screens showed unverified player counts, prize pools, earnings and payment status. Those numbers were not evidence of live players, actual payments, or money owed.</p><p>This version is a <b>free local demo</b>. Paid races, live multiplayer and payouts are disabled until verified server services are connected and tested. Your demo points are not cash.</p><button onclick="document.getElementById('update-notice').remove()" style="padding:8px 15px;border:0;border-radius:8px;background:#ffbd59;color:#111;font-weight:700;cursor:pointer" type="button">I UNDERSTAND — CONTINUE DEMO</button></section>
@@ -209,7 +221,7 @@ function draw() {
         }
     }
     // Ship - glowing
-    let shipX=cx, shipY=cy+game.progress*1.2;
+    let shipX=cx+steerOffset, shipY=cy+game.progress*1.2;
     ctx.shadowColor='#00ff88'; ctx.shadowBlur=18;
     ctx.fillStyle='#00ff88'; ctx.beginPath(); ctx.moveTo(shipX,shipY-20); ctx.lineTo(shipX-11,shipY+13); ctx.lineTo(shipX+11,shipY+13); ctx.closePath(); ctx.fill();
     ctx.shadowBlur=0;
@@ -234,6 +246,8 @@ game.earnings = 0;
 game.unlocked = false;
 let raceToken = 0;
 let boostSpeed = 0;
+let steerOffset = 0;
+let thrustHeld = false;
 let messageToken = 0;
 function byId(id) { return document.getElementById(id); }
 function syncDemo() {
@@ -267,7 +281,7 @@ function openStripeDashboard() {
 }
 function resetRace() {
   raceToken++;
-  game.racing=false;game.progress=0;game.speed=0;game.distance=0;game.fuel=100;boostSpeed=0;
+  game.racing=false;game.progress=0;game.speed=0;game.distance=0;game.fuel=100;boostSpeed=0;steerOffset=0;thrustHeld=false;
   byId('progress-text').textContent='0%';byId('progress-fill').style.width='0%';
   byId('speed-text').textContent='0 km/s';byId('distance-text').textContent='0 / 259.1M km';
   byId('dist-top').textContent='0 km';byId('fuel-top').textContent='Fuel 100%';
@@ -281,7 +295,7 @@ function startRace() {
     const elapsed=Math.min(1,(now-started)/duration);
     game.progress=Math.max(game.progress,elapsed*100);
     game.distance=game.progress*2.591;
-    game.speed=80+elapsed*600+boostSpeed;
+    game.speed=80+elapsed*600+boostSpeed+(thrustHeld?60:0);
     game.fuel=Math.max(0,100-elapsed*30);
     byId('progress-text').textContent=Math.floor(game.progress)+'%';
     byId('progress-fill').style.width=game.progress+'%';
@@ -379,8 +393,13 @@ function shareViral(){copyText('ZENITH ALPHA v2.1 — free local space-racing de
 addEventListener('keydown',e=>{
   if(['INPUT','TEXTAREA'].includes(document.activeElement?.tagName))return;
   if(e.code==='Space'&&game.racing){e.preventDefault();boost();}
+  if(game.racing && (e.code==='ArrowLeft'||e.code==='KeyA')){e.preventDefault();steerOffset=Math.max(-120,steerOffset-12);}
+  if(game.racing && (e.code==='ArrowRight'||e.code==='KeyD')){e.preventDefault();steerOffset=Math.min(120,steerOffset+12);}
+  if(game.racing && (e.code==='ArrowUp'||e.code==='KeyW')){e.preventDefault();thrustHeld=true;}
   if(e.key==='r'||e.key==='R')resetRace();
 });
+addEventListener('keyup',e=>{if(e.code==='ArrowUp'||e.code==='KeyW')thrustHeld=false;});
+addEventListener('blur',()=>{thrustHeld=false;});
 console.info('ZENITH ALPHA v2.1 local demo: no verified payments, player counts or payouts.');
 </script>
 </body>
