@@ -39,5 +39,14 @@ class AlphaDemoGate(unittest.TestCase):
         self.assertIn("game.points = 0", self.script)
         self.assertIn("game.earnings = 0", self.script)
 
+    def test_boost_persists_between_animation_frames(self):
+        self.assertIn("let boostSpeed = 0;", self.script)
+        self.assertIn("boostSpeed+=120;", self.script)
+        self.assertIn("game.speed=80+elapsed*600+boostSpeed;", self.script)
+        self.assertIn("game.fuel=100;boostSpeed=0;", self.script)
+
+    def test_initial_state_contains_no_fabricated_score(self):
+        self.assertIn("room:'local-demo', points:0, earnings:0", self.script)
+
 if __name__ == "__main__":
     unittest.main()
