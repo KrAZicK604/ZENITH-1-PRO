@@ -232,6 +232,42 @@ document.querySelectorAll('.window').forEach(win=>{
   document.addEventListener('touchend', ()=>{isDown=false;});
 });
 
+// Stylized fast-spin planet renderer: plausible lunar/Martian palette, NOT calibrated surface imagery.
+function drawRotatingWorld(g,x,y,r,kind,time){
+ const mars=kind==='mars', spin=time*(mars?1.8:1.1);
+ g.save();g.translate(x,y);
+ const halo=g.createRadialGradient(0,0,r*.75,0,0,r*1.65);
+ halo.addColorStop(0,mars?'rgba(237,108,54,.18)':'rgba(155,185,211,.13)');
+ halo.addColorStop(1,'rgba(0,0,0,0)');
+ g.fillStyle=halo;g.beginPath();g.arc(0,0,r*1.65,0,Math.PI*2);g.fill();
+ g.beginPath();g.arc(0,0,r,0,Math.PI*2);g.clip();
+ const surface=g.createLinearGradient(-r,-r,r,r);
+ if(mars){surface.addColorStop(0,'#e6a16b');surface.addColorStop(.48,'#b95736');surface.addColorStop(1,'#592e2c');}
+ else{surface.addColorStop(0,'#c4c9ca');surface.addColorStop(.55,'#818a91');surface.addColorStop(1,'#414c58');}
+ g.fillStyle=surface;g.fillRect(-r,-r,2*r,2*r);
+ // Longitude features travel across the visible disk and compress near its limb.
+ for(let i=0;i<12;i++){
+   const phase=spin+i*2.39996,longitude=Math.sin(phase),depth=Math.cos(phase);
+   if(depth<-.12)continue;
+   const px=longitude*r*.91,py=Math.sin(i*3.73)*r*.7;
+   const width=(mars?.31:.22)*r*(.22+.78*Math.max(0,depth));
+   const height=(mars?.17:.14)*r*(.7+.3*Math.abs(Math.sin(i)));
+   g.save();g.translate(px,py);g.rotate(Math.sin(i*4.1)*.8);
+   g.fillStyle=mars?(i%3===0?'rgba(97,49,41,.56)':'rgba(233,156,105,.4)'):(i%3===0?'rgba(51,62,75,.46)':'rgba(206,213,212,.22)');
+   g.beginPath();g.ellipse(0,0,width,height,0,0,Math.PI*2);g.fill();g.restore();
+ }
+ if(mars){
+   g.fillStyle='rgba(242,222,192,.85)';g.beginPath();g.ellipse(0,-r*.9,r*.44,r*.17,0,0,Math.PI*2);g.fill();
+ }
+ // Day/night terminator and rim lighting make the sphere read as a globe.
+ const shade=g.createLinearGradient(-r,0,r,0);
+ shade.addColorStop(0,'rgba(5,9,17,.72)');shade.addColorStop(.42,'rgba(8,13,22,.15)');
+ shade.addColorStop(.82,'rgba(0,0,0,0)');shade.addColorStop(1,'rgba(0,0,0,.32)');
+ g.fillStyle=shade;g.fillRect(-r,-r,r*2,r*2);
+ g.restore();
+ g.strokeStyle=mars?'rgba(251,172,121,.66)':'rgba(204,225,238,.46)';
+ g.lineWidth=.75;g.beginPath();g.arc(x,y,r-.4,0,Math.PI*2);g.stroke();
+}
 // Resolution-independent vector spacecraft; no change to game collision physics.
 function drawZenithShip(g,x,y,vx,vy){
  g.save();g.translate(x,y);g.rotate(Math.atan2(vy,vx));
@@ -265,8 +301,10 @@ function startGame(){
   let keys={};
   document.addEventListener('keydown', e=>{keys[e.key]=true;if(e.code=='Space'){e.preventDefault();doBoost();}});
   document.addEventListener('keyup', e=>{keys[e.key]=false;});
+  const spinEpoch=performance.now();
   function loop(){
     if(!gameRunning)return;
+    const spinTime=(performance.now()-spinEpoch)/1000;
     ctx2.fillStyle='rgba(0,0,0,0.25)';ctx2.fillRect(0,0,360,280);
     for(let i=0;i<60;i++){ctx2.fillStyle='rgba(255,255,255,0.5)';ctx2.fillRect((i*137)%360,(i*211)%280,1,1);}
     if(keys['ArrowUp'])gameState.vy-=0.3;if(keys['ArrowDown'])gameState.vy+=0.3;if(keys['ArrowLeft'])gameState.vx-=0.18;if(keys['ArrowRight'])gameState.vx+=0.18;
@@ -274,8 +312,8 @@ function startGame(){
     let dx=gameState.moonX-gameState.x,dy=gameState.moonY-gameState.y,d=Math.sqrt(dx*dx+dy*dy);
     if(d<50){gameState.vx+=dx*0.03;gameState.vy+=dy*0.03;ctx2.strokeStyle='rgba(0,255,255,0.5)';ctx2.beginPath();ctx2.moveTo(gameState.x,gameState.y);ctx2.lineTo(gameState.moonX,gameState.moonY);ctx2.stroke();ctx2.fillStyle='rgba(0,255,255,0.12)';ctx2.beginPath();ctx2.arc(gameState.moonX,gameState.moonY,50,0,6.28);ctx2.fill();}
     if(gameState.x>360)gameState.x=0;if(gameState.x<0)gameState.x=360;if(gameState.y>280)gameState.y=0;if(gameState.y<0)gameState.y=280;
-    ctx2.fillStyle='#aaa';ctx2.beginPath();ctx2.arc(gameState.moonX,gameState.moonY,10,0,6.28);ctx2.fill();
-    ctx2.fillStyle='#f30';ctx2.shadowColor='#f30';ctx2.shadowBlur=12;ctx2.beginPath();ctx2.arc(gameState.targetX,gameState.targetY,12,0,6.28);ctx2.fill();ctx2.shadowBlur=0;
+    drawRotatingWorld(ctx2,gameState.moonX,gameState.moonY,10,'moon',spinTime);
+    drawRotatingWorld(ctx2,gameState.targetX,gameState.targetY,12,'mars',spinTime);
     drawZenithShip(ctx2,gameState.x,gameState.y,gameState.vx,gameState.vy);
     gameState.asteroids.forEach(a=>{
       a.x+=a.vx;a.y+=a.vy;if(a.x<0||a.x>360)a.vx*=-1;if(a.y<0||a.y>280)a.vy*=-1;
