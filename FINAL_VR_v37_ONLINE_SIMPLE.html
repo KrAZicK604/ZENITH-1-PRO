@@ -232,10 +232,34 @@ document.querySelectorAll('.window').forEach(win=>{
   document.addEventListener('touchend', ()=>{isDown=false;});
 });
 
+// Resolution-independent vector spacecraft; no change to game collision physics.
+function drawZenithShip(g,x,y,vx,vy){
+ g.save();g.translate(x,y);g.rotate(Math.atan2(vy,vx));
+ const exhaust=g.createLinearGradient(-22,0,-7,0);
+ exhaust.addColorStop(0,'rgba(45,115,255,0)');exhaust.addColorStop(.7,'rgba(82,172,255,.7)');exhaust.addColorStop(1,'#e1f7ff');
+ g.fillStyle=exhaust;g.beginPath();g.moveTo(-8,-3);g.lineTo(-22,0);g.lineTo(-8,3);g.fill();
+ g.shadowColor='rgba(93,183,255,.4)';g.shadowBlur=7;
+ g.fillStyle='#63819a';g.strokeStyle='#dcebf7';g.lineWidth=.7;
+ for(const sign of [-1,1]){g.beginPath();g.moveTo(-3,sign*2);g.lineTo(-12,sign*11);g.lineTo(-4,sign*10);g.lineTo(6,sign*3);g.closePath();g.fill();g.stroke();}
+ const hull=g.createLinearGradient(0,-8,0,8);
+ hull.addColorStop(0,'#f4f9fc');hull.addColorStop(.45,'#9fb8cd');hull.addColorStop(.65,'#506b83');hull.addColorStop(1,'#d6e6ef');
+ g.fillStyle=hull;g.beginPath();g.moveTo(13,0);g.lineTo(3,-4);g.lineTo(-9,-3);g.lineTo(-9,3);g.lineTo(3,4);g.closePath();g.fill();g.stroke();
+ g.shadowBlur=0;g.fillStyle='#102e49';g.strokeStyle='#8bd9ff';g.lineWidth=.7;
+ g.beginPath();g.ellipse(4,0,3.3,1.7,0,0,Math.PI*2);g.fill();g.stroke();
+ g.strokeStyle='#e6f3fa';g.beginPath();g.moveTo(-7,0);g.lineTo(0,0);g.stroke();
+ g.fillStyle='#ffbb76';g.fillRect(-9,-1,1.4,2);g.restore();
+}
+function prepareGameCanvas(cvs,g){
+ const ratio=Math.min(Math.max(window.devicePixelRatio||1,1),4);
+ const w=Math.round(360*ratio),h=Math.round(280*ratio);
+ if(cvs.width!==w||cvs.height!==h){cvs.width=w;cvs.height=h;}
+ g.setTransform(ratio,0,0,ratio,0,0);
+}
 // GAME
 function startMultiplayer(){openWindow('winGame'); startGame();}
 function startGame(){
   let cvs=document.getElementById('gameCanvas'),ctx2=cvs.getContext('2d');
+  prepareGameCanvas(cvs,ctx2);
   gameRunning=true;gameScore=0;gameState={x:40,y:140,vx:2.5,vy:0,boosts:3,asteroids:[],targetX:320,targetY:140,moonX:150,moonY:140};
   for(let i=0;i<10;i++)gameState.asteroids.push({x:80+Math.random()*200,y:Math.random()*280,r:Math.random()*7+3,vx:Math.random()*2-1,vy:Math.random()*2-1});
   let keys={};
@@ -252,7 +276,7 @@ function startGame(){
     if(gameState.x>360)gameState.x=0;if(gameState.x<0)gameState.x=360;if(gameState.y>280)gameState.y=0;if(gameState.y<0)gameState.y=280;
     ctx2.fillStyle='#aaa';ctx2.beginPath();ctx2.arc(gameState.moonX,gameState.moonY,10,0,6.28);ctx2.fill();
     ctx2.fillStyle='#f30';ctx2.shadowColor='#f30';ctx2.shadowBlur=12;ctx2.beginPath();ctx2.arc(gameState.targetX,gameState.targetY,12,0,6.28);ctx2.fill();ctx2.shadowBlur=0;
-    ctx2.fillStyle='#0ff';ctx2.shadowColor='#0ff';ctx2.shadowBlur=18;ctx2.beginPath();ctx2.arc(gameState.x,gameState.y,6,0,6.28);ctx2.fill();ctx2.shadowBlur=0;
+    drawZenithShip(ctx2,gameState.x,gameState.y,gameState.vx,gameState.vy);
     gameState.asteroids.forEach(a=>{
       a.x+=a.vx;a.y+=a.vy;if(a.x<0||a.x>360)a.vx*=-1;if(a.y<0||a.y>280)a.vy*=-1;
       ctx2.fillStyle='#666';ctx2.beginPath();ctx2.arc(a.x,a.y,a.r,0,6.28);ctx2.fill();
