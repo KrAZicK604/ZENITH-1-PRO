@@ -48,5 +48,17 @@ class AlphaDemoGate(unittest.TestCase):
     def test_initial_state_contains_no_fabricated_score(self):
         self.assertIn("room:'local-demo', points:0, earnings:0", self.script)
 
+    def test_keyboard_steering_and_thrust_are_bounded(self):
+        self.assertIn("steerOffset=Math.max(-120,steerOffset-12)", self.script)
+        self.assertIn("steerOffset=Math.min(120,steerOffset+12)", self.script)
+        self.assertIn("thrustHeld?60:0", self.script)
+        self.assertIn("steerOffset=0;thrustHeld=false;", self.script)
+        self.assertIn("addEventListener('keyup'", self.script)
+
+    def test_responsive_mobile_hud_rules(self):
+        self.assertIn("@media (max-width: 820px)", self.source)
+        self.assertIn("flex-direction:column", self.source)
+        self.assertIn("#canvas, #bg-glow { position:fixed; }", self.source)
+
 if __name__ == "__main__":
     unittest.main()
