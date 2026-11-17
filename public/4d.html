@@ -76,8 +76,26 @@ function updateStars(){
   }
   if(dirty)starGeo.attributes.position.needsUpdate=true;
 }
-const planets=[{name:'MERCURY',r:25,pos:[-280,20,-850],color:0x918b83},{name:'VENUS',r:70,pos:[450,-45,-1200],color:0xd4a76b},{name:'JUPITER',r:210,pos:[-2400,180,-5500],color:0xc9a17c},{name:'SATURN',r:175,pos:[3100,-150,-7400],color:0xd7c49a},{name:'URANUS',r:115,pos:[-5100,90,-10500],color:0x80d5df},{name:'NEPTUNE',r:112,pos:[5600,100,-13500],color:0x3569c4},{name:'MARS',r:95,pos:[-600,80,-1400],color:0xc15a32},{name:'EARTH',r:130,pos:[900,-110,-2400],color:0x226cc6},{name:'MOON',r:42,pos:[1170,20,-2200],color:0x9b9b9b}];
-for(const p of planets){const planet=new THREE.Mesh(new THREE.SphereGeometry(p.r,48,32),new THREE.MeshStandardMaterial({color:p.color,roughness:.9,metalness:0}));planet.position.set(...p.pos);scene.add(planet);p.mesh=planet}
+// Reference: approximate mean orbital semimajor axes (AU), not instantaneous ephemerides.
+// Gameplay mapping deliberately compresses radial distances logarithmically for a bounded browser scene.
+// 1 AU = 149,597,870.7 km. 1 scene unit = 1 metre ONLY for the 18m XR-18 craft;
+// planetary distances/radii are separately stylized and must not be interpreted as metres.
+const AU_KM=149597870.7,orbitCompression=4300;
+function orbitRadius(au){return orbitCompression*Math.log1p(au*3)}
+const orbitalData=[
+{name:'MERCURY',au:.3871,r:32,color:0x918b83,angle:-.4},
+{name:'VENUS',au:.7233,r:55,color:0xd4a76b,angle:1.5},
+{name:'EARTH',au:1,r:64,color:0x226cc6,angle:-1.1},
+{name:'MARS',au:1.5237,r:48,color:0xc15a32,angle:2.4},
+{name:'JUPITER',au:5.2044,r:180,color:0xc9a17c,angle:-2.2},
+{name:'SATURN',au:9.5826,r:150,color:0xd7c49a,angle:.9},
+{name:'URANUS',au:19.1913,r:105,color:0x80d5df,angle:-.85},
+{name:'NEPTUNE',au:30.07,r:102,color:0x3569c4,angle:2.85}
+];
+const planets=orbitalData.map(p=>({...p,pos:[Math.sin(p.angle)*orbitRadius(p.au),0,-Math.cos(p.angle)*orbitRadius(p.au)]}));
+const earth=planets.find(p=>p.name==='EARTH');
+planets.push({name:'MOON',au:null,r:19,color:0x9b9b9b,pos:[earth.pos[0]+125,0,earth.pos[2]-75]});
+for(const p of planets){const planet=new THREE.Mesh(new THREE.SphereGeometry(p.r,32,24),new THREE.MeshStandardMaterial({color:p.color,roughness:.9,metalness:0}));planet.position.set(...p.pos);scene.add(planet);p.mesh=planet}
 ship.position.set(0,0,0);
 const enemyShips=[],shots=[],enemyShots=[];let kills=0,health=100,shield=100,spawned=false,fireCooldown=0,enemyFireCooldown=0;
 const enemyMat=new THREE.MeshStandardMaterial({color:0xb72c40,metalness:.6,roughness:.4}),bulletMat=new THREE.MeshBasicMaterial({color:0x55edff}),hostileBullet=new THREE.MeshBasicMaterial({color:0xff5a48});
@@ -97,8 +115,8 @@ if(enemyFireCooldown===0&&enemyShips.length){const e=enemyShips[Math.floor(rand(
 moveShots(shots,dt,false);moveShots(enemyShots,dt,true);if(!enemyShips.length){spawned=false;document.getElementById('status').textContent='VICTORY'}if(health<=0){spawned=false;document.getElementById('status').textContent='SHIP DISABLED — RESET'}}
 const radarCanvas=document.getElementById('radarCanvas'),radar=radarCanvas.getContext('2d');
 function radarDraw(){const w=radarCanvas.width,c=w/2,R=c-10;radar.clearRect(0,0,w,w);radar.fillStyle='#04101c';radar.fillRect(0,0,w,w);radar.strokeStyle='#24495a';for(const f of [.33,.66,1]){radar.beginPath();radar.arc(c,c,R*f,0,Math.PI*2);radar.stroke()}radar.beginPath();radar.moveTo(c,0);radar.lineTo(c,w);radar.moveTo(0,c);radar.lineTo(w,c);radar.stroke();
-function dot(pos,color,size){const x=c+(pos.x-ship.position.x)/15000*R,y=c+(pos.z-ship.position.z)/15000*R;if((x-c)**2+(y-c)**2>R*R)return;radar.fillStyle=color;radar.beginPath();radar.arc(x,y,size,0,Math.PI*2);radar.fill()}
-for(const p of planets)dot(p.mesh.position,'#5aaaff',3.5);for(const e of enemyShips)dot(e.mesh.position,'#ff4545',4);radar.fillStyle='#fff';radar.beginPath();radar.arc(c,c,4,0,Math.PI*2);radar.fill()}
+function dot(pos,color,size,label=''){const dx=pos.x-ship.position.x,dz=pos.z-ship.position.z;const range=21000;const x=c+dx/range*R,y=c+dz/range*R;if((x-c)**2+(y-c)**2>R*R)return;radar.fillStyle=color;radar.beginPath();radar.arc(x,y,size,0,Math.PI*2);radar.fill();if(label){radar.font='9px system-ui';radar.fillText(label,x+5,y-4)}}
+for(const p of planets)dot(p.mesh.position,'#5aaaff',3.5,p.name.slice(0,3));for(const e of enemyShips)dot(e.mesh.position,'#ff4545',4);radar.fillStyle='#fff';radar.beginPath();radar.arc(c,c,4,0,Math.PI*2);radar.fill()}
 
 const keys=new Set();addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();keys.add(e.code);if(e.repeat)return;if(e.code==='Digit1')timeScale=1;if(e.code==='Digit2')timeScale=10;if(e.code==='Digit3')timeScale=100;if(e.code==='KeyP')paused=!paused;if(e.code==='KeyV')toggleCamera();if(e.code==='KeyM')document.getElementById('radar').hidden=!document.getElementById('radar').hidden;if(e.code==='KeyH'){document.getElementById('metrics').hidden=!document.getElementById('metrics').hidden;document.getElementById('help').hidden=!document.getElementById('help').hidden}});
 addEventListener('keyup',e=>keys.delete(e.code));addEventListener('blur',()=>keys.clear());
