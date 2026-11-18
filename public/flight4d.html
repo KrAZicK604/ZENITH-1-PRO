@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ZENITH 4D | Space Flight Demo</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#01030b;color:#e9f5ff;font:14px system-ui,sans-serif}canvas{display:block;width:100vw;height:100vh;touch-action:none}
+#hud{position:fixed;top:14px;left:14px;pointer-events:none;text-shadow:0 2px 8px #000;font-weight:700}#hud small{font-weight:400;color:#a4bed4}#status{position:fixed;top:14px;right:14px;text-align:right;pointer-events:none}
+#hint{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);padding:10px 15px;background:#061627cf;border:1px solid #315773;border-radius:12px;text-align:center;max-width:95vw}
+button{border:1px solid #5abbd5;border-radius:9px;background:#0b3349;color:#fff;padding:9px 13px;cursor:pointer;font-weight:700}button:focus-visible{outline:3px solid #fff}
+#menu{position:fixed;top:14px;left:50%;transform:translateX(-50%);display:flex;gap:7px;align-items:center}#menu button{background:#102638cc}
+#touch{display:none;position:fixed;bottom:75px;left:12px;right:12px;justify-content:space-between;pointer-events:none}#touch>div{display:flex;gap:6px;pointer-events:auto}#touch button{width:54px;height:54px;touch-action:none}
+@media(pointer:coarse){#touch{display:flex}#hint{bottom:5px;font-size:11px;padding:6px}#menu{top:65px}}
+</style></head><body>
+<canvas id="scene" aria-label="Third-person spacecraft flight simulation"></canvas>
+<div id="hud">ZENITH 4D <small>· FREE FLIGHT DEMO · NO PAYMENTS</small><div id="speed">Speed 0 km/s (fictional)</div><div id="distance">Distance 0 km (fictional)</div><div id="score">Targets 0 · Hull 100%</div></div>
+<div id="status"><span id="state">READY</span><br><small>3D perspective + simulation time<br>Arcade physics, not orbital navigation</small></div>
+<div id="menu"><button id="start">START FLIGHT</button><button id="pause">PAUSE</button><button id="reset">RESET</button></div>
+<div id="hint">W/S or ↑/↓ pitch · A/D or ←/→ steer · Shift boost · Space fire · P pause · H hide HUD</div>
+<div id="touch"><div><button data-key="ArrowLeft">◀</button><button data-key="ArrowRight">▶</button><button data-key="ArrowUp">▲</button><button data-key="ArrowDown">▼</button></div><div><button data-key="ShiftLeft">BOOST</button><button data-key="Space">FIRE</button></div></div>
+<script>
+'use strict';
+const canvas=document.getElementById('scene'),ctx=canvas.getContext('2d',{alpha:false});
+const el=id=>document.getElementById(id);
+const keys=new Set();let width=0,height=0,dpr=1,playing=false,paused=false,last=0,elapsed=0,travel=0,score=0,hull=100,fireWait=0;
+const ship={x:0,y:0,vx:0,vy:0,roll:0},stars=[],rocks=[],shots=[];
+let seed=4381;function rnd(){seed=(1664525*seed+1013904223)>>>0;return seed/4294967296}
+function resize(){dpr=Math.min(devicePixelRatio||1,2);width=innerWidth;height=innerHeight;canvas.width=Math.floor(width*dpr);canvas.height=Math.floor(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}
+function newRock(z){return {x:(rnd()-.5)*22,y:(rnd()-.5)*13,z,r:0.5+rnd()*1.3,spin:rnd()*6.28}}
+function reset(){playing=false;paused=false;last=0;elapsed=0;travel=0;score=0;hull=100;fireWait=0;Object.assign(ship,{x:0,y:0,vx:0,vy:0,roll:0});seed=4381;stars.length=0;rocks.length=0;shots.length=0;for(let i=0;i<220;i++)stars.push({x:(rnd()-.5)*100,y:(rnd()-.5)*60,z:2+rnd()*110,s:rnd()*1.5+.5});for(let i=0;i<24;i++)rocks.push(newRock(16+i*7));el('state').textContent='READY';el('start').textContent='START FLIGHT';el('pause').textContent='PAUSE';updateHud()}
+function project(x,y,z){const focal=Math.min(width*1.15,height*1.8),depth=Math.max(z,0.15);return {x:width/2+(x-ship.x*.65)*focal/depth,y:height/2-(y-ship.y*.65)*focal/depth,k:focal/depth}}
+function poly(points,fill,stroke){ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);for(let i=1;i<points.length;i++)ctx.lineTo(points[i][0],points[i][1]);ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1.6;ctx.stroke()}}
+function drawShip(){const cx=width/2+ship.x*15,cy=height*.74-ship.y*13,s=Math.min(width,height)/430;ctx.save();ctx.translate(cx,cy);ctx.rotate(ship.roll);ctx.scale(s,s);
+ctx.shadowColor='#16e3f0';ctx.shadowBlur=18;poly([[-125,35],[-35,-4],[0,-47],[35,-4],[125,35],[57,43],[32,28],[0,65],[-32,28],[-57,43]],'#173a5d','#7be6ff');
+ctx.shadowBlur=0;poly([[-33,12],[0,-61],[33,12],[19,64],[-19,64]],'#9db3c5','#e6f9ff');poly([[-14,-13],[0,-44],[14,-13],[12,13],[-12,13]],'#091c38','#46bafa');
+poly([[-99,28],[-57,17],[-55,35],[-95,43]],'#e2edf5');poly([[99,28],[57,17],[55,35],[95,43]],'#e2edf5');
+for(const x of [-22,22]){ctx.fillStyle='#20caff';ctx.shadowColor='#0af';ctx.shadowBlur=18;ctx.beginPath();ctx.ellipse(x,60,9,13+(keys.has('ShiftLeft')?18:4),0,0,Math.PI*2);ctx.fill()}ctx.restore()}
+function draw(){ctx.fillStyle='#01040c';ctx.fillRect(0,0,width,height);
+const neb=ctx.createRadialGradient(width*.68,height*.33,5,width*.68,height*.33,width*.52);neb.addColorStop(0,'#14244c');neb.addColorStop(.5,'#080d26');neb.addColorStop(1,'#01040c');ctx.fillStyle=neb;ctx.fillRect(0,0,width,height);
+for(const st of stars){const p=project(st.x,st.y,st.z);if(p.x<0||p.x>width||p.y<0||p.y>height)continue;ctx.fillStyle='rgba(198,228,255,'+Math.min(.9,.15+80/st.z*.06)+')';ctx.fillRect(p.x,p.y,Math.max(.6,st.s*p.k*.018),Math.max(.6,st.s*p.k*.018))}
+const planet=project(18,7,85);const radius=planet.k*5;const grad=ctx.createRadialGradient(planet.x-radius*.3,planet.y-radius*.35,3,planet.x,planet.y,radius);grad.addColorStop(0,'#e9ad7d');grad.addColorStop(.45,'#ae5338');grad.addColorStop(1,'#351524');ctx.fillStyle=grad;ctx.beginPath();ctx.arc(planet.x,planet.y,radius,0,Math.PI*2);ctx.fill();
+for(const rock of rocks.slice().sort((a,b)=>b.z-a.z)){if(rock.z<.7)continue;const p=project(rock.x,rock.y,rock.z),r=Math.min(220,rock.r*p.k);if(p.x<-r||p.x>width+r||p.y<-r||p.y>height+r)continue;const pts=[];for(let i=0;i<8;i++){const a=i*Math.PI/4+rock.spin;pts.push([p.x+Math.cos(a)*r*(i%2?.84:1),p.y+Math.sin(a)*r*(i%3?.9:1)])}poly(pts,'#4b5667','#9aa7b7')}
+for(const shot of shots){const p=project(shot.x,shot.y,shot.z);ctx.strokeStyle='#7dffff';ctx.lineWidth=Math.max(2,p.k*.06);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x,p.y+Math.max(8,p.k*.3));ctx.stroke()}
+drawShip();ctx.strokeStyle='#7bd9f9';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(width/2-11,height/2);ctx.lineTo(width/2+11,height/2);ctx.moveTo(width/2,height/2-11);ctx.lineTo(width/2,height/2+11);ctx.stroke();
+if(!playing||paused){ctx.fillStyle='#d8f6ff';ctx.font='bold '+Math.min(30,width/18)+'px system-ui';ctx.textAlign='center';ctx.fillText(paused?'PAUSED':hull<=0?'SHIP DISABLED — RESET':'PRESS START FLIGHT',width/2,height*.42);ctx.textAlign='left'}}
+function updateHud(){el('speed').textContent='Speed '+(playing&&!paused?(keys.has('ShiftLeft')?1.8:.8):0).toFixed(1)+' km/s (fictional)';el('distance').textContent='Distance '+Math.floor(travel)+' km (fictional)';el('score').textContent='Targets '+score+' · Hull '+Math.max(0,Math.round(hull))+'%'}
+function tick(now){if(!last)last=now;const dt=Math.min((now-last)/1000,.05);last=now;
+if(playing&&!paused){elapsed+=dt;const axisX=Number(keys.has('ArrowRight')||keys.has('KeyD'))-Number(keys.has('ArrowLeft')||keys.has('KeyA')),axisY=Number(keys.has('ArrowUp')||keys.has('KeyW'))-Number(keys.has('ArrowDown')||keys.has('KeyS'));ship.vx+=(axisX*14-ship.vx*5)*dt;ship.vy+=(axisY*11-ship.vy*5)*dt;ship.x=Math.max(-10,Math.min(10,ship.x+ship.vx*dt));ship.y=Math.max(-6,Math.min(6,ship.y+ship.vy*dt));ship.roll+=(axisX*-.22-ship.roll)*Math.min(1,dt*6);const speed=keys.has('ShiftLeft')?37:16;travel+=speed*dt*.05;
+for(const st of stars){st.z-=speed*dt;if(st.z<1){st.z+=110;st.x=(rnd()-.5)*100;st.y=(rnd()-.5)*60}}
+for(const rock of rocks){rock.z-=speed*dt;rock.spin+=dt*.18;if(rock.z<1){if(Math.abs(rock.x-ship.x)<rock.r+1.1&&Math.abs(rock.y-ship.y)<rock.r+1.1){hull-=18;el('state').textContent='COLLISION'}Object.assign(rock,newRock(120+rnd()*60))}}
+fireWait=Math.max(0,fireWait-dt);if(keys.has('Space')&&fireWait===0){shots.push({x:ship.x,y:ship.y,z:3});fireWait=.19}
+for(let i=shots.length-1;i>=0;i--){const shot=shots[i];shot.z+=dt*105;let hit=false;for(const rock of rocks){if(Math.abs(shot.z-rock.z)<2.8&&Math.hypot(shot.x-rock.x,shot.y-rock.y)<rock.r+0.45){score++;Object.assign(rock,newRock(130+rnd()*50));hit=true;break}}if(hit||shot.z>160)shots.splice(i,1)}
+if(hull<=0){playing=false;el('state').textContent='SHIP DISABLED'}
+updateHud()}draw();requestAnimationFrame(tick)}
+el('start').addEventListener('click',()=>{if(hull<=0)reset();playing=true;paused=false;el('state').textContent='FREE FLIGHT';el('start').textContent='RESUME FLIGHT';el('pause').textContent='PAUSE'});
+el('pause').addEventListener('click',()=>{if(!playing)return;paused=!paused;el('state').textContent=paused?'PAUSED':'FREE FLIGHT';el('pause').textContent=paused?'RESUME':'PAUSE';keys.clear()});
+el('reset').addEventListener('click',reset);
+addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space'].includes(e.code))e.preventDefault();keys.add(e.code);if(e.code==='KeyP')el('pause').click();if(e.code==='KeyH'){const hidden=el('hud').hidden;el('hud').hidden=!hidden;el('status').hidden=!hidden;el('hint').hidden=!hidden}});
+addEventListener('keyup',e=>keys.delete(e.code));addEventListener('blur',()=>keys.clear());document.addEventListener('visibilitychange',()=>{if(document.hidden){keys.clear();if(playing&&!paused)el('pause').click()}});
+for(const b of document.querySelectorAll('[data-key]')){const key=b.dataset.key;b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);keys.add(key)});for(const event of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(event,()=>keys.delete(key))}
+addEventListener('resize',resize);resize();reset();requestAnimationFrame(tick);
+</script></body></html>
