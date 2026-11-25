@@ -54,4 +54,4 @@ class ConcurrentActionsTests(unittest.TestCase):
     def test_clock_failure_denies_action(self):
         with patch.object(actions.PROCESS_CLOCK, "sample", return_value=None):
             self.assertFalse(actions.record_demo_action(self.token, "clock_failure"))
-        self.assertTrue(actions.record_demo_action(self.token, "clock_failure"))
+        self.assertFalse(actions.record_demo_action(self.token, "clock_failure"))

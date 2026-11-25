@@ -45,3 +45,27 @@ class ClockGuard:
 
 
 PROCESS_CLOCK = ClockGuard()
+
+
+def retained_sample(db, guard=None):
+    """Call inside BEGIN IMMEDIATE. Local retained high-water, not external trust.
+
+    Denials must commit the latch; callers must not roll back a denied sample.
+    A restored or replaced database can erase this evidence.
+    """
+    if not db.in_transaction:
+        raise ValueError("write transaction required")
+    db.execute("""CREATE TABLE IF NOT EXISTS clock_continuity (
+        singleton INTEGER PRIMARY KEY CHECK(singleton=1),
+        high_water INTEGER NOT NULL CHECK(high_water>=0),
+        failed INTEGER NOT NULL CHECK(failed IN (0,1)))""")
+    row = db.execute("SELECT high_water,failed FROM clock_continuity WHERE singleton=1").fetchone()
+    if row and row[1]:
+        return None
+    now = (guard if guard is not None else PROCESS_CLOCK).sample()
+    if now is None or (row and now < row[0]):
+        db.execute("INSERT OR REPLACE INTO clock_continuity VALUES (1,?,1)",
+                   (row[0] if row else 0,))
+        return None
+    db.execute("INSERT OR REPLACE INTO clock_continuity VALUES (1,?,0)", (now,))
+    return now
