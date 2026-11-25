@@ -49,9 +49,36 @@ def snapshot(source, destination):
 
 
 def restore_to_quarantine(source, destination, expected_sha256):
-    """Verify retained digest, then copy through SQLite backup; never activate."""
-    with Path(source).open("rb") as stream:
-        actual = hashlib.file_digest(stream, "sha256").hexdigest()
-    if actual != expected_sha256:
-        raise ValueError("snapshot digest mismatch")
-    return snapshot(source, destination)
+    """Copy and hash the same bytes into quarantine, then inspect those bytes.
+
+    Only standalone snapshots are supported; never use a live WAL database.
+    Controlled private directory required. No activation or freshness claim.
+    """
+    started = time.monotonic_ns()
+    source = Path(source).resolve(strict=True)
+    destination = Path(destination).absolute()
+    if any(Path(str(source)+suffix).exists() for suffix in ("-wal", "-shm", "-journal")):
+        raise ValueError("source has SQLite sidecars")
+    fd = os.open(destination, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    try:
+        digest = hashlib.sha256()
+        with os.fdopen(fd, "wb") as out, source.open("rb") as inp:
+            while chunk := inp.read(1024 * 1024):
+                digest.update(chunk)
+                out.write(chunk)
+            out.flush()
+            os.fsync(out.fileno())
+        if digest.hexdigest() != expected_sha256:
+            raise ValueError("snapshot digest mismatch")
+        result = inspect_snapshot(destination)
+        with destination.open("rb") as stream:
+            if hashlib.file_digest(stream, "sha256").hexdigest() != expected_sha256:
+                raise ValueError("quarantine bytes changed")
+        result.update(sha256=expected_sha256,
+                      utc=datetime.now(timezone.utc).isoformat(),
+                      elapsed_ns=time.monotonic_ns()-started,
+                      clock="UTC_HOST_UNATTESTED")
+        return result
+    except BaseException:
+        destination.unlink(missing_ok=True)
+        raise
