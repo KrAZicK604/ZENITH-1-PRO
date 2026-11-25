@@ -92,6 +92,21 @@ class LedgerTests(unittest.TestCase):
         self.checkout(); self.paid()
         self.assertFalse(ledger.is_active("sub_other", BASE+20))
 
+    def test_customer_bound_predicate(self):
+        self.checkout(); self.paid()
+        self.assertTrue(ledger.is_active_for_customer("sub_test", "cus_player", BASE+20))
+        for customer in ("cus_other", "", None, "cus_", "p@example.com"):
+            with self.subTest(customer=customer):
+                self.assertFalse(ledger.is_active_for_customer("sub_test", customer, BASE+20))
+        self.assertFalse(ledger.is_active_for_customer("sub_other", "cus_player", BASE+20))
+        self.assertFalse(ledger.is_active_for_customer("sub_test", "cus_player", END))
+        ledger.block("sub_test", BASE+21, terminal=True)
+        self.assertFalse(ledger.is_active_for_customer("sub_test", "cus_player", BASE+22))
+
+    def test_customer_bound_storage_failure_denies(self):
+        with patch.dict(os.environ, {"DATABASE_PATH": ""}):
+            self.assertFalse(ledger.is_active_for_customer("sub_test", "cus_player", BASE+20))
+
     def test_missing_storage_config_fails_closed(self):
         with patch.dict(os.environ, {"DATABASE_PATH": ""}):
             with self.assertRaises(OSError):
