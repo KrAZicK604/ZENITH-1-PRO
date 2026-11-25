@@ -68,3 +68,21 @@ class RecoveryTests(unittest.TestCase):
         bad.write_bytes(b"not a database")
         with self.assertRaises((sqlite3.Error, ValueError)):
             recovery.inspect_snapshot(bad)
+
+    def test_restore_exact_bytes_and_reject_sidecars(self):
+        backup = self.root/"backup.sqlite3"
+        receipt = recovery.snapshot(self.db, backup)
+        restored = self.root/"exact.sqlite3"
+        result = recovery.restore_to_quarantine(backup, restored, receipt["sha256"])
+        self.assertEqual(backup.read_bytes(), restored.read_bytes())
+        self.assertEqual(result["sha256"], receipt["sha256"])
+        sidecar = Path(str(backup)+"-wal")
+        sidecar.write_bytes(b"unexpected sidecar")
+        with self.assertRaises(ValueError):
+            recovery.restore_to_quarantine(backup, self.root/"sidecar.sqlite3", receipt["sha256"])
+        sidecar.unlink()
+        backup.write_bytes(backup.read_bytes()+b"tamper")
+        target = self.root/"tampered.sqlite3"
+        with self.assertRaises(ValueError):
+            recovery.restore_to_quarantine(backup, target, receipt["sha256"])
+        self.assertFalse(target.exists())
