@@ -1,6 +1,6 @@
 """Offline research action gate; no HTTP route, payment or game mutation."""
 import sqlite3
-from clock_guard import PROCESS_CLOCK
+from clock_guard import PROCESS_CLOCK, retained_sample
 import player_sessions as sessions
 import subscription_store as ledger
 
@@ -20,7 +20,7 @@ def record_demo_action(token, request_id):
         return False
     try:
         with ledger.database(write=True) as db:
-            now = PROCESS_CLOCK.sample()
+            now = retained_sample(db, PROCESS_CLOCK)
             if now is None:
                 return False
             sessions._schema(db)
