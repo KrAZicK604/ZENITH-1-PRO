@@ -6,7 +6,7 @@ import hashlib
 import re
 import secrets
 import sqlite3
-import time
+from clock_guard import retained_sample
 
 import subscription_store as ledger
 
@@ -64,10 +64,12 @@ def issue(player_id, ttl=900):
     """Call only after independent authentication of player_id by trusted adapter."""
     if not _valid(player_id) or type(ttl) is not int or not 1 <= ttl <= MAX_TTL:
         return None
-    now = int(time.time())
     token = secrets.token_urlsafe(32)
     try:
         with ledger.database(write=True) as db:
+            now = retained_sample(db)
+            if now is None:
+                return None
             _schema(db)
             if not db.execute("SELECT 1 FROM player_bindings WHERE player_id=?",
                               (player_id,)).fetchone():
@@ -92,12 +94,14 @@ def revoke(token):
 
 
 def eligible(token):
-    """Read-only research predicate, not a deployed game authorization decision."""
+    """Research predicate with retained clock write; not atomic action authorization."""
     if not isinstance(token, str) or not _TOKEN.fullmatch(token):
         return False
-    now = int(time.time())
     try:
-        with ledger.database() as db:
+        with ledger.database(write=True) as db:
+            now = retained_sample(db)
+            if now is None:
+                return False
             row = db.execute("""SELECT b.subscription_id,b.customer_id
                 FROM player_sessions s JOIN player_bindings b ON b.player_id=s.player_id
                 WHERE s.digest=? AND s.revoked=0 AND s.issued<=? AND s.expires>?""",
