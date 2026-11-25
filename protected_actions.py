@@ -1,6 +1,6 @@
 """Offline research action gate; no HTTP route, payment or game mutation."""
 import sqlite3
-import time
+from clock_guard import PROCESS_CLOCK
 import player_sessions as sessions
 import subscription_store as ledger
 
@@ -20,7 +20,9 @@ def record_demo_action(token, request_id):
         return False
     try:
         with ledger.database(write=True) as db:
-            now = int(time.time())
+            now = PROCESS_CLOCK.sample()
+            if now is None:
+                return False
             sessions._schema(db)
             db.execute("""CREATE TABLE IF NOT EXISTS demo_action_receipts (
                 player_id TEXT NOT NULL, request_id TEXT NOT NULL,
