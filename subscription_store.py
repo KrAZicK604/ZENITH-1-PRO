@@ -124,6 +124,27 @@ def block(subscription_id, created, terminal=False, db=None):
 
 
 def is_active(subscription_id, now=None):
+    """Legacy internal billing predicate; never use as player authorization."""
+    return _active(subscription_id, now=now)
+
+
+def is_active_for_customer(subscription_id, customer_id, now=None):
+    """Internal billing check for a server-verified customer binding.
+
+    Caller must authenticate the player and resolve both IDs server-side.
+    This is not an authentication service or a public authorization endpoint.
+    """
+    if (not isinstance(subscription_id, str) or not subscription_id.startswith('sub_')
+            or len(subscription_id) <= 4 or not isinstance(customer_id, str)
+            or not customer_id.startswith('cus_') or len(customer_id) <= 4):
+        return False
+    try:
+        return _active(subscription_id, now=now, customer_id=customer_id)
+    except (OSError, sqlite3.Error):
+        return False
+
+
+def _active(subscription_id, now=None, customer_id=None):
     """Internal-only: require matching paid period and no later adverse event.
 
     No public HTTP endpoint or unauthenticated email-based entitlement lookup.
@@ -134,9 +155,10 @@ def is_active(subscription_id, now=None):
             JOIN race_paid_periods p ON p.subscription_id=s.subscription_id
               AND p.customer_id=s.customer_id
             LEFT JOIN race_blocks b ON b.subscription_id=s.subscription_id
-            WHERE s.subscription_id=? AND p.period_start<=? AND p.period_end>?
+            WHERE s.subscription_id=? AND (? IS NULL OR s.customer_id=?)
+              AND p.period_start<=? AND p.period_end>?
               AND s.checkout_event<=? AND p.paid_event<=?
               AND (b.subscription_id IS NULL OR
                    (b.terminal=0 AND p.paid_event>b.blocked_event))
-            LIMIT 1""", (subscription_id, now, now, now, now)).fetchone()
+            LIMIT 1""", (subscription_id, customer_id, customer_id, now, now, now, now)).fetchone()
     return row is not None
