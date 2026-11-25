@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>ZENITH-1-PRO | REALITY OS ALPHA v2.1 — Honest Demo</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;600;800&display=swap');
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#000; color:#fff; font-family:'Inter',sans-serif; overflow:hidden; }
+#canvas { position:absolute; top:0; left:0; width:100%; height:100%; }
+#bg-glow { position:absolute; inset:0; background:radial-gradient(ellipse at 20% 20%, rgba(0,136,255,0.25) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(255,0,255,0.2) 0%, transparent 50%), radial-gradient(ellipse at 50% 0%, rgba(0,255,136,0.15) 0%, transparent 60%); pointer-events:none; z-index:1; }
+#hud { position:absolute; inset:0; pointer-events:none; z-index:10; }
+#hud > * { pointer-events:auto; }
+#top { position:absolute; top:0; left:0; right:0; height:56px; background:rgba(10,10,20,0.85); backdrop-filter:blur(20px); border-bottom:1px solid rgba(255,255,255,0.1); display:flex; justify-content:space-between; align-items:center; padding:0 16px; font-size:12px; }
+#top b { font-family:'Orbitron',sans-serif; letter-spacing:1px; }
+.logo { font-family:'Orbitron',sans-serif; font-weight:900; font-size:16px; background:linear-gradient(90deg,#00ff88,#00ccff,#ff00ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.pill { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); padding:5px 10px; border-radius:20px; font-size:11px; display:inline-flex; align-items:center; gap:5px; }
+.pill-green { background:rgba(0,255,136,0.15); border-color:rgba(0,255,136,0.4); color:#00ff88; }
+.pill-gold { background:rgba(255,170,0,0.15); border-color:rgba(255,170,0,0.4); color:#ffaa00; }
+#left { position:absolute; top:66px; left:12px; width:360px; background:rgba(12,12,22,0.82); backdrop-filter:blur(24px); border:1px solid rgba(255,255,255,0.12); border-radius:20px; padding:16px; max-height:82vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1); }
+#right { position:absolute; top:66px; right:12px; width:360px; background:rgba(12,12,22,0.82); backdrop-filter:blur(24px); border:1px solid rgba(255,255,255,0.12); border-radius:20px; padding:16px; max-height:82vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1); }
+#bottom { position:absolute; bottom:12px; left:50%; transform:translateX(-50%); background:rgba(10,10,20,0.85); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.12); border-radius:20px; display:flex; gap:8px; padding:10px; box-shadow:0 20px 60px rgba(0,0,0,0.6); flex-wrap:wrap; justify-content:center; max-width:95vw; }
+.btn { padding:12px 18px; font-weight:700; border:none; border-radius:12px; cursor:pointer; font-family:'Inter',sans-serif; font-size:12px; transition:all 0.2s; box-shadow:0 4px 16px rgba(0,0,0,0.4); }
+.btn:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.5); }
+.btn-race { background:linear-gradient(135deg,#00ff88,#00cc88); color:#000; }
+.btn-vr { background:linear-gradient(135deg,#ff00ff,#9933ff); color:#fff; }
+.btn-quest { background:linear-gradient(135deg,#0088ff,#00ccff); color:#fff; border:1px solid rgba(255,255,255,0.3); }
+.btn-multi { background:linear-gradient(135deg,#00ccff,#0088ff); color:#000; }
+.btn-unlock { background:linear-gradient(135deg,#ffaa00,#ff6600); color:#000; }
+.btn-colony { background:linear-gradient(135deg,#ff6600,#ff3300); color:#fff; }
+.btn-jarvis { background:linear-gradient(135deg,#9933ff,#6600cc); color:#fff; }
+#center { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:26px; font-weight:800; text-align:center; display:none; background:rgba(10,10,20,0.92); backdrop-filter:blur(20px); padding:28px 32px; border-radius:24px; border:1px solid rgba(255,255,255,0.2); z-index:100; max-width:90%; box-shadow:0 30px 80px rgba(0,0,0,0.7); font-family:'Orbitron',sans-serif; }
+#alpha-badge { position:absolute; top:66px; left:50%; transform:translateX(-50%); background:linear-gradient(90deg,#00ff88,#00ccff); color:#000; padding:7px 16px; border-radius:20px; font-weight:800; font-size:11px; z-index:50; box-shadow:0 8px 24px rgba(0,255,136,0.4); letter-spacing:0.5px; }
+.row { display:flex; justify-content:space-between; padding:4px 0; font-size:12px; }
+.row b { color:#fff; }
+.row span:last-child { color:#aaa; }
+.live-dot { width:8px; height:8px; background:#00ff88; border-radius:50%; display:inline-block; animation: pulse 1s infinite; box-shadow:0 0 10px #00ff88; }
+@keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(0.8); } }
+.tab { display:none; }
+.tab.active { display:block; animation: fadeIn 0.3s; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+.tab-btn { background:rgba(255,255,255,0.06); color:#ccc; border:1px solid rgba(255,255,255,0.1); padding:7px 10px; border-radius:10px; cursor:pointer; font-size:11px; font-weight:600; transition:all 0.2s; }
+.tab-btn.active { background:linear-gradient(135deg,#00ff88,#00ccff); color:#000; border-color:transparent; }
+input { background:rgba(255,255,255,0.06); color:#fff; border:1px solid rgba(255,255,255,0.12); padding:9px 12px; border-radius:10px; width:100%; margin:4px 0; font-family:'Inter',sans-serif; outline:none; }
+input:focus { border-color:#00ff88; box-shadow:0 0 0 2px rgba(0,255,136,0.2); }
+.progress-bar { background:rgba(255,255,255,0.08); height:16px; border-radius:10px; overflow:hidden; margin:6px 0; border:1px solid rgba(255,255,255,0.08); }
+.progress-fill { background:linear-gradient(90deg,#00ff88,#00ccff,#ff00ff); height:100%; transition:width 0.3s; box-shadow:0 0 12px rgba(0,255,136,0.5); }
+.colony-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:8px 0; }
+.colony-card { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:12px; text-align:center; cursor:pointer; font-size:11px; transition:all 0.2s; }
+.colony-card:hover { border-color:#00ff88; background:rgba(0,255,136,0.08); transform:translateY(-2px); }
+.stat-card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:10px; margin:6px 0; }
+.stat-big { font-family:'Orbitron',sans-serif; font-size:20px; font-weight:900; }
+.section-title { font-family:'Orbitron',sans-serif; font-weight:700; font-size:13px; letter-spacing:0.5px; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.15); border-radius:3px; }
+
+@media(max-width:850px){body{overflow:auto;min-height:100vh}#canvas,#bg-glow{position:fixed}#hud{position:relative;min-height:100vh;display:flex;flex-direction:column;gap:10px;padding:8px}#top,#left,#right,#bottom,#alpha-badge{position:relative;inset:auto;left:auto;right:auto;top:auto;bottom:auto;transform:none;width:100%;max-height:none;max-width:none}#top{height:auto;min-height:56px;flex-wrap:wrap;gap:8px;padding:10px}#alpha-badge{order:1}#left{order:2}#right{order:3}#bottom{order:4}#center{position:fixed}#update-notice{top:10px!important}}
+@media (max-width: 820px) {
+  body { overflow:auto; min-height:100vh; }
+  #canvas, #bg-glow { position:fixed; }
+  #hud { position:relative; inset:auto; display:flex; flex-direction:column; gap:12px; padding:8px 10px 20px; min-height:100vh; }
+  #top, #left, #right, #bottom, #alpha-badge { position:relative; top:auto; right:auto; bottom:auto; left:auto; transform:none; width:100%; max-width:none; max-height:none; }
+  #top { height:auto; min-height:56px; flex-wrap:wrap; gap:8px; padding:10px; border-radius:12px; }
+  #left, #right { overflow:visible; }
+  #bottom { order:4; justify-content:center; }
+  #alpha-badge { order:0; text-align:center; }
+  #center { position:fixed; font-size:17px; width:min(90vw,480px); }
+  .btn { padding:10px 12px; }
+}
+</style>
+</head>
+<body><section aria-label="Important Alpha update" id="update-notice" role="status" style="position:fixed;z-index:200;top:68px;left:50%;transform:translateX(-50%);width:min(580px,94vw);max-height:65vh;overflow:auto;background:#111a27;color:white;border:2px solid #ffbd59;border-radius:14px;padding:16px;box-shadow:0 15px 40px #000b;font:13px/1.6 Inter,sans-serif"><strong style="color:#ffbd59">ZENITH ALPHA v2.1 — IMPORTANT UPDATE</strong><p><b>We're sorry for the confusion.</b> Earlier screens showed unverified player counts, prize pools, earnings and payment status. Those numbers were not evidence of live players, actual payments, or money owed.</p><p>This version is a <b>free local demo</b>. Paid races, live multiplayer and payouts are disabled until verified server services are connected and tested. Your demo points are not cash.</p><button onclick="document.getElementById('update-notice').remove()" style="padding:8px 15px;border:0;border-radius:8px;background:#ffbd59;color:#111;font-weight:700;cursor:pointer" type="button">I UNDERSTAND — CONTINUE DEMO</button></section>
+<canvas id="canvas"></canvas>
+<div id="bg-glow"></div>
+<div id="hud">
+<div id="top">
+<div><span class="logo">REALITY OS</span> <span style="color:#888; font-size:11px;">ALPHA v2.1 DEMO</span> <span class="pill">Room <b id="room">local-demo</b></span> <span class="pill pill-green"><span class="live-dot"></span> <span id="online-count">LIVE COUNT UNAVAILABLE</span></span></div>
+<div style="display:flex; gap:6px; flex-wrap:wrap;"><span class="pill pill-gold">🧪 DEMO — NO CASH POOL</span><span class="pill">You: <b id="earn-top" style="color:#00ff88;">0 demo credits</b></span><span class="pill"><b id="rank-top">0 demo pts</b></span><span class="pill"><span id="fuel-top">Fuel 100%</span></span><span class="pill"><span id="dist-top">0 km</span></span></div>
+</div>
+<div id="alpha-badge" style="background:#ffbd59;color:#101018;max-width:90vw;text-align:center;">ALPHA v2.1 · OFFLINE DEMO · NO VERIFIED PAYMENTS OR LIVE PLAYERS</div>
+<div id="left">
+<div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:12px;">
+<button class="tab-btn active" onclick="showTab('race')">🏁 RACE</button>
+<button class="tab-btn" onclick="showTab('multi')">👥 MULTI</button>
+<button class="tab-btn" onclick="showTab('colony')">🏠 COLONY</button>
+<button class="tab-btn" onclick="showTab('jarvis')">🤖 JARVIS</button>
+<button class="tab-btn" onclick="showTab('leader')">🏆 LEADER</button>
+</div>
+<div class="tab active" id="tab-race">
+<div class="section-title">🏁 <span style="color:#00ff88;">MARS RACE — LOCAL DEMO</span></div>
+<div class="stat-card"><div style="display:flex; justify-content:space-between;"><div><div style="font-size:10px; color:#888;">EARTH → MARS</div><div class="stat-big">259.1M km (demo)</div></div><div style="text-align:right;"><div style="font-size:10px; color:#888;">DELTA-V</div><div class="stat-big" style="color:#00ccff;">3.82 km/s (example)</div></div></div></div>
+<div class="row"><span>Simulated Moon Slingshot</span><b style="color:#00ff88;">Demo boost (not physically validated)</b></div>
+<div class="row"><span>Psi</span><b>1.133</b></div>
+<div class="row"><span>Fuel Saved</span><b style="color:#00ff88;">Illustrative only</b></div>
+<div style="margin:10px 0;"><div class="row"><span><b>Race Progress</b></span><b id="progress-text" style="color:#00ff88;">0%</b></div><div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div></div>
+<div class="row"><span>Speed</span><b id="speed-text" style="color:#00ccff;">0 km/s</b></div>
+<div class="row"><span>Distance</span><b id="distance-text">0 / 259.1M km</b></div>
+<div style="margin-top:10px; background:rgba(255,255,255,0.04); padding:10px; border-radius:12px; font-size:11px; line-height:1.6; color:#aaa;"><b style="color:#fff;">Controls:</b> SPACE = Boost +1%   ↑ = Thrust   ← → = Steer   R = Restart<br/><b style="color:#00ff88;">Tip:</b> BOOST at 45% for Moon slingshot max!</div>
+<button onclick="startRace()" style="width:100%; background:linear-gradient(135deg,#00ff88,#00cc88); color:#000; border:none; padding:13px; border-radius:12px; font-weight:800; cursor:pointer; margin-top:10px; font-size:13px;">🏁 START FREE DEMO RACE</button>
+<button onclick="boost()" style="width:100%; background:linear-gradient(135deg,#ff00ff,#9933ff); color:#fff; border:none; padding:11px; border-radius:12px; cursor:pointer; margin-top:6px; font-weight:700;">⚡ DEMO BOOST + SLINGSHOT</button>
+</div>
+<div class="tab" id="tab-multi">
+<div class="section-title">👥 <span style="color:#00ccff;">MULTIPLAYER (NOT CONNECTED) - ALPHA v2.1</span></div>
+<div id="players"><div class="stat-card">No verified live players connected. This build runs a local single-player demo; room names are labels, not network sessions.</div></div>
+<div style="margin-top:10px;"><input id="room-input" placeholder="Local demo room label" value="local-demo"/><button class="btn btn-multi" onclick="joinRoomFromInput()" style="width:100%">SET LOCAL ROOM LABEL</button><button class="btn" onclick="copyRoom()" style="width:100%;margin-top:6px">COPY DEMO PAGE LINK (NOT MULTIPLAYER)</button><div style="font-size:11px;color:#aaa;margin-top:8px">No live backend connected. Sharing a room label does not connect players.</div></div>
+</div>
+<div class="tab" id="tab-colony">
+<div class="section-title">🏠 <span style="color:#ff6600;">MARS COLONY BUILDER - ALPHA v2.1</span></div>
+<div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:6px; margin-bottom:8px;">
+<div class="stat-card" style="text-align:center; margin:0;"><div style="font-size:10px; color:#888;">COLONISTS</div><div id="colonists" style="font-weight:800;">12</div></div>
+<div class="stat-card" style="text-align:center; margin:0;"><div style="font-size:10px; color:#888;">OXYGEN</div><div id="oxygen" style="font-weight:800; color:#00ccff;">98%</div></div>
+<div class="stat-card" style="text-align:center; margin:0;"><div style="font-size:10px; color:#888;">POWER</div><div id="power" style="font-weight:800; color:#ffaa00;">87%</div></div>
+<div class="stat-card" style="text-align:center; margin:0;"><div style="font-size:10px; color:#888;">FOOD</div><div id="food" style="font-weight:800; color:#00ff88;">76%</div></div>
+</div>
+<div class="colony-grid">
+<div class="colony-card" onclick="build('Habitat')"><div style="font-size:24px;">🏠</div><b>Habitat</b><br/>+5 Colonists<br/><span style="color:#00ff88;">30 pts</span></div>
+<div class="colony-card" onclick="build('Solar')"><div style="font-size:24px;">☀️</div><b>Solar Farm</b><br/>+20% Power<br/><span style="color:#00ff88;">30 pts</span></div>
+<div class="colony-card" onclick="build('Greenhouse')"><div style="font-size:24px;">🌱</div><b>Greenhouse</b><br/>+15% Food<br/><span style="color:#00ff88;">30 pts</span></div>
+<div class="colony-card" onclick="build('Oxygen')"><div style="font-size:24px;">💨</div><b>Oxygen Plant</b><br/>+10% O2<br/><span style="color:#00ff88;">30 pts</span></div>
+</div>
+<div id="colony-log" style="font-size:11px; color:#888; background:rgba(255,255,255,0.04); padding:8px; border-radius:10px;">Colony built: Habitat x1, Solar x1<br/>Click to build - Earn pts from races to build colony</div>
+</div>
+<div class="tab" id="tab-jarvis">
+<div class="section-title">🤖 <span style="color:#9933ff;">JARVIS AI - ALPHA v2.1</span></div>
+<div id="jarvis-chat" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:12px; height:150px; overflow-y:auto; font-size:12px; line-height:1.6; margin-bottom:8px;"><div style="color:#c99aff"><b>JARVIS DEMO:</b> Welcome. This is a local simulation; no live players, paid race entitlement, or cash prize is verified.</div></div>
+<input id="jarvis-input" onkeypress="if(event.key==='Enter') askJarvis()" placeholder="Ask JARVIS: status, slingshot, fuel, strategy..."/>
+<button onclick="askJarvis()" style="width:100%; background:linear-gradient(135deg,#9933ff,#6600cc); color:#fff; border:none; padding:11px; border-radius:10px; cursor:pointer; font-weight:700;">🤖 ASK JARVIS</button>
+<button onclick="voiceJarvis()" style="width:100%; background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.12); padding:9px; border-radius:10px; cursor:pointer; margin-top:6px;">🎤 VOICE - Speak to JARVIS</button>
+</div>
+<div class="tab" id="tab-leader"><div class="section-title">🏆 LOCAL DEMO SCOREBOARD</div><div class="stat-card">Your demo score: <b id="leader-score">0</b> points. No verified opponents, prize pool, cash winnings, or public leaderboard are available.</div><button class="btn btn-multi" onclick="shareLeaderboard()" style="width:100%">COPY DEMO SCORE</button></div>
+</div>
+<div id="right"><div class="section-title">🛡️ PAYMENT &amp; PLAYER STATUS</div>
+<div class="stat-card"><div class="row"><span>Verified live players</span><b>Unavailable</b></div><div class="row"><span>Verified cash balance</span><b>Not connected</b></div><div class="row"><span>Paid race entry</span><b>Disabled</b></div><div class="row"><span>Local demo points</span><b id="points-side">0</b></div><div class="row"><span>Demo credits (not cash)</span><b id="earn-side">0 demo credits</b></div><div class="row"><span>Payment status</span><b id="lock-stat">UNVERIFIED</b></div></div>
+<div class="stat-card" style="line-height:1.6;font-size:12px;color:#ddd">No Stripe account or payment ledger is connected to this HTML. The former $420, $1,247 pool, $3,683 revenue and $2,292 profit were displayed without transaction evidence. No payouts can be initiated here.</div>
+<button class="btn btn-race" onclick="startRace()" style="width:100%">🏁 PLAY FREE LOCAL DEMO</button>
+<button class="btn btn-multi" onclick="showPaymentInfo()" style="width:100%;margin-top:8px">🔒 PAID RACES — NOT AVAILABLE</button>
+<button class="btn" onclick="openStripeDashboard()" style="width:100%;margin-top:8px;background:#283342;color:#fff">OPEN YOUR STRIPE DASHBOARD (LOGIN REQUIRED)</button>
+
+
+
+
+
+
+
+
+<div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.08); padding-top:10px;">
+<div class="section-title">📱 <span style="color:#00ff88;">VIRAL + MOBILE</span></div>
+<div style="font-size:11px; color:#888; line-height:1.6;">Mobile: Touch BOOST during demo race<br/>Quest VR: immersive mode not implemented</div>
+<button onclick="shareViral()" style="width:100%; background:linear-gradient(135deg,#00ff88,#00cc88); color:#000; border:none; padding:11px; border-radius:10px; cursor:pointer; font-weight:800; margin-top:6px;">🚀 SHARE DEMO</button>
+</div>
+<div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.08); padding-top:10px;">
+<div class="section-title">🎮 ILLUSTRATIVE SPACE DATA - ALPHA v2.1</div>
+<div class="row"><span>🌍 Earth</span><b>Example only</b></div>
+<div class="row"><span>🔴 Mars</span><b>Example only</b></div>
+<div class="row"><span>🌑 Moon</span><b style="color:#00ff88;">Slingshot Ready</b></div>
+<div class="row"><span>📡 Signal Delay</span><b>Not live</b></div>
+</div>
+</div>
+<div id="bottom">
+<button class="btn btn-race" onclick="startRace()">🏁 RACE</button>
+<button class="btn" onclick="boost()" style="background:linear-gradient(135deg,#ff00ff,#9933ff); color:#fff;">⚡ BOOST</button>
+<button class="btn btn-vr" onclick="enterVR()">🥽 VR</button>
+<button class="btn btn-quest" onclick="enterQuestVR()">🥽 QUEST VR</button>
+<button class="btn btn-multi" onclick="joinRoom()">👥 ROOM (LOCAL)</button>
+<button class="btn btn-colony" onclick="showTab('colony')">🏠 COLONY</button>
+<button class="btn btn-jarvis" onclick="showTab('jarvis')">🤖 JARVIS</button>
+<button class="btn btn-unlock" onclick="showPaymentInfo()">🔒 PAID RACES OFFLINE</button>
+</div>
+<div id="center"></div>
+</div>
+<script>
+let canvas = document.getElementById('canvas'), ctx = canvas.getContext('2d');
+let steerOffset = 0; // Must initialize before draw() first runs.
+let stars = [], nebulas=[], game = { racing:false, speed:0, distance:0, progress:0, unlocked:false, room:'local-demo', points:0, earnings:0, fuel:100, colonists:12, oxygen:98, power:87, food:76, colonyLog:['Habitat x1','Solar x1'] };
+function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+resize(); addEventListener('resize', resize);
+for(let i=0;i<400;i++) stars.push({ x:Math.random()*4000-2000, y:Math.random()*4000-2000, z:Math.random()*4000, s:Math.random()*2+1, c:Math.random(), tw:Math.random()*Math.PI*2 });
+for(let i=0;i<6;i++) nebulas.push({ x:Math.random()*innerWidth, y:Math.random()*innerHeight, r:200+Math.random()*300, c: i%3===0?'255,0,255': i%3===1?'0,136,255':'0,255,136' });
+function draw() {
+    ctx.fillStyle='#020208'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    // Nebulas - soft glow
+    for(let n of nebulas) {
+        let g=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,n.r);
+        g.addColorStop(0,`rgba(${n.c},0.08)`); g.addColorStop(1,`rgba(${n.c},0)`);
+        ctx.fillStyle=g; ctx.fillRect(n.x-n.r,n.y-n.r,n.r*2,n.r*2);
+    }
+    let cx=canvas.width/2, cy=canvas.height/2;
+    // Mars - glossy 3D
+    let mx=cx+canvas.width*0.35, my=cy-canvas.height*0.25;
+    let mg=ctx.createRadialGradient(mx-12,my-12,5,mx,my,48);
+    mg.addColorStop(0,'#ff8888'); mg.addColorStop(0.5,'#ff4444'); mg.addColorStop(1,'#880000');
+    ctx.fillStyle=mg; ctx.beginPath(); ctx.arc(mx,my,42,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.25)'; ctx.beginPath(); ctx.arc(mx-10,my-12,10,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(255,100,100,0.15)'; ctx.beginPath(); ctx.arc(mx,my,58,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='700 12px Inter'; ctx.fillText('MARS 259.1M km',mx-52,my+70);
+    ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.font='10px Inter'; ctx.fillText('🔴 -63°C Dust',mx-32,my+84);
+    // Moon slingshot orbit
+    let moonX=cx+Math.sin(Date.now()*0.0005)*240, moonY=cy+Math.cos(Date.now()*0.0005)*150;
+    ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.setLineDash([6,6]); ctx.beginPath(); ctx.ellipse(cx,cy,240,150,0,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+    let moong=ctx.createRadialGradient(moonX-4,moonY-4,2,moonX,moonY,16);
+    moong.addColorStop(0,'#ffffff'); moong.addColorStop(1,'#888888');
+    ctx.fillStyle=moong; ctx.beginPath(); ctx.arc(moonX,moonY,15,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='600 10px Inter'; ctx.fillText('🌑 MOON +0.8 km/s SLINGSHOT',moonX-70,moonY+30);
+    // Earth - glossy
+    let ex=cx-canvas.width*0.35, ey=cy+canvas.height*0.25;
+    let eg=ctx.createRadialGradient(ex-10,ey-10,5,ex,ey,38);
+    eg.addColorStop(0,'#66ccff'); eg.addColorStop(0.5,'#0088ff'); eg.addColorStop(1,'#003388');
+    ctx.fillStyle=eg; ctx.beginPath(); ctx.arc(ex,ey,34,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#00ff88'; ctx.beginPath(); ctx.arc(ex-8,ey-5,8,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='700 12px Inter'; ctx.fillText('EARTH',ex-20,ey+52);
+    ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.font='10px Inter'; ctx.fillText('🌍 22°C Clear',ex-28,ey+66);
+    // Twinkling stars
+    for(let s of stars) {
+        s.z -= game.speed*0.7; s.tw+=0.05;
+        if(s.z<=0) { s.z=4000; s.x=Math.random()*4000-2000; s.y=Math.random()*4000-2000; }
+        let x=(s.x/s.z)*400+cx, y=(s.y/s.z)*400+cy, size=(1-s.z/4000)*s.s*3;
+        if(x>=0&&x<canvas.width&&y>=0&&y<canvas.height) {
+            let alpha=(1-s.z/4000)*(0.6+0.4*Math.sin(s.tw));
+            ctx.fillStyle = s.c>0.5 ? `rgba(255,255,255,${alpha})` : `rgba(100,200,255,${alpha})`;
+            ctx.beginPath(); ctx.arc(x,y,size,0,Math.PI*2); ctx.fill();
+            if(size>2) { ctx.fillStyle=`rgba(255,255,255,${alpha*0.3})`; ctx.beginPath(); ctx.arc(x,y,size*2.5,0,Math.PI*2); ctx.fill(); }
+        }
+    }
+    // Ship - glowing
+    let shipX=cx+steerOffset, shipY=cy+game.progress*1.2;
+    ctx.shadowColor='#00ff88'; ctx.shadowBlur=18;
+    ctx.fillStyle='#00ff88'; ctx.beginPath(); ctx.moveTo(shipX,shipY-20); ctx.lineTo(shipX-11,shipY+13); ctx.lineTo(shipX+11,shipY+13); ctx.closePath(); ctx.fill();
+    ctx.shadowBlur=0;
+    let fg=ctx.createRadialGradient(shipX,shipY+16,0,shipX,shipY+16,12+Math.random()*5);
+    fg.addColorStop(0,'#ffaa00'); fg.addColorStop(1,'rgba(255,170,0,0)');
+    ctx.fillStyle=fg; ctx.beginPath(); ctx.arc(shipX,shipY+16,12+Math.random()*4,0,Math.PI*2); ctx.fill();
+    if(game.racing) {
+        ctx.strokeStyle='rgba(0,255,136,0.4)'; ctx.lineWidth=2; ctx.setLineDash([8,6]);
+        ctx.beginPath(); ctx.moveTo(ex,ey); ctx.lineTo(shipX,shipY); ctx.lineTo(mx,my); ctx.stroke(); ctx.setLineDash([]);
+    }
+    requestAnimationFrame(draw);
+}
+draw();
+// Alpha v2.1 — local-only demo. Never infer payment or multiplayer from browser state.
+const params = new URLSearchParams(location.search);
+const SAFE_ROOM = /^[A-Za-z0-9_-]{1,40}$/;
+const savedRoom = params.get('room');
+if (savedRoom && SAFE_ROOM.test(savedRoom)) game.room = savedRoom;
+else game.room = 'local-demo';
+game.points = 0;
+game.earnings = 0;
+game.unlocked = false;
+let raceToken = 0;
+let boostSpeed = 0;
+let thrustHeld = false;
+let messageToken = 0;
+function byId(id) { return document.getElementById(id); }
+function syncDemo() {
+  byId('room').textContent = game.room;
+  byId('room-input').value = game.room;
+  byId('points-side').textContent = String(game.points);
+  byId('leader-score').textContent = String(game.points);
+  byId('earn-top').textContent = game.earnings + ' demo credits';
+  byId('earn-side').textContent = game.earnings + ' demo credits';
+  byId('rank-top').textContent = game.points + ' demo pts';
+}
+syncDemo();
+function showMsg(text,color='#00ccff') {
+  const token=++messageToken, el=byId('center');
+  el.textContent=text; el.style.color=color; el.style.borderColor=color; el.style.display='block';
+  setTimeout(()=>{ if(token===messageToken) el.style.display='none'; },3500);
+}
+function showTab(t) {
+  if(!['race','multi','colony','jarvis','leader'].includes(t)) return;
+  document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
+  byId('tab-'+t).classList.add('active');
+  const index={race:0,multi:1,colony:2,jarvis:3,leader:4}[t];
+  document.querySelectorAll('.tab-btn')[index].classList.add('active');
+}
+function showPaymentInfo() {
+  showMsg('Paid races unavailable: verified Stripe server and player entitlements are not connected.','#ffbd59');
+}
+function openStripeDashboard() {
+  window.open('https://dashboard.stripe.com/balance','_blank','noopener,noreferrer');
+}
+function resetRace() {
+  raceToken++;
+  game.racing=false;game.progress=0;game.speed=0;game.distance=0;game.fuel=100;boostSpeed=0;steerOffset=0;thrustHeld=false;
+  byId('progress-text').textContent='0%';byId('progress-fill').style.width='0%';
+  byId('speed-text').textContent='0 km/s';byId('distance-text').textContent='0 / 259.1M km';
+  byId('dist-top').textContent='0 km';byId('fuel-top').textContent='Fuel 100%';
+}
+function startRace() {
+  if(game.racing) {showMsg('Demo race already running');return;}
+  resetRace();game.racing=true;game.speed=80;
+  const token=raceToken, started=performance.now(), duration=20000;
+  function loop(now) {
+    if(!game.racing || token!==raceToken)return;
+    const elapsed=Math.min(1,(now-started)/duration);
+    game.progress=Math.max(game.progress,elapsed*100);
+    game.distance=game.progress*2.591;
+    game.speed=80+elapsed*600+boostSpeed+(thrustHeld?60:0);
+    game.fuel=Math.max(0,100-elapsed*30);
+    byId('progress-text').textContent=Math.floor(game.progress)+'%';
+    byId('progress-fill').style.width=game.progress+'%';
+    byId('speed-text').textContent=(game.speed/100).toFixed(2)+' km/s (demo)';
+    byId('distance-text').textContent=game.distance.toFixed(1)+' / 259.1M km (simulated)';
+    byId('dist-top').textContent=game.distance.toFixed(1)+'M km (demo)';
+    byId('fuel-top').textContent='Fuel '+Math.floor(game.fuel)+'%';
+    if(game.progress>=100){finish(token);return;}
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+  showMsg('FREE LOCAL DEMO RACE STARTED — no cash prize','#00ff88');
+}
+function boost() {
+  if(!game.racing){showMsg('Start the demo race first','#ffbd59');return;}
+  game.progress=Math.min(100,game.progress+2);
+  game.distance=game.progress*2.591;
+  boostSpeed+=120;
+  game.speed+=120;
+  if(game.progress>40&&game.progress<50){
+    game.fuel=Math.min(100,game.fuel+10);
+    showMsg('DEMO MOON SLINGSHOT — illustrative only','#00ff88');
+  } else showMsg('DEMO BOOST +2%','#ff00ff');
+}
+function finish(token) {
+  if(!game.racing||token!==raceToken)return;
+  game.racing=false;game.progress=100;game.points+=200;game.earnings+=10;
+  byId('progress-text').textContent='100%';byId('progress-fill').style.width='100%';
+  syncDemo();
+  showMsg('DEMO COMPLETE: +200 points, +10 demo credits (not cash)','#00ff88');
+}
+function enterVR() {showMsg('Immersive VR is not implemented in this 2D demo.','#ffbd59');}
+function enterQuestVR() {showMsg('Quest VR integration is not connected. No VR session started.','#ffbd59');}
+function setRoom(r) {
+  r=String(r||'').trim();
+  if(!SAFE_ROOM.test(r)){showMsg('Room label must be 1–40 letters, numbers, _ or -','#ff4444');return;}
+  game.room=r;syncDemo();
+  showMsg('Local room label changed. No online connection was made.','#00ccff');
+}
+function joinRoom() {showTab('multi');showMsg('Room labels are local; live multiplayer is unavailable.','#ffbd59');}
+function joinRoomFromInput(){setRoom(byId('room-input').value);}
+async function copyText(t) {
+  try {await navigator.clipboard.writeText(t);showMsg('Demo text copied','#00ccff');}
+  catch(e){showMsg('Clipboard unavailable. Copy the address manually.','#ffbd59');}
+}
+function copyRoom() {
+  if(location.protocol==='file:'){showMsg('Local file cannot create a public multiplayer invitation.','#ffbd59');return;}
+  const url=new URL(location.href);url.search='';url.searchParams.set('room',game.room);
+  copyText(url.href+' (local room label only; multiplayer not connected)');
+}
+function build(type) {
+  if(!['Habitat','Solar','Greenhouse','Oxygen'].includes(type))return;
+  if(game.points<30){showMsg('Need 30 demo points. Complete a demo race.','#ffbd59');return;}
+  game.points-=30;
+  if(type==='Habitat')game.colonists+=5;
+  if(type==='Solar')game.power=Math.min(100,game.power+20);
+  if(type==='Greenhouse')game.food=Math.min(100,game.food+15);
+  if(type==='Oxygen')game.oxygen=Math.min(100,game.oxygen+10);
+  game.colonyLog.push(type+' x1');
+  byId('colonists').textContent=game.colonists;
+  byId('oxygen').textContent=game.oxygen+'%';
+  byId('power').textContent=game.power+'%';
+  byId('food').textContent=game.food+'%';
+  byId('colony-log').textContent='Demo colony: '+game.colonyLog.join(', ');
+  syncDemo();showMsg('Demo colony: built '+type,'#ff6600');
+}
+function addChatLine(label,message,color){
+  const line=document.createElement('div');line.style.marginTop='6px';line.style.color=color;
+  const b=document.createElement('b');b.textContent=label+': ';
+  line.appendChild(b);line.appendChild(document.createTextNode(message));
+  byId('jarvis-chat').appendChild(line);
+}
+function askJarvis(){
+  const input=byId('jarvis-input');const original=input.value.trim().slice(0,300);
+  if(!original)return;
+  addChatLine('You',original,'#fff');
+  const q=original.toLowerCase();
+  let answer='This is an offline demo. Your fuel is '+Math.floor(game.fuel)+'% and progress is '+Math.floor(game.progress)+'%.';
+  if(q.includes('status'))answer='Demo status: '+game.points+' points, '+game.earnings+' noncash credits. Live player count and payments are unavailable.';
+  if(q.includes('moon')||q.includes('slingshot'))answer='The slingshot is a gameplay approximation, not a validated orbital maneuver.';
+  if(q.includes('money')||q.includes('payout')||q.includes('payment'))answer='No verified Stripe payments, withdrawable balances or prize pools are connected to this demo. Check your own authenticated Stripe dashboard for actual transactions.';
+  if(q.includes('multi')||q.includes('player'))answer='No multiplayer backend is connected. The former 127 ONLINE label was unverified.';
+  if(q.includes('strategy'))answer='Complete the local demo race to earn demo points and build colony upgrades. No cash awards.';
+  addChatLine('JARVIS demo',answer,'#c99aff');
+  byId('jarvis-chat').scrollTop=byId('jarvis-chat').scrollHeight;input.value='';
+}
+function voiceJarvis(){
+  const API=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!API){showMsg('Voice recognition unsupported. Use text input.','#ffbd59');return;}
+  try {const rec=new API();rec.onresult=e=>{byId('jarvis-input').value=e.results[0][0].transcript;askJarvis();};rec.onerror=()=>showMsg('Microphone unavailable','#ffbd59');rec.start();}
+  catch(e){showMsg('Microphone unavailable','#ffbd59');}
+}
+function shareLeaderboard(){copyText('ZENITH ALPHA v2.1 LOCAL DEMO — '+game.points+' demo points. No real-money prizes or verified leaderboard.');}
+function shareViral(){copyText('ZENITH ALPHA v2.1 — free local space-racing demo with colony and JARVIS demo. No verified multiplayer or paid races.');}
+addEventListener('keydown',e=>{
+  if(['INPUT','TEXTAREA'].includes(document.activeElement?.tagName))return;
+  if(e.code==='Space'&&game.racing){e.preventDefault();boost();}
+  if(game.racing && (e.code==='ArrowLeft'||e.code==='KeyA')){e.preventDefault();steerOffset=Math.max(-120,steerOffset-12);}
+  if(game.racing && (e.code==='ArrowRight'||e.code==='KeyD')){e.preventDefault();steerOffset=Math.min(120,steerOffset+12);}
+  if(game.racing && (e.code==='ArrowUp'||e.code==='KeyW')){e.preventDefault();thrustHeld=true;}
+  if(e.key==='r'||e.key==='R')resetRace();
+});
+addEventListener('keyup',e=>{if(e.code==='ArrowUp'||e.code==='KeyW')thrustHeld=false;});
+addEventListener('blur',()=>{thrustHeld=false;});
+console.info('ZENITH ALPHA v2.1 local demo: no verified payments, player counts or payouts.');
+</script>
+</body>
+</html>

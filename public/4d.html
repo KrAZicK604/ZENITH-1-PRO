@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ZENITH 4D | Free Flight Simulator</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;color:#eaf7ff;font:14px system-ui}canvas{display:block}#hud{position:fixed;inset:0;pointer-events:none}#top{position:absolute;top:16px;left:18px;right:18px;display:flex;justify-content:space-between;gap:10px;align-items:start}#top strong{font-size:19px;letter-spacing:.13em}#top small{display:block;color:#8faabf;font-size:11px}#metrics{position:absolute;left:18px;bottom:18px;background:#06121ac9;border:1px solid #34677d;border-radius:12px;padding:12px 15px;line-height:1.8}#cross{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:28px;color:#8feaff99}#help{position:absolute;right:18px;bottom:18px;max-width:310px;background:#06121ac9;border:1px solid #34677d;border-radius:12px;padding:12px;line-height:1.6}button,select{pointer-events:auto;background:#092837;color:#eaf7ff;border:1px solid #50a6bc;border-radius:7px;padding:9px;cursor:pointer}#error{position:absolute;top:38%;left:10%;right:10%;text-align:center;color:#ffb7a8;background:#1b0a0ae8;padding:16px;display:none}#centerNotice{position:absolute;top:70px;left:50%;transform:translateX(-50%);color:#c4e8ff;background:#06121ac0;padding:9px 14px;border-radius:9px;text-align:center}@media(max-width:700px){#help{font-size:11px;right:8px;bottom:8px;max-width:180px}#metrics{font-size:11px;left:8px;bottom:8px}#top{left:8px;right:8px}#top strong{font-size:14px}#centerNotice{font-size:11px;width:90%}}
+#radar{position:absolute;top:86px;right:18px;width:236px;background:#06121ad9;border:1px solid #50a6bc;border-radius:12px;padding:8px;pointer-events:auto}#radar canvas{width:218px;height:218px}#combat{position:absolute;top:86px;left:18px;background:#06121ad9;border:1px solid #50a6bc;border-radius:12px;padding:10px;pointer-events:auto}#radar[hidden],#combat[hidden]{display:none}@media(max-width:700px){#radar{top:125px;right:5px;width:146px;padding:3px}#radar canvas{width:138px;height:138px}#combat{top:125px;left:5px;font-size:10px;max-width:145px}} </style></head><body>
+<div id="hud"><div id="top"><div><strong>ZENITH // 4D</strong><small>FREE FLIGHT · 3D SPACE + SIMULATION TIME · NO PAYMENT</small></div><div><select id="quality" aria-label="Graphics quality"><option value="auto">AUTO GRAPHICS</option><option value="low">PERFORMANCE</option><option value="high">HIGH</option><option value="ultra">4K / ULTRA</option></select> <button id="camera">CHASE CAMERA</button> <button id="pause">PAUSE</button></div></div>
+<div id="centerNotice">FREE ROAM — Fly anywhere. This is an arcade simulation, not calibrated orbital physics.</div><div id="cross">+</div><div id="radar"><strong>PLANETARY RADAR</strong><canvas id="radarCanvas" width="218" height="218"></canvas><small>Blue planets · Red hostiles · White player</small></div><div id="combat"><strong>DOGFIGHT TRAINING</strong><div>HULL <b id="health">100</b><meter id="hullMeter" min="0" max="100" value="100"></meter><br>SHIELD <b id="shield">100</b><meter id="shieldMeter" min="0" max="100" value="100"></meter></div><div>KILLS <b id="kills">0</b> · HOSTILES <b id="enemies">0</b></div><div id="status">Patrol ready</div><button id="spawn">START DOGFIGHT</button> <button id="restart">RESET</button></div><div id="metrics">XR-18 · 18m × 14m × 4m<br>MODE <b id="flightmode">ASSIST</b><br>ENV <b id="environment">VACUUM</b><br>SPEED <b id="speed">0</b> units/s<br>POSITION <b id="position">0, 0, 0</b><br>SIM TIME <b id="clock">0.0</b> s · <b id="fps">--</b> FPS<br>RENDER <b id="res">--</b></div><div id="help">W/S thrust · A/D strafe · Q/E vertical<br>Arrow keys pitch/yaw · Z/C roll<br>SHIFT boost · X brake · V camera<br>1/2/3 time ×1 / ×10 / ×100 · P pause<br>H hide HUD · M radar · F/Space fire · G flight mode<br>Camera follows ship · V switches view</div><div id="error" role="alert"></div></div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.181.2/build/three.module.js';
+const err=document.getElementById('error');const showError=e=>{err.style.display='block';err.textContent='3D engine unavailable: '+String(e.message||e)};
+try{
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.35;document.body.prepend(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x000004);
+const camera=new THREE.PerspectiveCamera(70,1,.05,100000);
+scene.add(new THREE.HemisphereLight(0x6daeff,0x080c18,1.4));
+const sun=new THREE.DirectionalLight(0xffeed5,3);sun.position.set(-500,200,-700);scene.add(sun);
+const ship=new THREE.Group();scene.add(ship);
+// ZENITH XR-18 fictional craft. Geometry units are metres; bounding envelope 18m L × 14m W × 4m H.
+const hull=new THREE.MeshStandardMaterial({color:0xb8c9d6,metalness:.8,roughness:.29});
+const ceramic=new THREE.MeshStandardMaterial({color:0x243d51,metalness:.62,roughness:.38});
+const trim=new THREE.MeshStandardMaterial({color:0x68c9f0,metalness:.8,roughness:.2,emissive:0x0b3447,emissiveIntensity:.65});
+const glass=new THREE.MeshPhysicalMaterial({color:0x0b3048,metalness:.24,roughness:.09,transparent:true,opacity:.91,clearcoat:1,clearcoatRoughness:.06});
+const glow=new THREE.MeshBasicMaterial({color:0x4ddaff});
+const flame=new THREE.MeshBasicMaterial({color:0x61cfff,transparent:true,opacity:.55,depthWrite:false});
+function mesh(geometry,material,x=0,y=0,z=0,rx=0,ry=0,rz=0){const m=new THREE.Mesh(geometry,material);m.position.set(x,y,z);m.rotation.set(rx,ry,rz);ship.add(m);return m}
+function panel(points,material,thickness=.15){const shape=new THREE.Shape();shape.moveTo(points[0][0],points[0][1]);for(let i=1;i<points.length;i++)shape.lineTo(points[i][0],points[i][1]);shape.closePath();const g=new THREE.ExtrudeGeometry(shape,{depth:thickness,bevelEnabled:true,bevelThickness:.045,bevelSize:.055,bevelSegments:1});g.rotateX(Math.PI/2);return mesh(g,material)}
+// Main fuselage extends from nose z=-9 to engine stern z=+9.
+mesh(new THREE.CylinderGeometry(.85,1.4,11,8),hull,0,0,-.8,Math.PI/2);
+mesh(new THREE.ConeGeometry(.85,3.8,8),hull,0,0,-7.1,-Math.PI/2);
+mesh(new THREE.BoxGeometry(2.6,1.45,7),ceramic,0,-.25,3.3);
+mesh(new THREE.BoxGeometry(2.15,.18,7),hull,0,.78,2.4);
+// Wing planform is explicitly in metres: tip-to-tip 14m.
+for(const sign of [-1,1]){
+  const pts=[[sign*.95,-3.3],[sign*3.2,-1.1],[sign*7,3.9],[sign*7,5.4],[sign*2.8,4.25],[sign*.95,5.7]];
+  panel(pts,hull,.20);
+  const inner=[[sign*1.6,-1.2],[sign*3.1,.25],[sign*5.8,4.1],[sign*3.4,3.25]];
+  panel(inner,ceramic,.05).position.y+=.13;
+  mesh(new THREE.BoxGeometry(.17,.18,5.8),trim,sign*4.65,.08,2.9,0,sign*.32,0);
+  mesh(new THREE.BoxGeometry(.95,1.1,4.5),ceramic,sign*2.2,-.32,5.4);
+  mesh(new THREE.CylinderGeometry(.55,.55,.65,24),ceramic,sign*2.2,-.3,8.1,Math.PI/2);
+  mesh(new THREE.CylinderGeometry(.42,.42,.06,24),glow,sign*2.2,-.3,8.47,Math.PI/2);
+  mesh(new THREE.BoxGeometry(.16,2.2,2.7),hull,sign*5.9,1.15,4.3,0,0,sign*.17);
+  mesh(new THREE.BoxGeometry(.14,.14,2.3),trim,sign*5.9,2.18,4.3);
+  mesh(new THREE.BoxGeometry(.18,.14,2),trim,sign*3.9,.24,3.0);
+}
+mesh(new THREE.SphereGeometry(.86,24,16),glass,0,.84,-3.25);
+mesh(new THREE.BoxGeometry(1.7,.55,3.2),glass,0,.72,-2.3);
+mesh(new THREE.BoxGeometry(.1,.07,3.1),trim,0,1.05,-2.3);
+mesh(new THREE.BoxGeometry(1.4,.2,1.5),ceramic,0,-.9,5.7);
+mesh(new THREE.CylinderGeometry(.42,.42,.65,24),ceramic,0,-.25,8.1,Math.PI/2);
+mesh(new THREE.CylinderGeometry(.32,.32,.06,24),glow,0,-.25,8.47,Math.PI/2);
+const thrusterFlames=[];
+for(const x of [-2.2,0,2.2]){const f=mesh(new THREE.ConeGeometry(x===0?.33:.42,2.4,16),flame,x,-.3,9.7,Math.PI/2);thrusterFlames.push(f)}
+// Dimension markers are specifications for this fictional model, not a real spacecraft certification.
+// Sparse finite star volume in world coordinates. Passing a star leaves it behind the camera;
+// it is recycled only once far outside the flight bubble. No star follows the ship.
+const starsN=2100,starRadius=4800,starRecycle=6500;
+const stars=new Float32Array(starsN*3);let seed=31289;
+const rand=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296};
+function randomStar(center,frontOnly=false){
+  const theta=rand()*Math.PI*2,u=rand()*2-1,r=450+Math.cbrt(rand())*(starRadius-450);
+  const direction=new THREE.Vector3(Math.sqrt(1-u*u)*Math.cos(theta),u,Math.sqrt(1-u*u)*Math.sin(theta));
+  if(frontOnly&&direction.dot(new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion))<-.15)direction.negate();
+  return center.clone().addScaledVector(direction,r);
+}
+for(let i=0;i<starsN;i++){const p=randomStar(ship.position);stars.set([p.x,p.y,p.z],i*3)}
+const starGeo=new THREE.BufferGeometry();starGeo.setAttribute('position',new THREE.BufferAttribute(stars,3));starGeo.attributes.position.setUsage(THREE.DynamicDrawUsage);
+const starField=new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xe3efff,size:1.65,sizeAttenuation:false,transparent:true,opacity:.8,depthWrite:false}));starField.frustumCulled=false;scene.add(starField);
+let starScan=0;
+function updateStars(){
+  // Bounded work: check 90 points/frame, even at 4K.
+  let dirty=false;
+  for(let n=0;n<90;n++){const i=(starScan++)%starsN,j=i*3;const dx=stars[j]-ship.position.x,dy=stars[j+1]-ship.position.y,dz=stars[j+2]-ship.position.z;
+    if(dx*dx+dy*dy+dz*dz>starRecycle*starRecycle){const p=randomStar(ship.position,true);stars[j]=p.x;stars[j+1]=p.y;stars[j+2]=p.z;dirty=true}
+  }
+  if(dirty)starGeo.attributes.position.needsUpdate=true;
+}
+// Reference: approximate mean orbital semimajor axes (AU), not instantaneous ephemerides.
+// Gameplay mapping deliberately compresses radial distances logarithmically for a bounded browser scene.
+// 1 AU = 149,597,870.7 km. 1 scene unit = 1 metre ONLY for the 18m XR-18 craft;
+// planetary distances/radii are separately stylized and must not be interpreted as metres.
+// Planet radii are proportional to approximate real mean radii, in km.
+// Display scale: Earth radius 6371 km -> 64 render units. This is a PLANET VISUAL SCALE,
+// distinct from the spacecraft's 1-unit-per-metre geometry and compressed orbit distances.
+// Never claim physical distances, collisions, or travel times are at one consistent scale.
+const AU_KM=149597870.7,orbitCompression=4300,planetRadiusScale=64/6371;
+function orbitRadius(au){return orbitCompression*Math.log1p(au*3)}
+const orbitalData=[
+{name:'MERCURY',au:.3871,radiusKm:2439.7,color:0x918b83,angle:-.4},
+{name:'VENUS',au:.7233,radiusKm:6051.8,color:0xd4a76b,angle:1.5},
+{name:'EARTH',au:1,radiusKm:6371,color:0x226cc6,angle:-1.1},
+{name:'MARS',au:1.5237,radiusKm:3389.5,color:0xc15a32,angle:2.4},
+{name:'JUPITER',au:5.2044,radiusKm:69911,color:0xc9a17c,angle:-2.2},
+{name:'SATURN',au:9.5826,radiusKm:58232,color:0xd7c49a,angle:.9},
+{name:'URANUS',au:19.1913,radiusKm:25362,color:0x80d5df,angle:-.85},
+{name:'NEPTUNE',au:30.07,radiusKm:24622,color:0x3569c4,angle:2.85}
+];
+const planets=orbitalData.map(p=>({...p,r:p.radiusKm*planetRadiusScale,pos:[Math.sin(p.angle)*orbitRadius(p.au),0,-Math.cos(p.angle)*orbitRadius(p.au)]}));
+const earth=planets.find(p=>p.name==='EARTH');
+planets.push({name:'MOON',au:null,radiusKm:1737.4,r:1737.4*planetRadiusScale,color:0x9b9b9b,pos:[earth.pos[0]+180,0,earth.pos[2]-130]});
+const sphereLOD=[new THREE.SphereGeometry(1,12,8),new THREE.SphereGeometry(1,24,16),new THREE.SphereGeometry(1,48,32)];
+for(const p of planets){const planet=new THREE.Mesh(sphereLOD[0],new THREE.MeshStandardMaterial({color:p.color,roughness:.9,metalness:0}));planet.scale.setScalar(p.r);planet.position.set(...p.pos);scene.add(planet);p.mesh=planet;p.lodIndex=0}
+let planetLodFrame=0;
+function updatePlanetLOD(){if((planetLodFrame++%30)!==0)return;for(const p of planets){const distance=Math.max(1,camera.position.distanceTo(p.mesh.position));const angular=p.r/distance;const desired=angular>.1?2:angular>.012?1:0;if(desired!==p.lodIndex){p.mesh.geometry=sphereLOD[desired];p.lodIndex=desired}}}
+ship.position.set(0,0,0);
+// Fictional arcade combat: bounded populations, shared meshes, swept projectile hits.
+const enemyShips=[],shots=[],enemyShots=[];let kills=0,health=100,shield=100,spawned=false,fireCooldown=0,hitFlash=0;
+const enemyMat=new THREE.MeshStandardMaterial({color:0xb72c40,metalness:.6,roughness:.4}),bulletMat=new THREE.MeshBasicMaterial({color:0x55edff}),hostileBullet=new THREE.MeshBasicMaterial({color:0xff5a48});
+const enemyGeo=new THREE.ConeGeometry(2.5,8,4);enemyGeo.rotateX(-Math.PI/2);
+const bulletGeo=new THREE.SphereGeometry(.7,8,6);
+const npcWingGeo=new THREE.BoxGeometry(11,.35,3),npcWingMat=new THREE.MeshStandardMaterial({color:0x50385e,metalness:.6,roughness:.35});
+function resetCombat(){for(const e of enemyShips)scene.remove(e.mesh);enemyShips.length=0;for(const b of [...shots,...enemyShots])scene.remove(b.mesh);shots.length=0;enemyShots.length=0;kills=0;health=100;shield=100;spawned=false;fireCooldown=0;hitFlash=0;document.getElementById('status').textContent='Patrol ready'}
+function startCombat(){resetCombat();for(let i=0;i<50;i++){const m=new THREE.Group();m.add(new THREE.Mesh(enemyGeo,enemyMat),new THREE.Mesh(npcWingGeo,npcWingMat));const angle=rand()*Math.PI*2,dist=i<8?100+rand()*300:500+rand()*8500;m.position.copy(ship.position).add(new THREE.Vector3(Math.cos(angle)*dist,(rand()-.5)*dist*.5,Math.sin(angle)*dist));scene.add(m);enemyShips.push({mesh:m,hp:100,shield:40,velocity:new THREE.Vector3(),goal:new THREE.Vector3(),wander:0,cooldown:1+rand()*3,previous:m.position.clone()})}spawned=true;document.getElementById('status').textContent='50 alien patrols active'}
+document.getElementById('spawn').onclick=startCombat;document.getElementById('restart').onclick=startCombat;
+function fire(from,dir,hostile=false){const list=hostile?enemyShots:shots;if(list.length>=160||dir.lengthSq()<1e-12)return;const m=new THREE.Mesh(bulletGeo,hostile?hostileBullet:bulletMat);m.position.copy(from);scene.add(m);list.push({mesh:m,velocity:dir.clone().normalize().multiplyScalar(hostile?150:350),life:3})}
+function damage(s,h,d){const absorbed=Math.min(s,d);return [s-absorbed,Math.max(0,h-(d-absorbed))]}
+function sweptHit(a,b,r){const dx=b[0]-a[0],dy=b[1]-a[1],dz=b[2]-a[2],den=dx*dx+dy*dy+dz*dz;const t=den?Math.max(0,Math.min(1,-(a[0]*dx+a[1]*dy+a[2]*dz)/den)):0;return (a[0]+t*dx)**2+(a[1]+t*dy)**2+(a[2]+t*dz)**2<=r*r}
+function relativeHit(a,b,oldTarget,newTarget,r){return sweptHit(a.clone().sub(oldTarget).toArray(),b.clone().sub(newTarget).toArray(),r)}
+const previousPlayer=ship.position.clone();
+function moveShots(list,dt,hostile){for(let i=list.length-1;i>=0;i--){const b=list[i],old=b.mesh.position.clone();b.mesh.position.addScaledVector(b.velocity,Math.min(dt,b.life));b.life-=dt;let hit=false;
+if(hostile){if(relativeHit(old,b.mesh.position,previousPlayer,ship.position,6)){hit=true;[shield,health]=damage(shield,health,12);hitFlash=.25}}
+else for(let j=enemyShips.length-1;j>=0;j--){const e=enemyShips[j];if(relativeHit(old,b.mesh.position,e.previous,e.mesh.position,6)){hit=true;[e.shield,e.hp]=damage(e.shield,e.hp,20);if(e.hp<=0){scene.remove(e.mesh);enemyShips.splice(j,1);kills++}break}}
+if(hit||b.life<=0){scene.remove(b.mesh);list.splice(i,1)}}}
+function combatStep(dt){if(!spawned||health<=0)return;fireCooldown=Math.max(0,fireCooldown-dt);hitFlash=Math.max(0,hitFlash-dt);
+if((keys.has('KeyF')||keys.has('Space'))&&fireCooldown===0){fire(ship.position.clone().add(new THREE.Vector3(0,0,-9).applyQuaternion(ship.quaternion)),new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion));fireCooldown=.17}
+for(const e of enemyShips){e.previous.copy(e.mesh.position);e.wander-=dt;e.cooldown-=dt;const delta=ship.position.clone().sub(e.mesh.position),dist=delta.length();if(e.wander<=0){e.goal.set(rand()-.5,rand()-.5,rand()-.5).normalize().multiplyScalar(35+rand()*45);e.wander=1+rand()*6}const desired=e.goal.clone();if(dist<550&&dist>90)desired.addScaledVector(delta.normalize(),55);else if(dist<90)desired.addScaledVector(delta.normalize(),-65);if(desired.length()>100)desired.setLength(100);e.velocity.lerp(desired,1-Math.exp(-dt*1.8));e.mesh.position.addScaledVector(e.velocity,dt);for(const p of planets){const v=e.mesh.position.clone().sub(p.mesh.position),limit=p.r+8;if(v.lengthSq()<limit*limit){if(v.lengthSq()<1e-8)v.set(0,1,0);e.mesh.position.copy(p.mesh.position).addScaledVector(v.normalize(),limit)}}if(e.velocity.lengthSq()>1)e.mesh.lookAt(e.mesh.position.clone().sub(e.velocity));if(dist<450&&e.cooldown<=0){fire(e.mesh.position,ship.position.clone().sub(e.mesh.position),true);e.cooldown=1.5+rand()*3}}
+moveShots(shots,dt,false);moveShots(enemyShots,dt,true);if(!enemyShips.length||health<=0){spawned=false;for(const b of [...shots,...enemyShots])scene.remove(b.mesh);shots.length=0;enemyShots.length=0;document.getElementById('status').textContent=health<=0?'SHIP DISABLED — RESET':'VICTORY'}}
+const radarCanvas=document.getElementById('radarCanvas'),radar=radarCanvas.getContext('2d');
+function radarDraw(){const w=radarCanvas.width,c=w/2,R=c-10;radar.clearRect(0,0,w,w);radar.fillStyle='#04101c';radar.fillRect(0,0,w,w);radar.strokeStyle='#24495a';for(const f of [.33,.66,1]){radar.beginPath();radar.arc(c,c,R*f,0,Math.PI*2);radar.stroke()}radar.beginPath();radar.moveTo(c,0);radar.lineTo(c,w);radar.moveTo(0,c);radar.lineTo(w,c);radar.stroke();
+function dot(pos,color,size,label=''){const dx=pos.x-ship.position.x,dz=pos.z-ship.position.z;const range=21000;const x=c+dx/range*R,y=c+dz/range*R;if((x-c)**2+(y-c)**2>R*R)return;radar.fillStyle=color;radar.beginPath();radar.arc(x,y,size,0,Math.PI*2);radar.fill();if(label){radar.font='9px system-ui';radar.fillText(label,x+5,y-4)}}
+for(const p of planets)dot(p.mesh.position,'#5aaaff',3.5,p.name.slice(0,3));for(const e of enemyShips)dot(e.mesh.position,'#ff4545',4);radar.fillStyle='#fff';radar.beginPath();radar.arc(c,c,4,0,Math.PI*2);radar.fill()}
+
+const keys=new Set();addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();keys.add(e.code);if(e.repeat)return;if(e.code==='Digit1')timeScale=1;if(e.code==='Digit2')timeScale=10;if(e.code==='Digit3')timeScale=100;if(e.code==='KeyP')paused=!paused;if(e.code==='KeyV')toggleCamera();if(e.code==='KeyM')document.getElementById('radar').hidden=!document.getElementById('radar').hidden;if(e.code==='KeyG'){flightMode=flightMode==='ASSIST'?'INERTIAL':'ASSIST';document.getElementById('flightmode').textContent=flightMode;}if(e.code==='KeyH'){document.getElementById('metrics').hidden=!document.getElementById('metrics').hidden;document.getElementById('help').hidden=!document.getElementById('help').hidden}});
+addEventListener('keyup',e=>keys.delete(e.code));addEventListener('blur',()=>keys.clear());
+// Camera is fixed relative to ship; mouse has no camera or steering bindings.
+let cockpit=false,paused=false,timeScale=1,velocity=new THREE.Vector3(),simTime=0,last=performance.now(),frames=0,frameWindow=last,avg=60,quality='auto';
+function toggleCamera(){cockpit=!cockpit;document.getElementById('camera').textContent=cockpit?'COCKPIT CAMERA':'CHASE CAMERA'}document.getElementById('camera').onclick=toggleCamera;document.getElementById('pause').onclick=()=>{paused=!paused;document.getElementById('pause').textContent=paused?'RESUME':'PAUSE'};document.getElementById('quality').onchange=e=>{quality=e.target.value;resize()};
+function ratio(){const d=devicePixelRatio||1;if(quality==='low')return Math.min(d,.8);if(quality==='high')return Math.min(d,1.5);if(quality==='ultra')return Math.min(d,2);return Math.min(d,avg<42?0.85:avg<54?1:1.4)}
+function resize(){renderer.setPixelRatio(ratio());renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();document.getElementById('res').textContent=renderer.domElement.width+' × '+renderer.domElement.height}addEventListener('resize',resize);resize();
+const fwd=new THREE.Vector3(0,0,-1),right=new THREE.Vector3(1,0,0),up=new THREE.Vector3(0,1,0),target=new THREE.Vector3(),accel=new THREE.Vector3();
+let flightMode='ASSIST',environment='VACUUM';
+const worldPhysics={MERCURY:[3.7,0,58.6],VENUS:[8.87,92,-243],EARTH:[9.81,1,1],MARS:[3.71,.006,1.026],JUPITER:[24.79,1,.414],SATURN:[10.44,1,.444],URANUS:[8.69,1,-.718],NEPTUNE:[11.15,1,.671],MOON:[1.62,0,27.3]};
+// Gravity and pressure are scaled arcade proxies, not physical SI trajectories.
+const airWorlds=new Set(Object.keys(worldPhysics).filter(k=>worldPhysics[k][1]>0));
+const gravityVector=new THREE.Vector3();
+const radial=new THREE.Vector3(),airForward=new THREE.Vector3(),liftDirection=new THREE.Vector3();
+function localEnvironment(){let nearest=null,best=Infinity;for(const p of planets){if(!airWorlds.has(p.name))continue;const altitude=ship.position.distanceTo(p.mesh.position)-p.r;if(altitude<best){best=altitude;nearest=p}}const height=nearest?Math.max(12,nearest.r*.35):1;const density=nearest?Math.max(0,Math.min(1,1-best/height)):0;const pressure=nearest?worldPhysics[nearest.name][1]*density*density:0;return {planet:nearest,density:Math.min(1,pressure),pressure,altitude:best};}
+const angularVelocity=new THREE.Vector3(),requestedTurn=new THREE.Vector3(),localAcceleration=new THREE.Vector3();
+const rotationResponse=5.5,rotationLimit=1.1,translationResponse=4.2;
+function flightStep(dt){
+ // Fixed-size substeps improve numerical stability when frames are delayed.
+ const count=Math.max(1,Math.ceil(dt/(1/120))),h=dt/count;
+ for(let step=0;step<count;step++){
+  requestedTurn.set(Number(keys.has('ArrowDown'))-Number(keys.has('ArrowUp')),Number(keys.has('ArrowLeft'))-Number(keys.has('ArrowRight')),Number(keys.has('KeyZ'))-Number(keys.has('KeyC')));
+  if(requestedTurn.lengthSq()>1)requestedTurn.normalize();
+  const env=localEnvironment();environment=env.density>.01?'ATMOSPHERE '+env.planet.name:'VACUUM';
+  requestedTurn.multiplyScalar(rotationLimit*(1-.35*env.density));
+  angularVelocity.lerp(requestedTurn,1-Math.exp(-rotationResponse*h));
+  ship.rotateX(angularVelocity.x*h);ship.rotateY(angularVelocity.y*h);ship.rotateZ(angularVelocity.z*h);
+  localAcceleration.set(Number(keys.has('KeyD'))-Number(keys.has('KeyA')),Number(keys.has('KeyE'))-Number(keys.has('KeyQ')),Number(keys.has('KeyS'))-Number(keys.has('KeyW')));
+  if(localAcceleration.lengthSq()>1)localAcceleration.normalize();
+  const thrust=keys.has('ShiftLeft')||keys.has('ShiftRight')?120:38;
+  accel.copy(localAcceleration).applyQuaternion(ship.quaternion).multiplyScalar(thrust);
+  velocity.addScaledVector(accel,h);
+  // Dimensionless arcade atmosphere: speed-dependent drag and lift normal to airflow.
+  // Planet radii and distances use separate visual scales; these are not SI flight coefficients.
+  if(env.density>0){
+   const speed=velocity.length();
+   velocity.multiplyScalar(Math.exp(-env.density*(.12+.0015*speed)*h));
+   if(speed>1){
+    airForward.copy(velocity).normalize();
+    liftDirection.set(0,1,0).applyQuaternion(ship.quaternion);
+    liftDirection.addScaledVector(airForward,-liftDirection.dot(airForward));
+    const lift=Math.min(45,.0007*speed*speed)*env.density;
+    velocity.addScaledVector(liftDirection,lift*h);
+   }
+   
+  }
+  // Assist is a game flight-control system with artificial damping, not vacuum drag.
+  // Inertial mode conserves coasting velocity unless thrusters or brakes act.
+  for(const p of planets){gravityVector.copy(p.mesh.position).sub(ship.position);const d=Math.max(p.r,gravityVector.length());if(gravityVector.lengthSq()>1e-8)velocity.addScaledVector(gravityVector.normalize(),worldPhysics[p.name][0]*(p.r/d)**2*h)}
+  const damping=keys.has('KeyX')?2.5:flightMode==='ASSIST'?.08:0;
+  velocity.multiplyScalar(Math.exp(-damping*h));
+  const maxSpeed=flightMode==='ASSIST'?800:1600;
+  if(velocity.lengthSq()>maxSpeed*maxSpeed)velocity.setLength(maxSpeed);
+  ship.position.addScaledVector(velocity,h);
+  // Solid surface exclusion for the stylized planet meshes; no landing model.
+  for(const p of planets){radial.copy(ship.position).sub(p.mesh.position);const limit=p.r+10;if(radial.lengthSq()<limit*limit){if(radial.lengthSq()<1e-8)radial.set(0,1,0);radial.normalize();ship.position.copy(p.mesh.position).addScaledVector(radial,limit);const inward=velocity.dot(radial);if(inward<0)velocity.addScaledVector(radial,-inward)}}
+ }
+}
+function tick(now){const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;frames++;if(now-frameWindow>1000){avg=frames*1000/(now-frameWindow);frames=0;frameWindow=now;document.getElementById('fps').textContent=avg.toFixed(0);if(quality==='auto')resize()}
+if(!paused){simTime+=dt*timeScale;for(const f of thrusterFlames){f.visible=keys.has('KeyW')||keys.has('ShiftLeft')||keys.has('ShiftRight');f.scale.z=1+Math.sin(now*.04)*.12}previousPlayer.copy(ship.position);if(health>0)flightStep(dt);updateStars();for(const p of planets)p.mesh.rotation.y+=dt*timeScale*.08/worldPhysics[p.name][2];combatStep(dt)}
+const offset=new THREE.Vector3(0,cockpit?.65:4,cockpit?-1.8:16).applyQuaternion(ship.quaternion);target.copy(ship.position).add(offset);camera.position.lerp(target,Math.min(1,dt*7));const look=ship.position.clone().add(fwd.clone().applyQuaternion(ship.quaternion).multiplyScalar(90));camera.up.copy(up).applyQuaternion(ship.quaternion);camera.lookAt(look);ship.visible=!cockpit;
+document.getElementById('environment').textContent=environment;document.getElementById('speed').textContent=velocity.length().toFixed(1);document.getElementById('position').textContent=ship.position.toArray().map(x=>x.toFixed(0)).join(', ');document.getElementById('clock').textContent=simTime.toFixed(1);document.getElementById('hullMeter').value=health;document.getElementById('shieldMeter').value=shield;document.getElementById('cross').style.color=hitFlash>0?'#ff4545':'#8feaff99';document.getElementById('health').textContent=health;document.getElementById('shield').textContent=shield;document.getElementById('kills').textContent=kills;document.getElementById('enemies').textContent=enemyShips.length;radarDraw();updatePlanetLOD();renderer.render(scene,camera)}
+startCombat();renderer.setAnimationLoop(tick);
+}catch(e){showError(e);console.error(e)}
+</script></body></html>
