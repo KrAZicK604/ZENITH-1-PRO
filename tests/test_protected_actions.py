@@ -50,3 +50,8 @@ class ConcurrentActionsTests(unittest.TestCase):
     def test_storage_failure(self):
         with patch.dict(os.environ, {"DATABASE_PATH": ""}):
             self.assertFalse(actions.record_demo_action(self.token, "r1"))
+
+    def test_clock_failure_denies_action(self):
+        with patch.object(actions.PROCESS_CLOCK, "sample", return_value=None):
+            self.assertFalse(actions.record_demo_action(self.token, "clock_failure"))
+        self.assertTrue(actions.record_demo_action(self.token, "clock_failure"))
