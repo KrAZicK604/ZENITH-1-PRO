@@ -16,7 +16,7 @@ class PlayerSessionsTests(unittest.TestCase):
         env = patch.dict(os.environ, {"DATABASE_PATH": self.tmp.name + "/ledger.sqlite3"})
         env.start()
         self.addCleanup(env.stop)
-        clock = patch("player_sessions.time.time", return_value=NOW)
+        clock = patch("clock_guard.PROCESS_CLOCK.sample", return_value=NOW)
         self.clock = clock.start()
         self.addCleanup(clock.stop)
         ledger.record_checkout("sub_a", "cs_a", "cus_a", "a@example.com", NOW-10)
@@ -61,3 +61,16 @@ class PlayerSessionsTests(unittest.TestCase):
             self.assertFalse(sessions.revoke(token))
         for ttl in (0, -1, 3601, True, "900"):
             self.assertIsNone(sessions.issue("player_a", ttl))
+
+    def test_clock_fault_denies_grants_but_not_revocation(self):
+        self.assertTrue(sessions.bind_verified("player_a", "cus_a", "sub_a"))
+        token = sessions.issue("player_a")
+        self.assertIsNotNone(token)
+        self.clock.return_value = NOW-1
+        self.assertIsNone(sessions.issue("player_a"))
+        self.assertFalse(sessions.eligible(token))
+        self.assertTrue(sessions.revoke(token))
+        self.clock.return_value = NOW+100
+        self.assertIsNone(sessions.issue("player_a"))
+        with ledger.database() as db:
+            self.assertEqual(db.execute("SELECT revoked FROM player_sessions").fetchone()[0], 1)
