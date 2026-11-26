@@ -22,11 +22,11 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # verified v4 tag head
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # verified v5 commit, action.yml node24
         with:
           persist-credentials: false
       - name: Python 3.12
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # verified v5 tag head
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # verified v6 commit, action.yml node24
         with:
           python-version: '3.12'
       - name: Install dependencies
@@ -43,7 +43,7 @@ jobs:
       - name: Audit application dependencies
         run: |
           python -m venv /tmp/zenith-audit
-          /tmp/zenith-audit/bin/python -m pip install pip-audit
+          /tmp/zenith-audit/bin/python -m pip install 'pip-audit==2.10.1'
           /tmp/zenith-audit/bin/python -m pip_audit --path "$(python -c 'import sysconfig; print(sysconfig.get_path("purelib"))')"
       - name: Check Python syntax
         run: python -B -m py_compile app.py cloud_webhook.py subscription_store.py webhook_server.py tests/test_cloud_webhook_security.py tests/test_subscription_store.py tests/test_checkout_mapping.py tests/test_webhook_crypto.py tests/test_webhook_journal.py sandbox_preflight.py tests/test_sandbox_preflight.py
