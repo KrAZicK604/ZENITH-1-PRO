@@ -18,7 +18,7 @@ with race:
     st.subheader("Mars Race")
     st.metric("Monthly subscription", "$29 CAD / month")
     st.write("Billed monthly. Race access must be verified server-side.")
-    st.link_button("View $29/month checkout", "https://buy.stripe.com/bJebIU54dghRa3j2SW8bS01")
+    st.info("Mars Race enrollment is temporarily unavailable pending access verification.")
 with course:
     st.subheader("Complete Course")
     st.metric("One-time purchase", "$199 CAD")
