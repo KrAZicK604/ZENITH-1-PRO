@@ -178,9 +178,21 @@ def stripe_webhook():
                 return jsonify({"received": True, "duplicate": True,
                                 "handled": bool(prior[3])}), 200
             if typ in ("checkout.session.completed", "invoice.paid"):
-                if retained_sample(db) is None:
+                now = retained_sample(db)
+                if now is None:
                     # Commit the clock latch, but do not acknowledge or journal a grant.
                     return jsonify({"error": "clock_continuity_unavailable"}), 503
+                # The Stripe SDK rejects old signatures, but currently permits
+                # future timestamps. Add a symmetric bound to new grants only.
+                # Signed cancellations remain independently revocable.
+                try:
+                    signed_time = int(next(
+                        field.split("=", 2)[1] for field in signature.split(",")
+                        if field.split("=", 2)[0] == "t"))
+                except (StopIteration, IndexError, ValueError):
+                    return jsonify({"error": "signature_timestamp_unavailable"}), 400
+                if abs(signed_time - now) > stripe.Webhook.DEFAULT_TOLERANCE:
+                    return jsonify({"error": "signature_time_untrusted"}), 503
             if typ == "checkout.session.completed":
                 accepted = _handle_checkout(obj, created, link, db)
             elif typ == "invoice.paid":
