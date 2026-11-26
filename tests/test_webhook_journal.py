@@ -170,5 +170,18 @@ class JournalIntegrityTests(unittest.TestCase):
         self.assertEqual(self.records()["race_webhook_receipts"], 0)
 
 
+    def test_parallel_terminal_cancellation_and_paid_replays(self):
+        c = event("checkout.session.completed", checkout())
+        p = event("invoice.paid", invoice(), created=BASE+21)
+        cancel = event("customer.subscription.deleted", {"id": "sub_signed_123"}, created=BASE+30)
+        self.assertEqual(len({c["id"], p["id"], cancel["id"]}), 3)
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            responses = list(pool.map(self.send, [c,p,cancel]*8))
+        self.assertEqual([x.status_code for x in responses], [200]*24)
+        self.assertEqual(self.records()["race_webhook_receipts"], 3)
+        self.assertFalse(self.module.store.is_active("sub_signed_123", now=BASE+31))
+        self.assertEqual(self.records()["race_blocks"], 1)
+
+
 if __name__ == "__main__":
     unittest.main()
