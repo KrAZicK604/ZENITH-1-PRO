@@ -55,3 +55,35 @@ class ConcurrentActionsTests(unittest.TestCase):
         with patch.object(actions.PROCESS_CLOCK, "sample", return_value=None):
             self.assertFalse(actions.record_demo_action(self.token, "clock_failure"))
         self.assertFalse(actions.record_demo_action(self.token, "clock_failure"))
+
+    def test_revocation_races_with_actions(self):
+        from threading import Barrier
+        barrier = Barrier(8)
+        def attempt(i):
+            barrier.wait(timeout=10)
+            if i == 0:
+                return sessions.revoke(self.token)
+            return actions.record_demo_action(self.token, "race"+str(i))
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            results = list(pool.map(attempt, range(8)))
+        self.assertTrue(results[0])
+        self.assertEqual(sum(self.run_parallel(["after"+str(i) for i in range(16)])), 0)
+        with ledger.database() as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM demo_action_receipts").fetchone()[0],
+                             sum(results[1:]))
+
+    def test_terminal_cancellation_races_with_actions(self):
+        from threading import Barrier
+        barrier = Barrier(8)
+        def attempt(i):
+            barrier.wait(timeout=10)
+            if i == 0:
+                ledger.block("sub_a", int(time.time()), terminal=True)
+                return False
+            return actions.record_demo_action(self.token, "cancel"+str(i))
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            results = list(pool.map(attempt, range(8)))
+        self.assertEqual(sum(self.run_parallel(["after"+str(i) for i in range(16)])), 0)
+        with ledger.database() as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM demo_action_receipts").fetchone()[0],
+                             sum(results))
