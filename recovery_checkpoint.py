@@ -13,7 +13,7 @@ from pathlib import Path
 
 from recovery_lab import inspect_snapshot, _readonly
 
-HEX64 = re.compile(r"[0-9a-f]{64}\\Z")
+HEX64 = re.compile(r"[0-9a-f]{64}")
 FIELDS = {"schema", "environment", "generation", "snapshot_sha256",
           "receipt_head_sha256", "clock_high_water", "parent_checkpoint_sha256"}
 
