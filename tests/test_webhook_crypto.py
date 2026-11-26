@@ -202,5 +202,23 @@ class CryptographicWebhookTests(unittest.TestCase):
             self.assertEqual(response.json["error"], "storage_unavailable")
 
 
+    def test_future_signed_header_cannot_grant_even_if_sdk_accepts_it(self):
+        data = event("checkout.session.completed", checkout())
+        raw = json.dumps(data, sort_keys=True, separators=(",", ":")).encode()
+        header = signed(raw, timestamp=int(time.time())+600)
+        response = self.send(data, header=header, body=raw)
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json["error"], "signature_time_untrusted")
+        with self.module.store.database() as db:
+            self.assertIsNone(self.module.store.get_receipt(data["id"], db))
+
+    def test_expired_signed_header_rejected_before_grant(self):
+        data = event("checkout.session.completed", checkout())
+        raw = json.dumps(data, sort_keys=True, separators=(",", ":")).encode()
+        header = signed(raw, timestamp=int(time.time())-600)
+        self.assertEqual(self.send(data, header=header, body=raw).status_code, 400)
+        self.assertFalse(self.active())
+
+
 if __name__ == "__main__":
     unittest.main()
