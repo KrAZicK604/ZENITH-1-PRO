@@ -183,5 +183,24 @@ class JournalIntegrityTests(unittest.TestCase):
         self.assertEqual(self.records()["race_blocks"], 1)
 
 
+    def test_clock_fault_withholds_grants_preserves_signed_cancellation(self):
+        c = event("checkout.session.completed", checkout())
+        p = event("invoice.paid", invoice(), created=BASE+21)
+        self.assertEqual(self.send(c).status_code, 200)
+        self.assertEqual(self.send(p).status_code, 200)
+        renewal = event("invoice.paid", invoice("in_renewal"), created=BASE+25)
+        with patch("clock_guard.PROCESS_CLOCK.sample", return_value=None):
+            self.assertEqual(self.send(renewal).status_code, 503)
+            self.assertEqual(self.send(c).status_code, 200)
+            cancel = event("customer.subscription.deleted", {"id": "sub_signed_123"}, created=BASE+30)
+            self.assertEqual(self.send(cancel).status_code, 200)
+        self.assertEqual(self.send(renewal).status_code, 503)
+        self.assertEqual(self.records()["race_webhook_receipts"], 3)
+        self.assertEqual(self.records()["race_paid_periods"], 1)
+        self.assertFalse(self.module.store.is_active("sub_signed_123", now=BASE+31))
+        with self.module.store.database() as db:
+            self.assertEqual(db.execute("SELECT failed FROM clock_continuity").fetchone()[0], 1)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -11,6 +11,7 @@ import stripe
 from flask import Flask, jsonify, request
 
 import subscription_store as store
+from clock_guard import retained_sample
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024
@@ -176,6 +177,10 @@ def stripe_webhook():
                     return jsonify({"error": "event_id_collision"}), 409
                 return jsonify({"received": True, "duplicate": True,
                                 "handled": bool(prior[3])}), 200
+            if typ in ("checkout.session.completed", "invoice.paid"):
+                if retained_sample(db) is None:
+                    # Commit the clock latch, but do not acknowledge or journal a grant.
+                    return jsonify({"error": "clock_continuity_unavailable"}), 503
             if typ == "checkout.session.completed":
                 accepted = _handle_checkout(obj, created, link, db)
             elif typ == "invoice.paid":
