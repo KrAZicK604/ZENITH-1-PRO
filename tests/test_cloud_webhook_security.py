@@ -4,6 +4,7 @@ import importlib
 import json
 import os
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 
@@ -60,10 +61,19 @@ class WebhookSecurityTests(unittest.TestCase):
     def post(self, event):
         with patch.object(self.module.stripe.Webhook, "construct_event", return_value=event):
             return self.client.post("/webhook", data=b"mock-signed-payload",
-                                    headers={"Stripe-Signature": "t=1,v1=mock"})
+                                    headers={"Stripe-Signature": f"t={int(time.time())},v1=mock"})
 
     def active(self):
         return self.module.store.is_active("sub_test_1", BASE+20)
+
+    def test_mocked_sdk_cannot_bypass_freshness_with_stale_header(self):
+        event = self.checkout()
+        with patch.object(self.module.stripe.Webhook, "construct_event", return_value=event):
+            response = self.client.post("/webhook", data=b"mock-signed-payload",
+                headers={"Stripe-Signature": "t=1,v1=mock"})
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json["error"], "signature_time_untrusted")
+        self.assertFalse(self.active())
 
     def test_missing_and_invalid_signature(self):
         self.assertEqual(self.client.post("/webhook", data=b"{}").status_code, 400)
