@@ -2,6 +2,8 @@ name: ZENITH P0 browser regression
 on:
   push:
     branches: [research/zenith-p0-runtime-20261125]
+  pull_request:
+    branches: [fix/alpha-payment-truth-and-player-notice-20261117]
   workflow_dispatch:
 permissions:
   contents: read
