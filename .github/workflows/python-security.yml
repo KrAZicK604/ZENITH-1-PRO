@@ -30,9 +30,14 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install dependencies
-        run: python -m pip install -r requirements.txt
+        run: python -m pip install -r requirements-ci-pinned.txt
       - name: Check dependency consistency
         run: python -m pip check
+      - name: Verify installed package versions match pinned inventory
+        run: |
+          python -m pip freeze > /tmp/zenith-actual-freeze.txt
+          grep -v '^#' requirements-ci-pinned.txt | sed '/^[[:space:]]*$/d' > /tmp/zenith-required-freeze.txt
+          diff -u /tmp/zenith-required-freeze.txt /tmp/zenith-actual-freeze.txt
       - name: Record resolved dependencies
         run: python -m pip freeze
       - name: Audit application dependencies
