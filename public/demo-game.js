@@ -260,7 +260,8 @@ let raceGeneration=0, simTime=0;
 const STEP_MS=1000/60;
 function fixedSteps(acc,elapsed){const total=acc+Math.max(0,Math.min(100,elapsed));const count=Math.floor((total+1e-8)/STEP_MS);return [count,Math.max(0,total-count*STEP_MS)];}
 function impactTime(x,y,nx,ny,a,r){const dx=nx-x,dy=ny-y,ox=x-a.x,oy=y-a.y,c=ox*ox+oy*oy-r*r;if(c<=0)return 0;const A=dx*dx+dy*dy,B=ox*dx+oy*dy,D=B*B-A*c;if(!A||D<0)return Infinity;const t=(-B-Math.sqrt(D))/A;return t>=0&&t<=1?t:Infinity;}
-function nearestHit(x,y,nx,ny,targets){let best=null,time=Infinity;for(const a of targets){if(a.hp<=0)continue;const t=impactTime(x,y,nx,ny,a,a.r||9);if(t<time){best=a;time=t;}}return best;}
+function movingImpact(x,y,nx,ny,a,r){return impactTime(x,y,nx-(a.x-(a.px??a.x)),ny-(a.y-(a.py??a.y)),{x:a.px??a.x,y:a.py??a.y},r);}
+function nearestHit(x,y,nx,ny,targets){let best=null,time=Infinity;for(const a of targets){if(a.hp<=0)continue;const t=movingImpact(x,y,nx,ny,a,a.r||9);if(t<time){best=a;time=t;}}return best;}
 function guide(p,target){if(!target)return;const angle=Math.atan2(p.vy,p.vx),desired=Math.atan2(target.y-p.y,target.x-p.x),delta=Math.atan2(Math.sin(desired-angle),Math.cos(desired-angle)),next=angle+Math.max(-.12,Math.min(.12,delta));p.vx=5*Math.cos(next);p.vy=5*Math.sin(next);}
 let enemyShots=[], sparks=[], bossSpawned=false;
 let shots=[], enemies=[], shield=100, missiles=3, lastFire=-Infinity, locked=false, damageAt=-Infinity;
@@ -269,9 +270,9 @@ function fireWeapon(missile=false){if(!gameRunning||shots.length>=64||simTime-la
 function combatHUD(){document.getElementById('combatHUD').textContent='Shield '+shield+'% | Missiles '+missiles+' | Hostiles '+enemies.length+' | Lock '+(locked?'ON':'OFF');}
 function damageShip(amount){if(simTime-damageAt<700)return;damageAt=simTime;shield=Math.max(0,shield-amount);}
 function burst(x,y){for(let i=0;i<12&&sparks.length<180;i++){const a=i*Math.PI/6;sparks.push({x,y,vx:Math.cos(a)*2,vy:Math.sin(a)*2,life:24});}}
-function combatStep(g){for(const e of enemies){const d=Math.hypot(gameState.x-e.x,gameState.y-e.y)||1;e.x+=(gameState.x-e.x)/d*.65;e.y+=(gameState.y-e.y)/d*.65;if(d<13)damageShip(20);if(d<150&&simTime>(e.nextFire||0)&&enemyShots.length<40){e.nextFire=simTime+(e.boss?650:1800);enemyShots.push({x:e.x,y:e.y,vx:(gameState.x-e.x)/d*2.8,vy:(gameState.y-e.y)/d*2.8,life:100});}g.save();g.translate(e.x,e.y);g.fillStyle='#ff7755';g.beginPath();g.moveTo(-8,-6);g.lineTo(8,0);g.lineTo(-8,6);g.closePath();g.fill();g.fillStyle='#522';g.fillRect(-10,-13,20,3);g.fillStyle='#ff7755';g.fillRect(-10,-13,20*e.hp/(e.boss?300:100),3);g.restore();}
+function combatStep(g){for(const e of enemies){e.px=e.x;e.py=e.y;const d=Math.hypot(gameState.x-e.x,gameState.y-e.y)||1;e.x+=(gameState.x-e.x)/d*.65;e.y+=(gameState.y-e.y)/d*.65;if(movingImpact(gameState.px,gameState.py,gameState.x,gameState.y,e,13)!==Infinity)damageShip(20);if(d<150&&simTime>(e.nextFire||0)&&enemyShots.length<40){e.nextFire=simTime+(e.boss?650:1800);enemyShots.push({x:e.x,y:e.y,vx:(gameState.x-e.x)/d*2.8,vy:(gameState.y-e.y)/d*2.8,life:100});}g.save();g.translate(e.x,e.y);g.fillStyle='#ff7755';g.beginPath();g.moveTo(-8,-6);g.lineTo(8,0);g.lineTo(-8,6);g.closePath();g.fill();g.fillStyle='#522';g.fillRect(-10,-13,20,3);g.fillStyle='#ff7755';g.fillRect(-10,-13,20*e.hp/(e.boss?300:100),3);g.restore();}
 for(const p of shots){if(p.homing)guide(p,enemies[0]);const nx=p.x+p.vx,ny=p.y+p.vy;const target=nearestHit(p.x,p.y,nx,ny,[...enemies,...gameState.asteroids]);if(target){target.hp-=p.damage;p.life=0;if(target.hp<=0){gameScore+=target.boss?300:50;burst(target.x,target.y);}}g.strokeStyle=p.missile?'#ffbb66':'#7ffaff';g.lineWidth=p.missile?3:1.5;g.beginPath();g.moveTo(p.x,p.y);g.lineTo(nx,ny);g.stroke();p.x=nx;p.y=ny;p.life--;}
-shots=shots.filter(p=>p.life>0&&p.x>=0&&p.x<=360&&p.y>=0&&p.y<=280);enemies=enemies.filter(e=>e.hp>0);if(!enemies.length&&!bossSpawned){bossSpawned=true;enemies.push({x:300,y:40,hp:300,boss:true,nextFire:simTime+1500});}for(const p of enemyShots){const nx=p.x+p.vx,ny=p.y+p.vy;if(segmentHit(p.x,p.y,nx,ny,gameState,7)){damageShip(15);p.life=0;}g.strokeStyle='#ff4555';g.lineWidth=2;g.beginPath();g.moveTo(p.x,p.y);g.lineTo(nx,ny);g.stroke();p.x=nx;p.y=ny;p.life--;}enemyShots=enemyShots.filter(p=>p.life>0&&p.x>=0&&p.x<=360&&p.y>=0&&p.y<=280);for(const p of sparks){g.fillStyle='rgba(255,180,70,'+(p.life/24)+')';g.fillRect(p.x,p.y,2,2);p.x+=p.vx;p.y+=p.vy;p.life--;}sparks=sparks.filter(p=>p.life>0);g.save();g.translate(305,5);g.fillStyle='#081b2c';g.fillRect(0,0,50,40);g.strokeStyle='#65c9dc';g.strokeRect(0,0,50,40);for(const e of enemies){g.fillStyle='#ff5555';g.fillRect(e.x/360*50,e.y/280*40,3,3);}g.fillStyle='#75ffff';g.fillRect(gameState.x/360*50,gameState.y/280*40,3,3);g.restore();gameState.asteroids=gameState.asteroids.filter(a=>a.hp>0);combatHUD();}
+shots=shots.filter(p=>p.life>0&&p.x>=0&&p.x<=360&&p.y>=0&&p.y<=280);enemies=enemies.filter(e=>e.hp>0);if(!enemies.length&&!bossSpawned){bossSpawned=true;enemies.push({x:300,y:40,hp:300,boss:true,nextFire:simTime+1500});}for(const p of enemyShots){const nx=p.x+p.vx,ny=p.y+p.vy;if(movingImpact(p.x,p.y,nx,ny,gameState,7)!==Infinity){damageShip(15);p.life=0;}g.strokeStyle='#ff4555';g.lineWidth=2;g.beginPath();g.moveTo(p.x,p.y);g.lineTo(nx,ny);g.stroke();p.x=nx;p.y=ny;p.life--;}enemyShots=enemyShots.filter(p=>p.life>0&&p.x>=0&&p.x<=360&&p.y>=0&&p.y<=280);for(const p of sparks){g.fillStyle='rgba(255,180,70,'+(p.life/24)+')';g.fillRect(p.x,p.y,2,2);p.x+=p.vx;p.y+=p.vy;p.life--;}sparks=sparks.filter(p=>p.life>0);g.save();g.translate(305,5);g.fillStyle='#081b2c';g.fillRect(0,0,50,40);g.strokeStyle='#65c9dc';g.strokeRect(0,0,50,40);for(const e of enemies){g.fillStyle='#ff5555';g.fillRect(e.x/360*50,e.y/280*40,3,3);}g.fillStyle='#75ffff';g.fillRect(gameState.x/360*50,gameState.y/280*40,3,3);g.restore();gameState.asteroids=gameState.asteroids.filter(a=>a.hp>0);combatHUD();}
 
 const raceKeys=Object.create(null);
 document.addEventListener('keydown',e=>{
@@ -306,19 +307,21 @@ function startGame(){
     ctx2.fillStyle='rgba(0,0,0,0.25)';ctx2.fillRect(0,0,360,280);
     for(let i=0;i<60;i++){ctx2.fillStyle='rgba(255,255,255,0.5)';ctx2.fillRect((i*137)%360,(i*211)%280,1,1);}
     if(raceKeys['arrowup']||raceKeys['w'])gameState.vy-=0.3;if(raceKeys['arrowdown']||raceKeys['s'])gameState.vy+=0.3;if(raceKeys['arrowleft']||raceKeys['a'])gameState.vx-=0.18;if(raceKeys['arrowright']||raceKeys['d'])gameState.vx+=0.18;
-    const speed=Math.hypot(gameState.vx,gameState.vy);if(speed>12){gameState.vx*=12/speed;gameState.vy*=12/speed;}gameState.x+=gameState.vx;gameState.y+=gameState.vy;gameState.vx*=0.992;gameState.vy*=0.992;
+    gameState.px=gameState.x;gameState.py=gameState.y;const speed=Math.hypot(gameState.vx,gameState.vy);if(speed>12){gameState.vx*=12/speed;gameState.vy*=12/speed;}gameState.x+=gameState.vx;gameState.y+=gameState.vy;gameState.vx*=0.992;gameState.vy*=0.992;
     let dx=gameState.moonX-gameState.x,dy=gameState.moonY-gameState.y,d=Math.sqrt(dx*dx+dy*dy);
     if(d<50){gameState.vx+=dx*0.03;gameState.vy+=dy*0.03;ctx2.strokeStyle='rgba(0,255,255,0.5)';ctx2.beginPath();ctx2.moveTo(gameState.x,gameState.y);ctx2.lineTo(gameState.moonX,gameState.moonY);ctx2.stroke();ctx2.fillStyle='rgba(0,255,255,0.12)';ctx2.beginPath();ctx2.arc(gameState.moonX,gameState.moonY,50,0,6.28);ctx2.fill();}
     if(gameState.x>360)gameState.x=0;if(gameState.x<0)gameState.x=360;if(gameState.y>280)gameState.y=0;if(gameState.y<0)gameState.y=280;
+    if(Math.abs(gameState.x-gameState.px)>12||Math.abs(gameState.y-gameState.py)>12){gameState.px=gameState.x;gameState.py=gameState.y;}
+    for(const a of gameState.asteroids){a.px=a.x;a.py=a.y;a.x=Math.max(0,Math.min(360,a.x+a.vx));a.y=Math.max(0,Math.min(280,a.y+a.vy));if(a.x===0||a.x===360)a.vx*=-1;if(a.y===0||a.y===280)a.vy*=-1;}
     drawRotatingWorld(ctx2,gameState.moonX,gameState.moonY,10,'moon',spinTime);
     drawRotatingWorld(ctx2,gameState.targetX,gameState.targetY,12,'mars',spinTime);
     drawZenithShip(ctx2,gameState.x,gameState.y,gameState.vx,gameState.vy);
     combatStep(ctx2);
     gameState.asteroids.forEach(a=>{
-      a.x+=a.vx;a.y+=a.vy;if(a.x<0||a.x>360)a.vx*=-1;if(a.y<0||a.y>280)a.vy*=-1;
+      
       ctx2.fillStyle='#666';ctx2.beginPath();ctx2.arc(a.x,a.y,a.r,0,6.28);ctx2.fill();
       let d2=Math.sqrt((a.x-gameState.x)**2+(a.y-gameState.y)**2);
-      if(d2<a.r+6)damageShip(35);
+      if(movingImpact(gameState.px,gameState.py,gameState.x,gameState.y,a,a.r+6)!==Infinity)damageShip(35);
     });
     let dt=Math.sqrt((gameState.targetX-gameState.x)**2+(gameState.targetY-gameState.y)**2);
     if(shield===0){gameRunning=false;ctx2.fillStyle='#8b1728';ctx2.fillRect(0,0,360,280);ctx2.fillStyle='#fff';ctx2.font='16px monospace';ctx2.fillText('SHIP LOST — RESET',65,140);addScore('Solo',gameScore);}else if(dt<14){gameRunning=false;gameScore+=700+gameState.boosts*100;ctx2.fillStyle='rgba(0,255,0,0.85)';ctx2.fillRect(0,0,360,280);ctx2.fillStyle='#fff';ctx2.font='16px monospace';ctx2.fillText('MARS REACHED! '+gameScore+' WIN!',30,140);addScore('Peter',gameScore);}
