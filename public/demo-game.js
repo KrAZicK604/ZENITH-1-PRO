@@ -351,7 +351,7 @@ function renderLeaderboard(){
   leaderboard.slice(0,8).forEach((e,i)=>{
     let medal=i==0?'🥇':i==1?'🥈':i==2?'🥉':(i+1)+'.';
     let timeAgo=Math.floor((Date.now()-e.time)/60000)+'m ago';
-    list.innerHTML+='<div style=display:flex;justify-content:space-between;padding:6px;border-bottom:1px solid rgba(0,255,255,0.2)'><span>'+medal+' '+e.name+' - '+e.score+' pts <span style=font-size:7px;color:rgba(255,255,255,0.5)>'+timeAgo+'</span></span><span>#'+(i+1)+'</span></div>';
+    const row=document.createElement('div'); row.textContent=medal+' '+e.name+' - '+e.score+' pts · '+timeAgo; list.appendChild(row);
   });
   try{localStorage.setItem('zenithSoloDemoLeaderboard',JSON.stringify(leaderboard));}catch(e){}
   document.getElementById('totalGames').innerText=leaderboard.length;
