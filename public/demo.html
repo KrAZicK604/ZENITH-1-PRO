@@ -105,7 +105,7 @@ Controls: Arrows steer, SPACE boost, Moon gravity (cyan circle) pulls you - Use 
 <span class=btn onclick="doBoost()">BOOST</span>
 <span class=btn id=raceFocusBtn onclick="toggleRaceFocus()">⛶ FOCUS RACE</span>
 <span class=btn onclick="closeRace()">✕ CLOSE RACE</span>
-<div id=raceHelp>Arrows / WASD: steer · Space: boost · Esc: exit focus · Close race to stop</div>
+<div id=combatHUD aria-live=off></div><button class=btn onclick="fireWeapon()">FIRE (F)</button> <button class=btn onclick="fireWeapon(true)">MISSILE (G)</button><div id=raceHelp>Arrows / WASD: steer · Space: boost · F: laser · G: missile · T: lock · R: shield (costs 1 boost) · Esc: exit focus</div>
 </div>
 <div id=playerList style=font-size:9px;margin-top:6px;background:rgba(0,0,0,0.4);padding:6px;border-radius:6px;max-height:70px;overflow-y:auto>● You - Online - Score 0</div>
 </div>
@@ -410,11 +410,21 @@ function prepareGameCanvas(cvs,g){
 }
 // GAME
 let raceGeneration=0;
+let shots=[], enemies=[], shield=100, missiles=3, lastFire=-Infinity, locked=false, damageAt=-Infinity;
+function segmentHit(x,y,nx,ny,a,r){const dx=nx-x,dy=ny-y,l=dx*dx+dy*dy;const t=l?Math.max(0,Math.min(1,((a.x-x)*dx+(a.y-y)*dy)/l)):0;return Math.hypot(x+t*dx-a.x,y+t*dy-a.y)<=r;}
+function fireWeapon(missile=false){if(!gameRunning||shots.length>=64||performance.now()-lastFire<150||(missile&&missiles===0))return;lastFire=performance.now();if(missile)missiles--;const target=locked?enemies[0]:null;const angle=target?Math.atan2(target.y-gameState.y,target.x-gameState.x):Math.atan2(gameState.vy,gameState.vx);shots.push({x:gameState.x,y:gameState.y,vx:Math.cos(angle)*(missile?5:9),vy:Math.sin(angle)*(missile?5:9),life:60,damage:missile?100:35,missile});}
+function combatHUD(){document.getElementById('combatHUD').textContent='Shield '+shield+'% | Missiles '+missiles+' | Hostiles '+enemies.length+' | Lock '+(locked?'ON':'OFF');}
+function damageShip(amount){if(performance.now()-damageAt<700)return;damageAt=performance.now();shield=Math.max(0,shield-amount);}
+function combatStep(g){for(const e of enemies){const d=Math.hypot(gameState.x-e.x,gameState.y-e.y)||1;e.x+=(gameState.x-e.x)/d*.65;e.y+=(gameState.y-e.y)/d*.65;if(d<13)damageShip(20);g.save();g.translate(e.x,e.y);g.fillStyle='#ff7755';g.beginPath();g.moveTo(-8,-6);g.lineTo(8,0);g.lineTo(-8,6);g.closePath();g.fill();g.fillStyle='#522';g.fillRect(-10,-13,20,3);g.fillStyle='#ff7755';g.fillRect(-10,-13,20*e.hp/100,3);g.restore();}
+for(const p of shots){const nx=p.x+p.vx,ny=p.y+p.vy;const target=[...enemies,...gameState.asteroids].find(a=>a.hp>0&&segmentHit(p.x,p.y,nx,ny,a,a.r||9));if(target){target.hp-=p.damage;p.life=0;if(target.hp<=0)gameScore+=50;}g.strokeStyle=p.missile?'#ffbb66':'#7ffaff';g.lineWidth=p.missile?3:1.5;g.beginPath();g.moveTo(p.x,p.y);g.lineTo(nx,ny);g.stroke();p.x=nx;p.y=ny;p.life--;}
+shots=shots.filter(p=>p.life>0&&p.x>=0&&p.x<=360&&p.y>=0&&p.y<=280);enemies=enemies.filter(e=>e.hp>0);gameState.asteroids=gameState.asteroids.filter(a=>a.hp>0);combatHUD();}
+
 const raceKeys=Object.create(null);
 document.addEventListener('keydown',e=>{
  const tag=e.target?.tagName;
  if(e.key==='Escape'&&document.body.classList.contains('race-focus')){toggleRaceFocus();return;}
  if(!gameRunning||tag==='INPUT'||tag==='TEXTAREA')return;
+ if(['f','g','t','r'].includes(e.key.toLowerCase())){e.preventDefault();if(!e.repeat){switch(e.key.toLowerCase()){case 'f':fireWeapon();break;case 'g':fireWeapon(true);break;case 't':locked=!locked;break;case 'r':if(gameState.boosts>0&&shield<100){gameState.boosts--;shield=Math.min(100,shield+30);}break;}combatHUD();}return;}
  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','w','a','s','d','W','A','S','D'].includes(e.key)){
    e.preventDefault();raceKeys[e.key.toLowerCase()]=true;
    if(e.code==='Space'&&!e.repeat)doBoost();
@@ -433,6 +443,7 @@ function startGame(){
   gameRunning=true;gameScore=0;gameState={x:40,y:140,vx:2.5,vy:0,boosts:3,asteroids:[],targetX:320,targetY:140,moonX:150,moonY:140};
   for(let i=0;i<10;i++)gameState.asteroids.push({x:80+Math.random()*200,y:Math.random()*280,r:Math.random()*7+3,vx:Math.random()*2-1,vy:Math.random()*2-1});
   for(const key of Object.keys(raceKeys))delete raceKeys[key];
+  shots=[];enemies=[{x:245,y:55,hp:100},{x:270,y:220,hp:100}];shield=100;missiles=3;locked=false;lastFire=-Infinity;damageAt=-Infinity;gameState.asteroids.forEach(a=>a.hp=35);combatHUD();
   const spinEpoch=performance.now();
   let lastNetworkSend=0;
   function loop(){
@@ -448,14 +459,15 @@ function startGame(){
     drawRotatingWorld(ctx2,gameState.moonX,gameState.moonY,10,'moon',spinTime);
     drawRotatingWorld(ctx2,gameState.targetX,gameState.targetY,12,'mars',spinTime);
     drawZenithShip(ctx2,gameState.x,gameState.y,gameState.vx,gameState.vy);
+    combatStep(ctx2);
     gameState.asteroids.forEach(a=>{
       a.x+=a.vx;a.y+=a.vy;if(a.x<0||a.x>360)a.vx*=-1;if(a.y<0||a.y>280)a.vy*=-1;
       ctx2.fillStyle='#666';ctx2.beginPath();ctx2.arc(a.x,a.y,a.r,0,6.28);ctx2.fill();
       let d2=Math.sqrt((a.x-gameState.x)**2+(a.y-gameState.y)**2);
-      if(d2<a.r+6){gameRunning=false;ctx2.fillStyle='rgba(255,0,0,0.85)';ctx2.fillRect(0,0,360,280);ctx2.fillStyle='#fff';ctx2.font='16px monospace';ctx2.fillText('CRASH! '+gameScore,80,140);addScore('Peter',gameScore);}
+      if(d2<a.r+6)damageShip(35);
     });
     let dt=Math.sqrt((gameState.targetX-gameState.x)**2+(gameState.targetY-gameState.y)**2);
-    if(dt<14){gameRunning=false;gameScore+=700+gameState.boosts*100;ctx2.fillStyle='rgba(0,255,0,0.85)';ctx2.fillRect(0,0,360,280);ctx2.fillStyle='#fff';ctx2.font='16px monospace';ctx2.fillText('MARS REACHED! '+gameScore+' WIN!',30,140);addScore('Peter',gameScore);}
+    if(shield===0){gameRunning=false;ctx2.fillStyle='#8b1728';ctx2.fillRect(0,0,360,280);ctx2.fillStyle='#fff';ctx2.font='16px monospace';ctx2.fillText('SHIP LOST — RESET',65,140);addScore('Solo',gameScore);}else if(dt<14){gameRunning=false;gameScore+=700+gameState.boosts*100;ctx2.fillStyle='rgba(0,255,0,0.85)';ctx2.fillRect(0,0,360,280);ctx2.fillStyle='#fff';ctx2.font='16px monospace';ctx2.fillText('MARS REACHED! '+gameScore+' WIN!',30,140);addScore('Peter',gameScore);}
     document.getElementById('gameScore').innerText=gameScore;document.getElementById('boostCount').innerText=gameState.boosts;
     // Local animation stays at display refresh; send compact state at <=20 Hz.
     // This reduces peer traffic but is NOT a measured network-latency guarantee.
@@ -509,5 +521,6 @@ let parts=[];for(let i=0;i<500;i++)parts.push({x:Math.random()*W,y:Math.random()
 function drawBG(){ctx.fillStyle='rgba(0,0,0,0.08)';ctx.fillRect(0,0,W,H);parts.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;p.z+=p.vz;if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;if(p.z<-1000||p.z>1000)p.vz*=-1;let s=800/Math.max(100,800+p.z),x=(p.x-W/2)*s+W/2,y=(p.y-H/2)*s+H/2,sz=p.q*s;ctx.fillStyle=(i%23===0?'rgba(192,221,255,0.92)':i%7===0?'rgba(133,178,229,0.72)':'rgba(210,223,243,0.46)');ctx.beginPath();ctx.arc(x,y,sz,0,6.28);ctx.fill();});t+=0.02;requestAnimationFrame(drawBG);}drawBG();
 setInterval(()=>{let el=document.getElementById('taskTime');if(el)el.innerText=new Date().toLocaleTimeString();},1000);
 updateTaskbar();
+document.getElementById('gameCanvas').addEventListener('pointerdown',()=>fireWeapon());
 launchSoloRace();toggleRaceFocus();
 </script></body></html>
