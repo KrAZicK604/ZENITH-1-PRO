@@ -258,6 +258,9 @@ function prepareGameCanvas(cvs,g){
 // GAME
 let raceGeneration=0, simTime=0;
 const STEP_MS=1000/60;
+function gravity(x,y,cx,cy,mu,soft){const dx=cx-x,dy=cy-y,k=mu/Math.pow(dx*dx+dy*dy+soft*soft,1.5);return [dx*k,dy*k];}
+function orbitKick(p){const a=gravity(p.x,p.y,p.moonX,p.moonY,260,14),b=gravity(p.x,p.y,p.targetX,p.targetY,420,18);p.vx+=a[0]+b[0];p.vy+=a[1]+b[1];}
+
 function fixedSteps(acc,elapsed){const total=acc+Math.max(0,Math.min(100,elapsed));const count=Math.floor((total+1e-8)/STEP_MS);return [count,Math.max(0,total-count*STEP_MS)];}
 function impactTime(x,y,nx,ny,a,r){const dx=nx-x,dy=ny-y,ox=x-a.x,oy=y-a.y,c=ox*ox+oy*oy-r*r;if(c<=0)return 0;const A=dx*dx+dy*dy,B=ox*dx+oy*dy,D=B*B-A*c;if(!A||D<0)return Infinity;const t=(-B-Math.sqrt(D))/A;return t>=0&&t<=1?t:Infinity;}
 function movingImpact(x,y,nx,ny,a,r){return impactTime(x,y,nx-(a.x-(a.px??a.x)),ny-(a.y-(a.py??a.y)),{x:a.px??a.x,y:a.py??a.y},r);}
@@ -307,9 +310,9 @@ function startGame(){
     ctx2.fillStyle='rgba(0,0,0,0.25)';ctx2.fillRect(0,0,360,280);
     for(let i=0;i<60;i++){ctx2.fillStyle='rgba(255,255,255,0.5)';ctx2.fillRect((i*137)%360,(i*211)%280,1,1);}
     if(raceKeys['arrowup']||raceKeys['w'])gameState.vy-=0.3;if(raceKeys['arrowdown']||raceKeys['s'])gameState.vy+=0.3;if(raceKeys['arrowleft']||raceKeys['a'])gameState.vx-=0.18;if(raceKeys['arrowright']||raceKeys['d'])gameState.vx+=0.18;
-    gameState.px=gameState.x;gameState.py=gameState.y;const speed=Math.hypot(gameState.vx,gameState.vy);if(speed>12){gameState.vx*=12/speed;gameState.vy*=12/speed;}gameState.x+=gameState.vx;gameState.y+=gameState.vy;gameState.vx*=0.992;gameState.vy*=0.992;
+    orbitKick(gameState);gameState.px=gameState.x;gameState.py=gameState.y;const speed=Math.hypot(gameState.vx,gameState.vy);if(speed>12){gameState.vx*=12/speed;gameState.vy*=12/speed;}gameState.x+=gameState.vx;gameState.y+=gameState.vy;gameState.vx*=0.992;gameState.vy*=0.992;
     let dx=gameState.moonX-gameState.x,dy=gameState.moonY-gameState.y,d=Math.sqrt(dx*dx+dy*dy);
-    if(d<50){gameState.vx+=dx*0.03;gameState.vy+=dy*0.03;ctx2.strokeStyle='rgba(0,255,255,0.5)';ctx2.beginPath();ctx2.moveTo(gameState.x,gameState.y);ctx2.lineTo(gameState.moonX,gameState.moonY);ctx2.stroke();ctx2.fillStyle='rgba(0,255,255,0.12)';ctx2.beginPath();ctx2.arc(gameState.moonX,gameState.moonY,50,0,6.28);ctx2.fill();}
+    if(d<50){ctx2.strokeStyle='rgba(0,255,255,0.5)';ctx2.beginPath();ctx2.moveTo(gameState.x,gameState.y);ctx2.lineTo(gameState.moonX,gameState.moonY);ctx2.stroke();ctx2.fillStyle='rgba(0,255,255,0.12)';ctx2.beginPath();ctx2.arc(gameState.moonX,gameState.moonY,50,0,6.28);ctx2.fill();}
     if(gameState.x>360)gameState.x=0;if(gameState.x<0)gameState.x=360;if(gameState.y>280)gameState.y=0;if(gameState.y<0)gameState.y=280;
     if(Math.abs(gameState.x-gameState.px)>12||Math.abs(gameState.y-gameState.py)>12){gameState.px=gameState.x;gameState.py=gameState.y;}
     for(const a of gameState.asteroids){a.px=a.x;a.py=a.y;a.x=Math.max(0,Math.min(360,a.x+a.vx));a.y=Math.max(0,Math.min(280,a.y+a.vy));if(a.x===0||a.x===360)a.vx*=-1;if(a.y===0||a.y===280)a.vy*=-1;}
