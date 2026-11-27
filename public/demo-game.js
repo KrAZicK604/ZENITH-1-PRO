@@ -64,7 +64,7 @@ function toggleRaceFocus(){
  document.getElementById('raceFocusBtn').textContent=active?'↙ WINDOW MODE':'⛶ FOCUS RACE';
  if(active)win.style.zIndex=950;
 }
-function openWindow(id){document.getElementById(id).classList.remove('hidden'); document.getElementById(id).style.zIndex=100; updateTaskbar();}
+function openWindow(id){if(id!=='winGame')document.body.classList.remove('race-focus');document.getElementById(id).classList.remove('hidden'); document.getElementById(id).style.zIndex=100; updateTaskbar();}
 function toggleWindow(id){let el=document.getElementById(id); if(el.classList.contains('hidden')){openWindow(id);} else {closeWindow(id);}}
 function updateTaskbar(){
   document.querySelectorAll('.ticon').forEach(icon=>icon.classList.remove('active'));
@@ -289,7 +289,7 @@ function startGame(){
   openWindow('winGame');
   let cvs=document.getElementById('gameCanvas'),ctx2=cvs.getContext('2d');
   prepareGameCanvas(cvs,ctx2);
-  gameRunning=true;gameScore=0;gameState={x:40,y:140,vx:2.5,vy:0,boosts:3,asteroids:[],targetX:320,targetY:140,moonX:150,moonY:140};
+  document.getElementById('gameStatus').textContent='Flying';gameRunning=true;gameScore=0;gameState={x:40,y:140,vx:2.5,vy:0,boosts:3,asteroids:[],targetX:320,targetY:140,moonX:150,moonY:140};
   for(let i=0;i<10;i++)gameState.asteroids.push({x:80+Math.random()*200,y:Math.random()*280,r:Math.random()*7+3,vx:Math.random()*2-1,vy:Math.random()*2-1});
   for(const key of Object.keys(raceKeys))delete raceKeys[key];
   enemyShots=[];sparks=[];bossSpawned=false;shots=[];enemies=[{x:245,y:55,hp:100},{x:270,y:220,hp:100}];shield=100;missiles=3;locked=false;lastFire=-Infinity;damageAt=-Infinity;gameState.asteroids.forEach(a=>a.hp=35);combatHUD();
@@ -340,7 +340,7 @@ function overclock(){document.body.style.filter='brightness(1.6)';setTimeout(()=
 // LEADERBOARD
 function refreshLeaderboard(){
   let saved=null;try{saved=localStorage.getItem('zenithSoloDemoLeaderboard');}catch(e){}
-  if(saved){try{leaderboard=JSON.parse(saved);}catch(e){leaderboard=[];}}
+  if(saved){try{const parsed=JSON.parse(saved);leaderboard=Array.isArray(parsed)?parsed.filter(e=>e&&Number.isFinite(e.score)&&Number.isFinite(e.time)).map(e=>({name:'Solo',score:e.score,time:e.time})):[];}catch(e){leaderboard=[];}}
   // Empty local scores are intentional: never present fabricated race results.
   renderLeaderboard();
 }
@@ -362,7 +362,7 @@ function addScore(name,score){
   renderLeaderboard();
   Object.values(connections).forEach(conn=>{if(conn.open)conn.send({type:'newScore',scoreData:entry});});
 }
-function clearLeaderboard(){if(confirm('Clear leaderboard?')){leaderboard=[];localStorage.removeItem('zenithSoloDemoLeaderboard');renderLeaderboard();}}
+function clearLeaderboard(){if(confirm('Clear leaderboard?')){leaderboard=[];try{localStorage.removeItem('zenithSoloDemoLeaderboard');}catch(e){}renderLeaderboard();}}
 
 // BG
 let cv=document.getElementById('c'),ctx=cv.getContext('2d'),t=0,W,H;function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight}resize();onresize=resize;
@@ -377,3 +377,5 @@ const demoActions=[()=>{copyRoomId()},()=>{joinRoom()},()=>{closeWindow('winMain
 document.querySelectorAll('[data-action]').forEach(el=>{el.addEventListener('click',demoActions[Number(el.dataset.action)]);if(el.tagName!=='BUTTON'){el.tabIndex=0;el.setAttribute('role','button');el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();el.click();}});}});
 
 openWindow('winGame');toggleRaceFocus();document.getElementById('gameStatus').textContent='Ready — press SOLO to start';
+
+for(const el of document.querySelectorAll('[data-steer]')){const k=el.dataset.steer;el.addEventListener('pointerdown',e=>{e.preventDefault();el.setPointerCapture(e.pointerId);raceKeys[k]=true;});for(const event of ['pointerup','pointercancel','lostpointercapture'])el.addEventListener(event,()=>delete raceKeys[k]);}
