@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>ZENITH G4.9 — WebGL Spatial Flight</title>
+  <style>
+    :root{color-scheme:dark;font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}
+    *{box-sizing:border-box}
+    html,body{width:100%;height:100%;margin:0;background:#020616;color:#e3f4ff;overflow:hidden}
+    #universe{display:block;position:fixed;inset:0;width:100vw;height:100vh;touch-action:none}
+    .panel{position:fixed;z-index:2;background:linear-gradient(125deg,rgba(6,19,37,.91),rgba(3,9,26,.78));border:1px solid #395a79;border-radius:14px;box-shadow:0 8px 40px #0008;backdrop-filter:blur(8px)}
+    header{left:18px;top:18px;max-width:min(760px,calc(100vw - 36px));padding:13px 16px}
+    header strong{font-size:14px;letter-spacing:.16em;color:#8deaff}
+    #flight-hud{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;margin-top:7px;overflow-wrap:anywhere}
+    #graphics-status{font-size:11px;color:#a8c8d7;margin-top:8px}
+    #calibration{right:18px;top:18px;max-width:min(300px,calc(100vw - 36px));padding:12px}
+    #calibration summary{cursor:pointer;font-weight:700;color:#8deaff}
+    #calibration label{display:block;margin-top:11px}
+    input[type=range]{width:100%;accent-color:#53d6ef}
+    .cal-meta{font-size:11px;color:#b6c9dc;margin-top:9px}
+    #controls{left:18px;right:18px;bottom:16px;padding:12px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+    button,.link{border:1px solid #5ca1bf;border-radius:9px;background:#123149;color:#e3faff;padding:9px 13px;font:inherit;cursor:pointer;text-decoration:none}
+    button:hover,.link:hover{background:#225574}
+    button:focus-visible,.link:focus-visible{outline:2px solid #adf5ff;outline-offset:2px}
+    #key-help{flex:1;min-width:220px;font-size:11px;color:#bed3df}
+    #fallback{position:fixed;inset:auto 10% 45%;padding:20px;background:#102438;border:1px solid #87d8ee;border-radius:12px;z-index:4;text-align:center}
+    [hidden]{display:none!important}
+    @media(max-width:820px){
+      #calibration{top:auto;bottom:126px;right:12px}
+      header{left:12px;top:12px;right:12px}
+      #controls{left:12px;right:12px;bottom:12px}
+      #key-help{flex-basis:100%}
+      #graphics-status{font-size:10px}
+    }
+  </style>
+  <script src="/zenith-math.js" defer></script>
+  <script src="/zenith-webgl.js" defer></script>
+</head>
+<body>
+  <canvas id="universe" aria-label="3D WebGL spatial universe"></canvas>
+  <header class="panel">
+    <strong>ZENITH G4.9 · DIMENSIONAL FLIGHT LAB</strong>
+    <div id="flight-hud" role="status">Initializing spatial simulation…</div>
+    <div id="graphics-status" role="status">Checking WebGL2 availability and shader compilation…</div>
+  </header>
+  <details id="calibration" class="panel">
+    <summary>Render calibration</summary>
+    <label for="fov">Vertical camera field of view <output id="fov-number">60°</output></label>
+    <input id="fov" type="range" min="40" max="100" value="60" step="1">
+    <label for="resolution">Rendering resolution <output id="resolution-number">100%</output></label>
+    <input id="resolution" type="range" min="55" max="100" value="100" step="5">
+    <p class="cal-meta">Perspective: right-handed 3D · near 0.25 · far 6000 · 60 Hz fixed simulation · WebGL2 depth buffer · distances are uncalibrated game units. Four-dimensional visualization: mathematical X–W rotation and projection; not a measured extra physical dimension.</p>
+  </details>
+  <nav id="controls" class="panel" aria-label="Flight controls">
+    <button id="reset" type="button">Reset</button>
+    <button id="camera" type="button">Cockpit / chase</button>
+    <button id="fire" type="button">Fire</button>
+    <div id="key-help">W/S forward & reverse · A/D strafe · R/F ascend & descend · arrows rotate · Shift boost · B brake · Space fire · C camera · Q/E 4D rotation · Z/X W-view</div>
+    <a class="link" href="/spatial.html">Original Canvas flight</a>
+  </nav>
+  <div id="fallback" hidden>
+    WebGL2 unavailable or shader initialization failed.
+    <a class="link" href="/spatial.html">Launch original Canvas version</a>
+  </div>
+  <noscript>The WebGL flight simulator requires JavaScript.</noscript>
+</body>
+</html>
