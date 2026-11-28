@@ -308,10 +308,14 @@
       ' FPS · '+canvas.width+'×'+canvas.height+' · max texture '+maxTexture+
       ' · '+state.camera+' · SIMULATION UNITS (NOT SI-CALIBRATED)';
   }
+  let contextLost=false;
+  canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();contextLost=true;keys.clear();message.textContent='Graphics context lost. Reload to restart or use Canvas fallback.';$('fallback').hidden=false;});
+  canvas.addEventListener('webglcontextrestored',()=>{message.textContent='Graphics context restored. Reload to rebuild GPU resources.';});
   function frame(now){
+    if(contextLost)return;
     accumulator+=Math.min(.1,Math.max(0,(now-last)/1000));last=now;
     while(accumulator>=1/60){integrate(1/60);accumulator-=1/60;}
-    render(now);requestAnimationFrame(frame);
+    try{render(now);requestAnimationFrame(frame);}catch(error){keys.clear();message.textContent='Rendering stopped: '+error.message;$('fallback').hidden=false;}
   }
   requestAnimationFrame(frame);
 })();
