@@ -1,0 +1,37 @@
+name: Isolated WebGL browser recovery
+on:
+  push:
+    branches: [demo/zenith-webgl-v49-20261127]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  chromium:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install browser test dependencies
+        run: |
+          python -m pip install playwright==1.51.0
+          python -m playwright install --with-deps chromium
+      - name: Run math and browser tests
+        run: |
+          node tests/spatial_webgl_math.test.js
+          python -m http.server 8765 --bind 127.0.0.1 --directory public > /tmp/zenith-http.log 2>&1 &
+          server=$!
+          trap 'kill "$server" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8765/spatial-webgl.html >/dev/null; then break; fi
+            sleep 1
+          done
+          python tests/webgl_browser_recovery.py
+      - name: Retain graphics evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: webgl-browser-evidence
+          path: graphics-evidence/
+          if-no-files-found: warn
