@@ -315,5 +315,8 @@
     while(accumulator>=1/60){integrate(1/60);accumulator-=1/60;}
     render(now);schedule();}catch(error){fail(error);}
   }
+  if(location.hostname==='127.0.0.1'&&new URLSearchParams(location.search).get('diagnostics')==='1'){
+    Object.defineProperty(globalThis,'zenithDiagnostics',{value:Object.freeze({snapshot:()=>JSON.stringify(state),scheduler:()=>({pending:raf!==null,lost:contextLost})})});
+  }
   try{rebuild();schedule();}catch(error){fail(error);}
 })();
