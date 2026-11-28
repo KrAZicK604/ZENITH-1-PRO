@@ -66,27 +66,24 @@
     }
     return shader;
   }
-  let program;
-  try{
+  let program,planetMesh,shipMesh,starMesh,wire,shotsMesh;
+  const uniforms={},identity=M.identity(),sun=M.unit([-1,1,-.5]);
+  function rebuild(){
     program=gl.createProgram();
     const vs=compile(gl.VERTEX_SHADER,vert),fs=compile(gl.FRAGMENT_SHADER,frag);
     gl.attachShader(program,vs);gl.attachShader(program,fs);
     gl.linkProgram(program);gl.deleteShader(vs);gl.deleteShader(fs);
     if(!gl.getProgramParameter(program,gl.LINK_STATUS))
       throw new Error('WebGL_LINK: '+gl.getProgramInfoLog(program));
-  }catch(error){
-    message.textContent='WebGL shader initialization failed: '+error.message;
-    $('fallback').hidden=false;return;
-  }
   gl.useProgram(program);
   gl.enable(gl.DEPTH_TEST);
   gl.depthFunc(gl.LEQUAL);
   gl.clearColor(0.006,0.012,0.032,1);
-  const uniforms={};
   for(const id of ['Projection','View','Model','Base','Sun','Eye','Mode'])
     uniforms[id]=gl.getUniformLocation(program,'u'+id);
-  const identity=M.identity(),sun=M.unit([-1,1,-.5]);
   gl.uniform3fv(uniforms.Sun,sun);
+    planetMesh=sphere();shipMesh=ship();starMesh=mesh(starData,gl.POINTS);wire=mesh([],gl.LINES,true);shotsMesh=mesh([],gl.POINTS,true);
+  }
   function pack(out,p,n,col){
     out.push(p[0],p[1],p[2],n[0],n[1],n[2],col[0],col[1],col[2]);
   }
@@ -136,7 +133,6 @@
     ])triangle(out,a,b,c,color);
     return mesh(out);
   }
-  const planetMesh=sphere(),shipMesh=ship();
   let randomState=912837;
   function rand(){randomState=(Math.imul(randomState,1664525)+1013904223)>>>0;return randomState/4294967296;}
   const starData=[];
@@ -144,7 +140,6 @@
     const p=[(rand()-.5)*2400,(rand()-.5)*1800,(rand()-.5)*2400];
     pack(starData,p,[0,0,1],[.5+rand()*.5,.65+rand()*.35,1]);
   }
-  const starMesh=mesh(starData,gl.POINTS),wire=mesh([],gl.LINES,true),shotsMesh=mesh([],gl.POINTS,true);
   const tesseract=Array.from({length:16},(_,i)=>Array.from({length:4},(_,axis)=>((i>>axis)&1)?1:-1));
   const edges=[];
   for(let i=0;i<16;i++)for(let axis=0;axis<4;axis++){
@@ -308,14 +303,17 @@
       ' FPS · '+canvas.width+'×'+canvas.height+' · max texture '+maxTexture+
       ' · '+state.camera+' · SIMULATION UNITS (NOT SI-CALIBRATED)';
   }
-  let contextLost=false;
-  canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();contextLost=true;keys.clear();message.textContent='Graphics context lost. Reload to restart or use Canvas fallback.';$('fallback').hidden=false;});
-  canvas.addEventListener('webglcontextrestored',()=>{message.textContent='Graphics context restored. Reload to rebuild GPU resources.';});
+  let contextLost=false,raf=null;
+  function stop(){if(raf!==null)cancelAnimationFrame(raf);raf=null;keys.clear();accumulator=0;}
+  function fail(error){stop();contextLost=true;message.textContent='Graphics stopped: '+error.message;$('fallback').hidden=false;}
+  function schedule(){if(!contextLost&&raf===null)raf=requestAnimationFrame(frame);}
+  canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();contextLost=true;stop();message.textContent='Graphics context lost. Flight paused; awaiting GPU recovery.';$('fallback').hidden=false;});
+  canvas.addEventListener('webglcontextrestored',()=>{if(!contextLost)return;try{rebuild();contextLost=false;last=stamp=performance.now();frames=0;fps=0;$('fallback').hidden=true;schedule();}catch(error){fail(error);}});
   function frame(now){
-    if(contextLost)return;
-    accumulator+=Math.min(.1,Math.max(0,(now-last)/1000));last=now;
+    raf=null;if(contextLost)return;
+    try{accumulator+=Math.min(.1,Math.max(0,(now-last)/1000));last=now;
     while(accumulator>=1/60){integrate(1/60);accumulator-=1/60;}
-    try{render(now);requestAnimationFrame(frame);}catch(error){keys.clear();message.textContent='Rendering stopped: '+error.message;$('fallback').hidden=false;}
+    render(now);schedule();}catch(error){fail(error);}
   }
-  requestAnimationFrame(frame);
+  try{rebuild();schedule();}catch(error){fail(error);}
 })();
