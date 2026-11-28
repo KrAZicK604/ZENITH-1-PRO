@@ -10,7 +10,7 @@ async def main():
         page = await browser.new_page(viewport={"width":1280,"height":720})
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
-        await page.goto("http://127.0.0.1:8765/spatial-webgl.html")
+        await page.goto("http://127.0.0.1:8765/spatial-webgl.html?diagnostics=1")
         await page.wait_for_function("document.querySelector('#graphics-status').textContent.includes('WebGL2 ACTIVE')")
         await page.screenshot(path=str(out/"initial.png"))
         results = await page.evaluate("""async () => {
@@ -21,15 +21,19 @@ async def main():
             c.addEventListener(name,()=>{clearTimeout(timer);resolve();},{once:true});action();
           });
           const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-          const rows=[];
+          const rows=[],diag=globalThis.zenithDiagnostics;
+          if(!diag)throw Error('DIAGNOSTICS_MISSING');
           for(let i=0;i<20;i++){
             await waitEvent('webglcontextlost',()=>ext.loseContext());
-            const before=document.querySelector('#flight-hud').textContent;
+            const before=diag.snapshot();
+            if(diag.scheduler().pending||!diag.scheduler().lost)throw Error('scheduler not paused');
             await sleep(250);
-            if(before!==document.querySelector('#flight-hud').textContent)throw Error('HUD changed during loss');
+            if(before!==diag.snapshot())throw Error('state changed during loss');
             await waitEvent('webglcontextrestored',()=>ext.restoreContext());
+            if(before!==diag.snapshot())throw Error('state changed during rebuild');
             await sleep(300);
             if(gl.isContextLost()||!document.querySelector('#graphics-status').textContent.includes('WebGL2 ACTIVE'))throw Error('recovery failed '+i);
+            if(!diag.scheduler().pending||diag.scheduler().lost)throw Error('scheduler not resumed');
             if(gl.getError()!==gl.NO_ERROR)throw Error('GL error '+i);
             rows.push({cycle:i+1,recovered:true});
           }
